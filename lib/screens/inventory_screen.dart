@@ -345,7 +345,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
       case 'Vegetables':
         return const Color(0xFF10B981);
       case 'Fruits':
-        return const Color(0xFFF59E0B);
+        return const Color.fromRGBO(245, 158, 11, 1);
       case 'Dairy':
         return const Color(0xFF3B82F6);
       case 'Beverages':

@@ -17,7 +17,7 @@ class DashboardScreen extends StatelessWidget {
                 children: [
                   Text('Good morning', style: Theme.of(context).textTheme.bodyMedium),
                   const SizedBox(height: 4),
-                  Text('Ruth', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+                  Text('Admin', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
                 ],
               ),
             ),
@@ -64,19 +64,38 @@ class DashboardScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 20),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: [
-            SizedBox(width: 155, child: _healthCard(context, 'Total Stock', '128', Icons.inventory_2_rounded, const Color(0xFF2563EB), '+12%')),
-            SizedBox(width: 155, child: _healthCard(context, 'Low Alerts', '4', Icons.warning_amber_rounded, const Color(0xFFF59E0B), 'Watch')),
-            SizedBox(width: 155, child: _healthCard(context, 'Expiring', '7', Icons.access_time_filled, const Color(0xFFEF4444), '3 soon')),
-            SizedBox(width: 155, child: _healthCard(context, 'Today\'s Purchase', 'ETB 54k', Icons.shopping_cart_outlined, const Color(0xFF10B981), '+8%')),
-            SizedBox(width: 155, child: _healthCard(context, 'Today\'s Stock Out', '3', Icons.remove_circle_outline, const Color(0xFF7C3AED), 'Stable')),
-            SizedBox(width: 155, child: _healthCard(context, 'Inventory Value', 'ETB 840k', Icons.account_balance_wallet_outlined, const Color(0xFF0F766E), '+4%')),
-            SizedBox(width: 155, child: _healthCard(context, 'Recent Transactions', '24', Icons.receipt_long, const Color(0xFF0EA5E9), 'Live')),
-          ],
-        ),
+      LayoutBuilder(
+  builder: (context, constraints) {
+    // 1. Calculate how many items can fit dynamically
+    double maxWidth = constraints.maxWidth;
+    int crossAxisCount = 2; // Default for mobile
+    
+    if (maxWidth > 900) {
+      crossAxisCount = 4; // Laptops/Desktops
+    } else if (maxWidth > 600) {
+      crossAxisCount = 3; // Tablets
+    }
+
+    // 2. Exact item width calculation removing the 12px spaces
+    double spacing = 12.0;
+    double itemWidth = (maxWidth - (spacing * (crossAxisCount - 1))) / crossAxisCount;
+
+    return Wrap(
+      spacing: spacing,
+      runSpacing: spacing,
+      children: [
+        SizedBox(width: itemWidth, child: _healthCard(context, 'Total Stock', '128', Icons.inventory_2_rounded, const Color(0xFF2563EB), '+12%')),
+        SizedBox(width: itemWidth, child: _healthCard(context, 'Low Alerts', '4', Icons.warning_amber_rounded, const Color(0xFFF59E0B), 'Watch')),
+        SizedBox(width: itemWidth, child: _healthCard(context, 'Expiring', '7', Icons.access_time_filled, const Color(0xFFEF4444), '3 soon')),
+        SizedBox(width: itemWidth, child: _healthCard(context, 'Today\'s Purchase', 'ETB 54k', Icons.shopping_cart_outlined, const Color(0xFF10B981), '+8%')),
+        SizedBox(width: itemWidth, child: _healthCard(context, 'Today\'s Stock Out', '3', Icons.remove_circle_outline, const Color(0xFF7C3AED), 'Stable')),
+        SizedBox(width: itemWidth, child: _healthCard(context, 'Inventory Value', 'ETB 840k', Icons.account_balance_wallet_outlined, const Color(0xFF0F766E), '+4%')),
+        SizedBox(width: itemWidth, child: _healthCard(context, 'Recent Transactions', '24', Icons.receipt_long, const Color(0xFF0EA5E9), 'Live')),
+      ],
+    );
+  },
+),
+
         const SizedBox(height: 20),
         Text('Quick actions', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 12),
