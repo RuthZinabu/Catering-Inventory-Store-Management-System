@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/inventory_models.dart';
 import '../services/mock_repository.dart';
 import 'inventory_detail_screen.dart';
+import 'inventory_create_screen.dart';
 
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
@@ -44,11 +45,19 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6FB),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {},
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 70),
+      child: FloatingActionButton.extended(
+        onPressed: () async {
+          await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const InventoryCreateScreen()));
+          if (mounted) setState(() {});
+        },
         icon: const Icon(Icons.add_rounded),
-        label: const Text('Add Item'),
+        label: const Text('New'),
       ),
+      ),
+      
+     
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
@@ -87,7 +96,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(50),
                         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 16, offset: const Offset(0, 8))],
                       ),
                       child: Row(

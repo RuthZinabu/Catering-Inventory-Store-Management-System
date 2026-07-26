@@ -65,10 +65,16 @@ class _PurchaseListScreenState extends State<PurchaseListScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6FB),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PurchaseCreateScreen())),
+    floatingActionButton: Padding(
+      padding: const EdgeInsets.only(bottom: 70),
+      child: FloatingActionButton.extended(
+        onPressed: () async {
+          await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PurchaseCreateScreen()));
+          if (mounted) setState(() {});
+        },
         icon: const Icon(Icons.add_rounded),
-        label: const Text('New Purchase'),
+        label: const Text('New'),
+      ),
       ),
       body: SafeArea(
         child: CustomScrollView(
@@ -87,7 +93,7 @@ class _PurchaseListScreenState extends State<PurchaseListScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(50),
                         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 16, offset: const Offset(0, 8))],
                       ),
                       child: Row(
@@ -246,4 +252,3 @@ class _PurchaseListScreenState extends State<PurchaseListScreen> {
     }
   }
 }
-

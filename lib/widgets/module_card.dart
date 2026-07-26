@@ -19,6 +19,7 @@ class ModuleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
+      borderRadius: BorderRadius.circular(24),
       onTap: onPressed,
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -28,8 +29,14 @@ class ModuleCard extends StatelessWidget {
           boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 18, offset: const Offset(0, 10))],
           border: Border.all(color: const Color(0xFFE9EEF8)),
         ),
+        // LayoutBuilder + Expanded/Flexible below means this card renders
+        // safely at whatever height its parent grid cell gives it - it
+        // never forces its own height (which is what caused the "abnormal"
+        // growth), and it never overflows that height either, even with
+        // long text or a larger system font size.
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.max,
           children: [
             Container(
               padding: const EdgeInsets.all(10),
@@ -44,11 +51,13 @@ class ModuleCard extends StatelessWidget {
               style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 4),
-            Text(
-              subtitle,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodySmall,
+            Flexible(
+              child: Text(
+                subtitle,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             ),
           ],
         ),

@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import '../services/mock_repository.dart';
+import '../utils/responsive.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final hPad = responsiveHorizontalPadding(context);
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 120),
+      padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 120),
       children: [
         Row(
           children: [
@@ -66,17 +68,21 @@ class DashboardScreen extends StatelessWidget {
         const SizedBox(height: 20),
       LayoutBuilder(
   builder: (context, constraints) {
-    // 1. Calculate how many items can fit dynamically
+    // Calculate how many items can fit dynamically, using the same
+    // breakpoints as the rest of the app.
     double maxWidth = constraints.maxWidth;
-    int crossAxisCount = 2; // Default for mobile
-    
-    if (maxWidth > 900) {
-      crossAxisCount = 4; // Laptops/Desktops
-    } else if (maxWidth > 600) {
+    int crossAxisCount;
+    if (maxWidth < 250) {
+      crossAxisCount = 1; // Very small phones
+    } else if (isDesktopWidth(maxWidth)) {
+      crossAxisCount = 4; // Desktop
+    } else if (isTabletWidth(maxWidth)) {
       crossAxisCount = 3; // Tablets
+    } else {
+      crossAxisCount = 2; // Phones
     }
 
-    // 2. Exact item width calculation removing the 12px spaces
+    // Exact item width calculation removing the 12px spaces
     double spacing = 12.0;
     double itemWidth = (maxWidth - (spacing * (crossAxisCount - 1))) / crossAxisCount;
 
@@ -196,8 +202,11 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _actionButton(BuildContext context, IconData icon, String label, Color color) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    // Two buttons per row on narrow phones, fixed comfortable width otherwise.
+    final width = screenWidth < 250 ? (screenWidth - 20 * 2 - 12) / 2 : 155.0;
     return SizedBox(
-      width: 155,
+      width: width,
       child: ElevatedButton.icon(
         onPressed: () {},
         icon: Icon(icon),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/inventory_models.dart';
+import '../../services/mock_repository.dart';
 
 class SupplierFormScreen extends StatefulWidget {
   final Supplier? supplier;
@@ -166,6 +167,43 @@ class _SupplierFormScreenState extends State<SupplierFormScreen> {
   void _submit() {
     if (_formKey.currentState!.validate()) {
       setState(() => _saved = true);
+
+      final isEditing = widget.supplier != null;
+      if (isEditing) {
+        final existing = widget.supplier!;
+        final index = MockRepository.suppliers.indexWhere((s) => s.id == existing.id);
+        final updated = Supplier(
+          id: existing.id,
+          name: _contactController.text.trim(),
+          company: _companyController.text.trim(),
+          contactPerson: _contactController.text.trim(),
+          phone: _phoneController.text.trim(),
+          email: _emailController.text.trim(),
+          address: _addressController.text.trim(),
+          taxNumber: _taxController.text.trim(),
+          status: _categoryController.text.trim().isEmpty ? existing.status : _categoryController.text.trim(),
+          outstandingBalance: existing.outstandingBalance,
+        );
+        if (index != -1) {
+          MockRepository.suppliers[index] = updated;
+        }
+      } else {
+        MockRepository.suppliers.add(
+          Supplier(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            name: _contactController.text.trim(),
+            company: _companyController.text.trim(),
+            contactPerson: _contactController.text.trim(),
+            phone: _phoneController.text.trim(),
+            email: _emailController.text.trim(),
+            address: _addressController.text.trim(),
+            taxNumber: _taxController.text.trim(),
+            status: 'Active',
+            outstandingBalance: 0,
+          ),
+        );
+      }
+
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
