@@ -5,7 +5,11 @@ import 'screens/suppliers/supplier_list_screen.dart';
 import 'screens/purchases/purchase_list_screen.dart';
 import 'screens/stock_transfers/stock_transfer_list_screen.dart';
 import 'screens/kitchen_issues/kitchen_issue_list_screen.dart';
-import 'services/mock_repository.dart';
+import 'screens/recipes/recipe_list_screen.dart';
+import 'screens/waste/waste_list_screen.dart';
+import 'screens/expiry/expiry_list_screen.dart';
+import 'screens/users/user_list_screen.dart';
+import 'screens/reports/reports_screen.dart';
 import 'widgets/module_card.dart';
 import 'utils/responsive.dart';
 
@@ -204,8 +208,11 @@ class MorePage extends StatelessWidget {
       } else {
         crossAxisCount = 2;
       }
+      final basePad = responsiveValue(context, mobile: 16.0, tablet: 24.0, desktop: 32.0);
+      // Extra bottom padding so the Reports card scrolls fully above the nav bar.
+      final bottomPad = basePad + MediaQuery.of(context).padding.bottom + 80;
       return ListView(
-        padding: EdgeInsets.all(responsiveValue(context, mobile: 16, tablet: 24, desktop: 32)),
+        padding: EdgeInsets.fromLTRB(basePad, basePad, basePad, bottomPad),
         children: [
           Text(
             'More modules',
@@ -273,8 +280,16 @@ class MorePage extends StatelessWidget {
               ModuleCard(
                 title: 'Recipes',
                 subtitle: 'Ingredient breakdown and food costing',
-                icon: Icons.receipt_long,
+                icon: Icons.restaurant_menu_rounded,
                 color: Colors.green,
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const RecipeListScreen(),
+                    ),
+                  );
+                },
               ),
 
               ModuleCard(
@@ -282,6 +297,14 @@ class MorePage extends StatelessWidget {
                 subtitle: 'Record wastage and losses',
                 icon: Icons.delete_outline_rounded,
                 color: Colors.red,
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const WasteListScreen(),
+                    ),
+                  );
+                },
               ),
 
               ModuleCard(
@@ -289,6 +312,14 @@ class MorePage extends StatelessWidget {
                 subtitle: 'Monitor near-expiry and expired lots',
                 icon: Icons.event_busy_outlined,
                 color: Colors.purple,
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ExpiryListScreen(),
+                    ),
+                  );
+                },
               ),
 
               ModuleCard(
@@ -296,50 +327,37 @@ class MorePage extends StatelessWidget {
                 subtitle: 'View roles, permissions and audit trail',
                 icon: Icons.people_outline_rounded,
                 color: Colors.teal,
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const UserListScreen(),
+                    ),
+                  );
+                },
+              ),
+
+              ModuleCard(
+                title: 'Reports',
+                subtitle: 'Stock, purchases, waste, expiry & more',
+                icon: Icons.bar_chart_rounded,
+                color: Colors.blue,
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ReportsScreen(),
+                    ),
+                  );
+                },
               ),
             ],
               );
             },
-          ),
-
-          const SizedBox(height: 16),
-
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Reports',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w700),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _chip('Current Stock'),
-                      _chip('Inventory Valuation'),
-                      _chip('Waste Report'),
-                      _chip('Consumption Report'),
-                    ],
-                  ),
-                ],
-              ),
-            ),
           ),
         ],
       );
     },
   );
 }
-  Widget _chip(String label) {
-    return Chip(label: Text(label));
-  }
 }

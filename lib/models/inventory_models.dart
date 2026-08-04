@@ -131,3 +131,129 @@ class AlertItem {
     required this.severity,
   });
 }
+
+class WasteRecord {
+  final String id;
+  final String number;
+  final String item;
+  final String category;
+  final String unit;
+  final double quantity;
+  final double estimatedCost;
+  final String reason;
+  final String recordedBy;
+  final DateTime date;
+  final String status;
+  final String notes;
+
+  const WasteRecord({
+    required this.id,
+    required this.number,
+    required this.item,
+    required this.category,
+    required this.unit,
+    required this.quantity,
+    required this.estimatedCost,
+    required this.reason,
+    required this.recordedBy,
+    required this.date,
+    required this.status,
+    required this.notes,
+  });
+}
+
+class ExpiryItem {
+  final String id;
+  final String item;
+  final String category;
+  final String unit;
+  final double quantity;
+  final DateTime expiryDate;
+  final String batchNumber;
+  final String location;
+  final String status; // 'Expired', 'Expiring Soon', 'OK'
+
+  const ExpiryItem({
+    required this.id,
+    required this.item,
+    required this.category,
+    required this.unit,
+    required this.quantity,
+    required this.expiryDate,
+    required this.batchNumber,
+    required this.location,
+    required this.status,
+  });
+}
+
+class AppUser {
+  final String id;
+  final String name;
+  final String email;
+  final String phone;
+  final String role;
+  final String department;
+  final String status; // 'Active', 'Inactive', 'Suspended'
+  final DateTime createdAt;
+  final String lastLogin;
+  final List<String> permissions;
+
+  const AppUser({
+    required this.id,
+    required this.name,
+    required this.email,
+    required this.phone,
+    required this.role,
+    required this.department,
+    required this.status,
+    required this.createdAt,
+    required this.lastLogin,
+    required this.permissions,
+  });
+}
+
+class RecipeIngredient {
+  final String name;
+  final double quantity;
+  final String unit;
+  final double unitCost;
+
+  const RecipeIngredient({
+    required this.name,
+    required this.quantity,
+    required this.unit,
+    required this.unitCost,
+  });
+
+  double get totalCost => quantity * unitCost;
+}
+
+class RecipeItem {
+  final String id;
+  final String name;
+  final String category;
+  final String description;
+  final int servings;
+  final List<RecipeIngredient> ingredients;
+  final double sellingPrice;
+  final String prepTime;
+  final String status; // 'Active', 'Inactive'
+
+  const RecipeItem({
+    required this.id,
+    required this.name,
+    required this.category,
+    required this.description,
+    required this.servings,
+    required this.ingredients,
+    required this.sellingPrice,
+    required this.prepTime,
+    required this.status,
+  });
+
+  double get totalFoodCost =>
+      ingredients.fold(0, (sum, i) => sum + i.totalCost);
+
+  double get foodCostPercentage =>
+      sellingPrice > 0 ? (totalFoodCost / sellingPrice) * 100 : 0;
+}
