@@ -1,3 +1,4 @@
+import 'package:catering_inventory_store_management_system/widgets/search_bar.dart';
 import 'package:flutter/material.dart';
 
 import 'stock_transfer_create_screen.dart';
@@ -8,7 +9,8 @@ class StockTransferListScreen extends StatefulWidget {
   const StockTransferListScreen({super.key});
 
   @override
-  State<StockTransferListScreen> createState() => _StockTransferListScreenState();
+  State<StockTransferListScreen> createState() =>
+      _StockTransferListScreenState();
 }
 
 class _StockTransferListScreenState extends State<StockTransferListScreen> {
@@ -64,7 +66,8 @@ class _StockTransferListScreenState extends State<StockTransferListScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6FB),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const StockTransferCreateScreen())),
+        onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+            builder: (_) => const StockTransferCreateScreen())),
         icon: const Icon(Icons.add_rounded),
         label: const Text('New Transfer'),
       ),
@@ -77,47 +80,52 @@ class _StockTransferListScreenState extends State<StockTransferListScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Stock Transfers', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.6)),
+                    Text('Stock Transfers',
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineSmall
+                            ?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.6)),
                     const SizedBox(height: 8),
-                    Text('Move stock between locations with clear status and audit-ready flows.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 14.5)),
+                    Text(
+                        'Move stock between locations with clear status and audit-ready flows.',
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyMedium
+                            ?.copyWith(fontSize: 14.5)),
                     const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 16, offset: const Offset(0, 8))],
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.search_rounded, color: Color(0xFF64748B)),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: TextField(
-                              onChanged: (value) => setState(() => searchQuery = value),
-                              decoration: const InputDecoration(
-                                border: InputBorder.none,
-                                hintText: 'Search transfers',
-                                isDense: true,
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          IconButton(onPressed: () {}, icon: const Icon(Icons.tune_rounded, color: Color(0xFF2563EB))),
-                          IconButton(onPressed: () {}, icon: const Icon(Icons.sort_rounded, color: Color(0xFF2563EB))),
-                        ],
-                      ),
+                    CateringSearch(
+                      hintText: 'Search transfers...',
+                      onChanged: (value) {
+                        setState(() => searchQuery = value);
+                      },
                     ),
                     const SizedBox(height: 16),
                     Wrap(
                       spacing: 10,
                       runSpacing: 10,
                       children: [
-                        _summaryCard('Total Transfers Today', '${filtered.length}', const Color(0xFF2563EB), Icons.swap_horiz_rounded),
-                        _summaryCard('Pending Transfers', '$pending', const Color(0xFFF59E0B), Icons.pending_actions_rounded),
-                        _summaryCard('Completed Transfers', '$completed', const Color(0xFF14B8A6), Icons.check_circle_rounded),
-                        _summaryCard('Total Items Transferred', '84', const Color(0xFF8B5CF6), Icons.inventory_2_outlined),
+                        _summaryCard(
+                            'Total Transfers Today',
+                            '${filtered.length}',
+                            const Color(0xFF2563EB),
+                            Icons.swap_horiz_rounded),
+                        _summaryCard(
+                            'Pending Transfers',
+                            '$pending',
+                            const Color(0xFFF59E0B),
+                            Icons.pending_actions_rounded),
+                        _summaryCard(
+                            'Completed Transfers',
+                            '$completed',
+                            const Color(0xFF14B8A6),
+                            Icons.check_circle_rounded),
+                        _summaryCard(
+                            'Total Items Transferred',
+                            '84',
+                            const Color(0xFF8B5CF6),
+                            Icons.inventory_2_outlined),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -131,14 +139,29 @@ class _StockTransferListScreenState extends State<StockTransferListScreen> {
                   ? SliverToBoxAdapter(
                       child: Container(
                         padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 16, offset: const Offset(0, 8))]),
+                        decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(24),
+                            boxShadow: [
+                              BoxShadow(
+                                  color: Colors.black.withOpacity(0.04),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 8))
+                            ]),
                         child: Column(
                           children: [
-                            const Icon(Icons.swap_horiz_rounded, size: 44, color: Color(0xFF64748B)),
+                            const Icon(Icons.swap_horiz_rounded,
+                                size: 44, color: Color(0xFF64748B)),
                             const SizedBox(height: 8),
-                            Text('No transfers found', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                            Text('No transfers found',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(fontWeight: FontWeight.w700)),
                             const SizedBox(height: 4),
-                            Text('Create a new transfer to move stock between stores.', style: Theme.of(context).textTheme.bodyMedium),
+                            Text(
+                                'Create a new transfer to move stock between stores.',
+                                style: Theme.of(context).textTheme.bodyMedium),
                           ],
                         ),
                       ),
@@ -149,7 +172,15 @@ class _StockTransferListScreenState extends State<StockTransferListScreen> {
                         return Container(
                           margin: const EdgeInsets.only(bottom: 14),
                           padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 16, offset: const Offset(0, 10))]),
+                          decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(22),
+                              boxShadow: [
+                                BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 16,
+                                    offset: const Offset(0, 10))
+                              ]),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -157,18 +188,39 @@ class _StockTransferListScreenState extends State<StockTransferListScreen> {
                                 children: [
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        Text(transfer.number, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                                        Text(transfer.number,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleMedium
+                                                ?.copyWith(
+                                                    fontWeight:
+                                                        FontWeight.w700)),
                                         const SizedBox(height: 4),
-                                        Text('${transfer.fromStore} → ${transfer.toStore}', style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+                                        Text(
+                                            '${transfer.fromStore} → ${transfer.toStore}',
+                                            style: const TextStyle(
+                                                color: Color(0xFF64748B),
+                                                fontWeight: FontWeight.w600)),
                                       ],
                                     ),
                                   ),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                                    decoration: BoxDecoration(color: _statusColor(transfer.status).withOpacity(0.14), borderRadius: BorderRadius.circular(999)),
-                                    child: Text(transfer.status, style: TextStyle(color: _statusColor(transfer.status), fontSize: 11, fontWeight: FontWeight.w700)),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 5),
+                                    decoration: BoxDecoration(
+                                        color: _statusColor(transfer.status)
+                                            .withOpacity(0.14),
+                                        borderRadius:
+                                            BorderRadius.circular(999)),
+                                    child: Text(transfer.status,
+                                        style: TextStyle(
+                                            color:
+                                                _statusColor(transfer.status),
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w700)),
                                   ),
                                 ],
                               ),
@@ -188,9 +240,23 @@ class _StockTransferListScreenState extends State<StockTransferListScreen> {
                                 spacing: 8,
                                 runSpacing: 8,
                                 children: [
-                                  OutlinedButton.icon(onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => StockTransferDetailScreen(transfer: transfer))), icon: const Icon(Icons.visibility_rounded), label: const Text('View Details')),
-                                  OutlinedButton.icon(onPressed: () {}, icon: const Icon(Icons.edit_rounded), label: const Text('Update Transfer')),
-                                  OutlinedButton.icon(onPressed: () {}, icon: const Icon(Icons.print_rounded), label: const Text('Print Transfer Note')),
+                                  OutlinedButton.icon(
+                                      onPressed: () => Navigator.of(context)
+                                          .push(MaterialPageRoute(
+                                              builder: (_) =>
+                                                  StockTransferDetailScreen(
+                                                      transfer: transfer))),
+                                      icon:
+                                          const Icon(Icons.visibility_rounded),
+                                      label: const Text('View Details')),
+                                  OutlinedButton.icon(
+                                      onPressed: () {},
+                                      icon: const Icon(Icons.edit_rounded),
+                                      label: const Text('Update Transfer')),
+                                  OutlinedButton.icon(
+                                      onPressed: () {},
+                                      icon: const Icon(Icons.print_rounded),
+                                      label: const Text('Print Transfer Note')),
                                 ],
                               ),
                             ],
@@ -209,12 +275,37 @@ class _StockTransferListScreenState extends State<StockTransferListScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       width: MediaQuery.of(context).size.width > 360 ? 162 : 150,
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 14, offset: const Offset(0, 8))]),
+      decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 14,
+                offset: const Offset(0, 8))
+          ]),
       child: Row(
         children: [
-          Container(width: 38, height: 38, decoration: BoxDecoration(color: color.withOpacity(0.14), borderRadius: BorderRadius.circular(14)), child: Icon(icon, color: color, size: 20)),
+          Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                  color: color.withOpacity(0.14),
+                  borderRadius: BorderRadius.circular(14)),
+              child: Icon(icon, color: color, size: 20)),
           const SizedBox(width: 10),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12)), const SizedBox(height: 2), Text(value, style: const TextStyle(color: Color(0xFF64748B), fontSize: 12))]))
+          Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                Text(title,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w700, fontSize: 12)),
+                const SizedBox(height: 2),
+                Text(value,
+                    style:
+                        const TextStyle(color: Color(0xFF64748B), fontSize: 12))
+              ]))
         ],
       ),
     );
@@ -223,8 +314,14 @@ class _StockTransferListScreenState extends State<StockTransferListScreen> {
   Widget _infoChip(String value) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(999)),
-      child: Text(value, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+      decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(999)),
+      child: Text(value,
+          style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF334155))),
     );
   }
 

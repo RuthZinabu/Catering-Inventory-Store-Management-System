@@ -1,3 +1,4 @@
+import 'package:catering_inventory_store_management_system/widgets/search_bar.dart';
 import 'package:flutter/material.dart';
 
 import '../../models/inventory_models.dart';
@@ -40,8 +41,7 @@ class _UserListScreenState extends State<UserListScreen> {
   Widget build(BuildContext context) {
     final filtered = _filtered;
     final activeCount = filtered.where((u) => u.status == 'Active').length;
-    final inactiveCount =
-        filtered.where((u) => u.status == 'Inactive').length;
+    final inactiveCount = filtered.where((u) => u.status == 'Inactive').length;
     final roles = filtered.map((u) => u.role).toSet().length;
 
     return Scaffold(
@@ -101,47 +101,11 @@ class _UserListScreenState extends State<UserListScreen> {
                     ),
                     const SizedBox(height: 16),
                     // Search
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(50),
-                        boxShadow: [
-                          BoxShadow(
-                              color: Colors.black.withOpacity(0.04),
-                              blurRadius: 16,
-                              offset: const Offset(0, 8))
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.search_rounded,
-                              color: Color(0xFF64748B)),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: TextField(
-                              onChanged: (v) =>
-                                  setState(() => searchQuery = v),
-                              decoration: const InputDecoration(
-                                border: InputBorder.none,
-                                hintText: 'Search by name, role or dept',
-                                isDense: true,
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                                color: const Color(0xFFF8FAFC),
-                                borderRadius: BorderRadius.circular(12)),
-                            child: const Icon(Icons.tune_rounded,
-                                color: Color(0xFF0F766E)),
-                          ),
-                        ],
-                      ),
+                    CateringSearch(
+                      hintText: 'Search by name, role or dept...',
+                      onChanged: (value) {
+                        setState(() => searchQuery = value);
+                      },
                     ),
                     const SizedBox(height: 14),
                     // Filter chips
@@ -157,8 +121,7 @@ class _UserListScreenState extends State<UserListScreen> {
                               selected: isSelected,
                               onSelected: (_) =>
                                   setState(() => selectedFilter = f),
-                              selectedColor:
-                                  const Color(0xFFCCFBF1),
+                              selectedColor: const Color(0xFFCCFBF1),
                               labelStyle: TextStyle(
                                 color: isSelected
                                     ? const Color(0xFF0F766E)
@@ -177,17 +140,19 @@ class _UserListScreenState extends State<UserListScreen> {
                       spacing: 10,
                       runSpacing: 10,
                       children: [
-                        _summaryCard('Total Users', '${filtered.length}',
+                        _summaryCard(
+                            'Total Users',
+                            '${filtered.length}',
                             const Color(0xFF0F766E),
                             Icons.people_outline_rounded),
-                        _summaryCard('Active', '$activeCount',
+                        _summaryCard(
+                            'Active',
+                            '$activeCount',
                             const Color(0xFF16A34A),
                             Icons.check_circle_outline_rounded),
                         _summaryCard('Inactive', '$inactiveCount',
-                            const Color(0xFF64748B),
-                            Icons.person_off_outlined),
-                        _summaryCard('Roles', '$roles',
-                            const Color(0xFF2563EB),
+                            const Color(0xFF64748B), Icons.person_off_outlined),
+                        _summaryCard('Roles', '$roles', const Color(0xFF2563EB),
                             Icons.badge_outlined),
                       ],
                     ),
@@ -202,8 +167,7 @@ class _UserListScreenState extends State<UserListScreen> {
                   ? SliverToBoxAdapter(child: _emptyState())
                   : SliverList(
                       delegate: SliverChildBuilderDelegate(
-                        (context, index) =>
-                            _userCard(context, filtered[index]),
+                        (context, index) => _userCard(context, filtered[index]),
                         childCount: filtered.length,
                       ),
                     ),
@@ -240,8 +204,8 @@ class _UserListScreenState extends State<UserListScreen> {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(22),
-          onTap: () => Navigator.of(context).push(MaterialPageRoute(
-              builder: (_) => UserDetailScreen(user: user))),
+          onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => UserDetailScreen(user: user))),
           child: Padding(
             padding: const EdgeInsets.all(2),
             child: Column(
@@ -273,8 +237,7 @@ class _UserListScreenState extends State<UserListScreen> {
                                   style: Theme.of(context)
                                       .textTheme
                                       .titleMedium
-                                      ?.copyWith(
-                                          fontWeight: FontWeight.w700),
+                                      ?.copyWith(fontWeight: FontWeight.w700),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -285,8 +248,7 @@ class _UserListScreenState extends State<UserListScreen> {
                                     horizontal: 8, vertical: 5),
                                 decoration: BoxDecoration(
                                   color: statusColor.withOpacity(0.12),
-                                  borderRadius:
-                                      BorderRadius.circular(999),
+                                  borderRadius: BorderRadius.circular(999),
                                 ),
                                 child: Text(user.status,
                                     style: TextStyle(
@@ -309,8 +271,7 @@ class _UserListScreenState extends State<UserListScreen> {
                       onSelected: (v) {
                         if (v == 'view') {
                           Navigator.of(context).push(MaterialPageRoute(
-                              builder: (_) =>
-                                  UserDetailScreen(user: user)));
+                              builder: (_) => UserDetailScreen(user: user)));
                         } else if (v == 'edit') {
                           Navigator.of(context)
                               .push(MaterialPageRoute(
@@ -320,21 +281,15 @@ class _UserListScreenState extends State<UserListScreen> {
                               .then((_) => setState(() {}));
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content: Text(
-                                      'Status updated.')));
+                              const SnackBar(content: Text('Status updated.')));
                         }
                       },
                       itemBuilder: (_) => const [
                         PopupMenuItem(
-                            value: 'view',
-                            child: Text('View Profile')),
+                            value: 'view', child: Text('View Profile')),
+                        PopupMenuItem(value: 'edit', child: Text('Edit User')),
                         PopupMenuItem(
-                            value: 'edit',
-                            child: Text('Edit User')),
-                        PopupMenuItem(
-                            value: 'deactivate',
-                            child: Text('Deactivate')),
+                            value: 'deactivate', child: Text('Deactivate')),
                       ],
                       icon: const Icon(Icons.more_vert_rounded,
                           color: Color(0xFF64748B)),
@@ -348,8 +303,7 @@ class _UserListScreenState extends State<UserListScreen> {
                   children: [
                     _roleChip(user.role),
                     _infoChip(user.department),
-                    _infoChip(
-                        '${user.permissions.length} permissions'),
+                    _infoChip('${user.permissions.length} permissions'),
                   ],
                 ),
                 const SizedBox(height: 10),
@@ -373,8 +327,7 @@ class _UserListScreenState extends State<UserListScreen> {
     );
   }
 
-  Widget _summaryCard(
-      String title, String value, Color color, IconData icon) {
+  Widget _summaryCard(String title, String value, Color color, IconData icon) {
     return Container(
       padding: const EdgeInsets.all(12),
       width: MediaQuery.of(context).size.width > 360 ? 162 : 148,
@@ -420,8 +373,7 @@ class _UserListScreenState extends State<UserListScreen> {
 
   Widget _infoChip(String value) {
     return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
           color: const Color(0xFFF8FAFC),
           borderRadius: BorderRadius.circular(999)),
@@ -435,8 +387,7 @@ class _UserListScreenState extends State<UserListScreen> {
 
   Widget _roleChip(String role) {
     return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
           color: const Color(0xFFCCFBF1),
           borderRadius: BorderRadius.circular(999)),

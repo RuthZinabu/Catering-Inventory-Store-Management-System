@@ -62,8 +62,10 @@ class ReportsScreen extends StatelessWidget {
                     subtitle: 'Live inventory levels and low stock alerts',
                     color: const Color(0xFF2563EB),
                     icon: Icons.inventory_2_rounded,
-                    onTap: () => Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const _CurrentStockScreen())),
+                    onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const _CurrentStockScreen())),
                   ),
                   _reportCard(
                     context,
@@ -71,8 +73,10 @@ class ReportsScreen extends StatelessWidget {
                     subtitle: 'Total value of stock on hand by item',
                     color: const Color(0xFF0F766E),
                     icon: Icons.account_balance_wallet_outlined,
-                    onTap: () => Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const _InventoryValuationScreen())),
+                    onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const _InventoryValuationScreen())),
                   ),
                   _reportCard(
                     context,
@@ -80,12 +84,14 @@ class ReportsScreen extends StatelessWidget {
                     subtitle: 'Track inflow and outflow of inventory items',
                     color: const Color(0xFF7C3AED),
                     icon: Icons.swap_vert_rounded,
-                    onTap: () => Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const _PlaceholderReportScreen(
-                          title: 'Stock Movement',
-                          icon: Icons.swap_vert_rounded,
-                          color: Color(0xFF7C3AED),
-                        ))),
+                    onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const _PlaceholderReportScreen(
+                                  title: 'Stock Movement',
+                                  icon: Icons.swap_vert_rounded,
+                                  color: Color(0xFF7C3AED),
+                                ))),
                   ),
                   _reportCard(
                     context,
@@ -93,8 +99,10 @@ class ReportsScreen extends StatelessWidget {
                     subtitle: 'Spend analysis and purchase order history',
                     color: const Color(0xFF4F46E5),
                     icon: Icons.receipt_long,
-                    onTap: () => Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const _PurchaseReportScreen())),
+                    onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const _PurchaseReportScreen())),
                   ),
                   _reportCard(
                     context,
@@ -102,12 +110,14 @@ class ReportsScreen extends StatelessWidget {
                     subtitle: 'Supplier performance and order statistics',
                     color: const Color(0xFF0369A1),
                     icon: Icons.business_outlined,
-                    onTap: () => Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const _PlaceholderReportScreen(
-                          title: 'Supplier Report',
-                          icon: Icons.business_outlined,
-                          color: Color(0xFF0369A1),
-                        ))),
+                    onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const _PlaceholderReportScreen(
+                                  title: 'Supplier Report',
+                                  icon: Icons.business_outlined,
+                                  color: Color(0xFF0369A1),
+                                ))),
                   ),
                   _reportCard(
                     context,
@@ -115,12 +125,14 @@ class ReportsScreen extends StatelessWidget {
                     subtitle: 'Items nearing expiry and expired stock',
                     color: const Color(0xFFB45309),
                     icon: Icons.event_busy_outlined,
-                    onTap: () => Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const _PlaceholderReportScreen(
-                          title: 'Expiry Report',
-                          icon: Icons.event_busy_outlined,
-                          color: Color(0xFFB45309),
-                        ))),
+                    onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const _PlaceholderReportScreen(
+                                  title: 'Expiry Report',
+                                  icon: Icons.event_busy_outlined,
+                                  color: Color(0xFFB45309),
+                                ))),
                   ),
                   _reportCard(
                     context,
@@ -128,8 +140,10 @@ class ReportsScreen extends StatelessWidget {
                     subtitle: 'Track wastage by reason and category',
                     color: const Color(0xFFEF4444),
                     icon: Icons.delete_outline_rounded,
-                    onTap: () => Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const _WasteReportScreen())),
+                    onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const _WasteReportScreen())),
                   ),
                   _reportCard(
                     context,
@@ -137,12 +151,14 @@ class ReportsScreen extends StatelessWidget {
                     subtitle: 'Daily consumption patterns and trends',
                     color: const Color(0xFF16A34A),
                     icon: Icons.restaurant_menu_rounded,
-                    onTap: () => Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const _PlaceholderReportScreen(
-                          title: 'Consumption Report',
-                          icon: Icons.restaurant_menu_rounded,
-                          color: Color(0xFF16A34A),
-                        ))),
+                    onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const _PlaceholderReportScreen(
+                                  title: 'Consumption Report',
+                                  icon: Icons.restaurant_menu_rounded,
+                                  color: Color(0xFF16A34A),
+                                ))),
                   ),
                   _reportCard(
                     context,
@@ -150,12 +166,14 @@ class ReportsScreen extends StatelessWidget {
                     subtitle: 'Periodic inventory summaries and snapshots',
                     color: const Color(0xFF64748B),
                     icon: Icons.calendar_month_outlined,
-                    onTap: () => Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const _PlaceholderReportScreen(
-                          title: 'Daily & Monthly Inventory Report',
-                          icon: Icons.calendar_month_outlined,
-                          color: Color(0xFF64748B),
-                        ))),
+                    onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const _PlaceholderReportScreen(
+                                  title: 'Daily & Monthly Inventory Report',
+                                  icon: Icons.calendar_month_outlined,
+                                  color: Color(0xFF64748B),
+                                ))),
                   ),
                 ],
               ),
@@ -309,11 +327,8 @@ class _PlaceholderReportScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(title,
-                  style: Theme.of(context)
-                      .textTheme
-                      .headlineSmall
-                      ?.copyWith(
-                          fontWeight: FontWeight.w800, letterSpacing: -0.6)),
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w800, letterSpacing: -0.6)),
               const Spacer(),
               Center(
                 child: Column(
@@ -426,8 +441,7 @@ class _StockReport extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
               child: _kpiCard('Healthy', '${healthy.length}',
-                  const Color(0xFF16A34A),
-                  Icons.check_circle_outline_rounded)),
+                  const Color(0xFF16A34A), Icons.check_circle_outline_rounded)),
         ]),
         const SizedBox(height: 16),
         _sectionTitle(context, 'Inventory Valuation by Item'),
@@ -435,8 +449,13 @@ class _StockReport extends StatelessWidget {
         ...items.map((item) {
           final value = item.stockOnHand * item.purchasePrice;
           final fraction = totalValue > 0 ? value / totalValue : 0.0;
-          return _barRow(context, item.name, item.category,
-              'ETB ${value.toStringAsFixed(0)}', fraction, const Color(0xFF2563EB));
+          return _barRow(
+              context,
+              item.name,
+              item.category,
+              'ETB ${value.toStringAsFixed(0)}',
+              fraction,
+              const Color(0xFF2563EB));
         }),
         const SizedBox(height: 16),
         _sectionTitle(context, 'Low Stock Alerts'),
@@ -479,7 +498,8 @@ class _PurchaseReport extends StatelessWidget {
       children: [
         Row(children: [
           Expanded(
-              child: _kpiCard('Total Spend',
+              child: _kpiCard(
+                  'Total Spend',
                   'ETB ${totalSpend.toStringAsFixed(0)}',
                   const Color(0xFF4F46E5),
                   Icons.shopping_cart_outlined)),
@@ -491,13 +511,12 @@ class _PurchaseReport extends StatelessWidget {
         const SizedBox(height: 10),
         Row(children: [
           Expanded(
-              child: _kpiCard('Total VAT',
-                  'ETB ${totalVat.toStringAsFixed(0)}',
-                  const Color(0xFFF59E0B),
-                  Icons.percent_rounded)),
+              child: _kpiCard('Total VAT', 'ETB ${totalVat.toStringAsFixed(0)}',
+                  const Color(0xFFF59E0B), Icons.percent_rounded)),
           const SizedBox(width: 10),
           Expanded(
-              child: _kpiCard('Discounts',
+              child: _kpiCard(
+                  'Discounts',
                   'ETB ${totalDiscount.toStringAsFixed(0)}',
                   const Color(0xFF16A34A),
                   Icons.local_offer_outlined)),
@@ -507,14 +526,19 @@ class _PurchaseReport extends StatelessWidget {
         const SizedBox(height: 10),
         ...supplierSpend.entries.map((e) {
           final frac = totalSpend > 0 ? e.value / totalSpend : 0.0;
-          return _barRow(context, e.key, 'Supplier',
-              'ETB ${e.value.toStringAsFixed(0)}', frac, const Color(0xFF4F46E5));
+          return _barRow(
+              context,
+              e.key,
+              'Supplier',
+              'ETB ${e.value.toStringAsFixed(0)}',
+              frac,
+              const Color(0xFF4F46E5));
         }),
         const SizedBox(height: 16),
         _sectionTitle(context, 'Purchase Orders'),
         const SizedBox(height: 10),
-        ...purchases.map((p) =>
-            _purchaseRow(context, p.number, p.supplier, p.item, p.total, p.date)),
+        ...purchases.map((p) => _purchaseRow(
+            context, p.number, p.supplier, p.item, p.total, p.date)),
         const SizedBox(height: 80),
       ],
     );
@@ -569,8 +593,8 @@ class _PurchaseReport extends StatelessWidget {
                       fontSize: 13,
                       color: Color(0xFF4F46E5))),
               Text('${date.day}/${date.month}/${date.year}',
-                  style: const TextStyle(
-                      color: Color(0xFF64748B), fontSize: 11)),
+                  style:
+                      const TextStyle(color: Color(0xFF64748B), fontSize: 11)),
             ],
           ),
         ],
@@ -608,7 +632,8 @@ class _WasteReport extends StatelessWidget {
       children: [
         Row(children: [
           Expanded(
-              child: _kpiCard('Total Loss',
+              child: _kpiCard(
+                  'Total Loss',
                   'ETB ${totalLoss.toStringAsFixed(0)}',
                   const Color(0xFFEF4444),
                   Icons.money_off_rounded)),
@@ -621,34 +646,43 @@ class _WasteReport extends StatelessWidget {
         Row(children: [
           Expanded(
               child: _kpiCard('Confirmed', '$confirmed',
-                  const Color(0xFF475569),
-                  Icons.check_circle_outline_rounded)),
+                  const Color(0xFF475569), Icons.check_circle_outline_rounded)),
           const SizedBox(width: 10),
           Expanded(
-              child: _kpiCard('Pending', '$pending',
-                  const Color(0xFFF59E0B), Icons.pending_actions_rounded)),
+              child: _kpiCard('Pending', '$pending', const Color(0xFFF59E0B),
+                  Icons.pending_actions_rounded)),
         ]),
         const SizedBox(height: 16),
         _sectionTitle(context, 'Loss by Reason'),
         const SizedBox(height: 10),
         ...byReason.entries.map((e) {
           final frac = totalLoss > 0 ? e.value / totalLoss : 0.0;
-          return _barRow(context, e.key, 'Reason',
-              'ETB ${e.value.toStringAsFixed(0)}', frac, const Color(0xFFEF4444));
+          return _barRow(
+              context,
+              e.key,
+              'Reason',
+              'ETB ${e.value.toStringAsFixed(0)}',
+              frac,
+              const Color(0xFFEF4444));
         }),
         const SizedBox(height: 16),
         _sectionTitle(context, 'Loss by Category'),
         const SizedBox(height: 10),
         ...byCat.entries.map((e) {
           final frac = totalLoss > 0 ? e.value / totalLoss : 0.0;
-          return _barRow(context, e.key, 'Category',
-              'ETB ${e.value.toStringAsFixed(0)}', frac, const Color(0xFF7C3AED));
+          return _barRow(
+              context,
+              e.key,
+              'Category',
+              'ETB ${e.value.toStringAsFixed(0)}',
+              frac,
+              const Color(0xFF7C3AED));
         }),
         const SizedBox(height: 16),
         _sectionTitle(context, 'Waste Records'),
         const SizedBox(height: 10),
-        ...records.map((r) =>
-            _wasteRow(context, r.number, r.item, r.reason, r.estimatedCost, r.status)),
+        ...records.map((r) => _wasteRow(
+            context, r.number, r.item, r.reason, r.estimatedCost, r.status)),
         const SizedBox(height: 80),
       ],
     );
@@ -762,15 +796,18 @@ class _FoodCostReport extends StatelessWidget {
         const SizedBox(height: 10),
         Row(children: [
           Expanded(
-              child: _kpiCard('Total Food Cost',
+              child: _kpiCard(
+                  'Total Food Cost',
                   'ETB ${totalFoodCost.toStringAsFixed(0)}',
                   const Color(0xFFEF4444),
                   Icons.shopping_basket_rounded)),
           const SizedBox(width: 10),
           Expanded(
-              child: _kpiCard('Total Revenue',
+              child: _kpiCard(
+                  'Total Revenue',
                   'ETB ${totalRevenue.toStringAsFixed(0)}',
-                  const Color(0xFF2563EB), Icons.sell_rounded)),
+                  const Color(0xFF2563EB),
+                  Icons.sell_rounded)),
         ]),
         const SizedBox(height: 16),
         _sectionTitle(context, 'Food Cost % by Recipe'),
@@ -854,8 +891,7 @@ class _FoodCostReport extends StatelessWidget {
                       fontSize: 12,
                       color: Color(0xFF334155))),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                     color: color.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(999)),
@@ -905,9 +941,7 @@ Widget _kpiCard(String title, String value, Color color, IconData icon) {
             children: [
               Text(value,
                   style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 16,
-                      color: color)),
+                      fontWeight: FontWeight.w800, fontSize: 16, color: color)),
               const SizedBox(height: 2),
               Text(title,
                   style: const TextStyle(
@@ -965,9 +999,7 @@ Widget _barRow(BuildContext context, String title, String subtitle,
             ),
             Text(valueLabel,
                 style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 13,
-                    color: color)),
+                    fontWeight: FontWeight.w800, fontSize: 13, color: color)),
           ],
         ),
         const SizedBox(height: 10),

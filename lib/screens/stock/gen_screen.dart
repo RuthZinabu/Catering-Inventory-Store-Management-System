@@ -1,8 +1,10 @@
 // Generator script for stock_screen.dart
+import 'dart:convert';
 import 'dart:io';
 
 void main() {
-  final path = r'c:\Users\ruthz\Catering-Inventory-Store-Management-System\lib\screens\stock\stock_screen.dart';
+  final path =
+      r'c:\Users\ruthz\Catering-Inventory-Store-Management-System\lib\screens\stock\stock_screen.dart';
   final sb = StringBuffer();
 
   // Imports
@@ -19,7 +21,8 @@ void main() {
   sb.writeln("  State<StockScreen> createState() => _StockScreenState();");
   sb.writeln("}");
   sb.writeln();
-  sb.writeln("class _StockScreenState extends State<StockScreen> with SingleTickerProviderStateMixin {");
+  sb.writeln(
+      "class _StockScreenState extends State<StockScreen> with SingleTickerProviderStateMixin {");
   sb.writeln("  late final TabController _tabController;");
   sb.writeln("  String _search = '';");
   sb.writeln("  bool _showPermanent = true;");

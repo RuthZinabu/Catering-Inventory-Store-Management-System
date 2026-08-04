@@ -1,3 +1,4 @@
+import 'package:catering_inventory_store_management_system/widgets/search_bar.dart';
 import 'package:flutter/material.dart';
 import '../../models/stock_models.dart';
 import '../../services/mock_repository.dart';
@@ -49,44 +50,11 @@ class _FoodStockTabState extends State<FoodStockTab> {
             child: Column(
               children: [
                 // Search bar
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(50),
-                    boxShadow: [
-                      BoxShadow(
-                          color: Colors.black.withOpacity(0.04),
-                          blurRadius: 16,
-                          offset: const Offset(0, 8))
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.search_rounded, color: Color(0xFF64748B)),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: TextField(
-                          onChanged: (value) => setState(() => searchQuery = value),
-                          decoration: InputDecoration(
-                            border: InputBorder.none,
-                            hintText: 'Search food items...',
-                            isDense: true,
-                            contentPadding: EdgeInsets.zero,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(Icons.tune_rounded, color: Color(0xFF2563EB)),
-                      ),
-                    ],
-                  ),
+                CateringSearch(
+                  hintText: 'Search food items...',
+                  onChanged: (value) {
+                    setState(() => searchQuery = value);
+                  },
                 ),
                 const SizedBox(height: 16),
                 // Categories scroll
@@ -100,10 +68,13 @@ class _FoodStockTabState extends State<FoodStockTab> {
                         child: ChoiceChip(
                           label: Text(category),
                           selected: isSelected,
-                          onSelected: (_) => setState(() => selectedCategory = category),
+                          onSelected: (_) =>
+                              setState(() => selectedCategory = category),
                           selectedColor: const Color(0xFFDCEAFE),
                           labelStyle: TextStyle(
-                            color: isSelected ? const Color(0xFF1D4ED8) : const Color(0xFF475569),
+                            color: isSelected
+                                ? const Color(0xFF1D4ED8)
+                                : const Color(0xFF475569),
                             fontWeight: FontWeight.w600,
                           ),
                           side: BorderSide.none,
@@ -117,13 +88,13 @@ class _FoodStockTabState extends State<FoodStockTab> {
                 Row(
                   children: [
                     Expanded(
-                      child: _summaryCard(
-                          'Healthy', '$healthyCount items', const Color(0xFF16A34A), Icons.check_circle_rounded),
+                      child: _summaryCard('Healthy', '$healthyCount items',
+                          const Color(0xFF16A34A), Icons.check_circle_rounded),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: _summaryCard(
-                          'Low Stock', '$lowStockCount items', const Color(0xFFF59E0B), Icons.warning_amber_rounded),
+                      child: _summaryCard('Low Stock', '$lowStockCount items',
+                          const Color(0xFFF59E0B), Icons.warning_amber_rounded),
                     ),
                   ],
                 ),
@@ -171,145 +142,155 @@ class _FoodStockTabState extends State<FoodStockTab> {
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 112),
             sliver: SliverList(
               delegate: SliverChildBuilderDelegate((context, index) {
-                    final item = filteredItems[index];
-                    final accent = _accentForCategory(item.category);
-                    final statusColor = stockStatusColor(item.status);
-                    final stockFraction = (item.quantity / item.maxQuantity).clamp(0.0, 1.0);
+                final item = filteredItems[index];
+                final accent = _accentForCategory(item.category);
+                final statusColor = stockStatusColor(item.status);
+                final stockFraction =
+                    (item.quantity / item.maxQuantity).clamp(0.0, 1.0);
 
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 14),
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(22),
-                        boxShadow: [
-                          BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 18,
-                              offset: const Offset(0, 10))
-                        ],
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 14),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(22),
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 18,
+                          offset: const Offset(0, 10))
+                    ],
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(22),
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => StockDetailScreen(item: item),
+                        ),
                       ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(22),
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => StockDetailScreen(item: item),
-                            ),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(2),
-                            child: Column(
+                      child: Padding(
+                        padding: const EdgeInsets.all(2),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Container(
-                                      width: 66,
-                                      height: 66,
-                                      decoration: BoxDecoration(
-                                        color: accent.withOpacity(0.14),
-                                        borderRadius: BorderRadius.circular(18),
-                                      ),
-                                      child: Icon(
-                                        foodCategoryIcon(item.category),
-                                        color: accent,
-                                        size: 28,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Expanded(
-                                                child: Text(
-                                                  item.name,
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .titleMedium
-                                                      ?.copyWith(
-                                                          fontWeight: FontWeight.w700,
-                                                          letterSpacing: -0.2),
-                                                  maxLines: 2,
-                                                  overflow: TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 8),
-                                              statusBadge(item.status),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Wrap(
-                                            spacing: 7,
-                                            runSpacing: 6,
-                                            children: [
-                                              infoChip(item.category,
-                                                  bgColor: accent.withOpacity(0.12),
-                                                  textColor: accent),
-                                              infoChip('${item.quantity} ${item.unit}'),
-                                              if (item.expiryDate != null)
-                                                infoChip('Expires: ${_formatDate(item.expiryDate!)}',
-                                                    bgColor: _expiryColor(item.expiryDate!).withOpacity(0.12),
-                                                    textColor: _expiryColor(item.expiryDate!)),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                Text('Current stock',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall
-                                        ?.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                            color: const Color(0xFF64748B))),
-                                const SizedBox(height: 6),
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(999),
-                                  child: LinearProgressIndicator(
-                                    value: stockFraction,
-                                    minHeight: 7,
-                                    backgroundColor: const Color(0xFFF1F5F9),
+                                Container(
+                                  width: 66,
+                                  height: 66,
+                                  decoration: BoxDecoration(
+                                    color: accent.withOpacity(0.14),
+                                    borderRadius: BorderRadius.circular(18),
+                                  ),
+                                  child: Icon(
+                                    foodCategoryIcon(item.category),
                                     color: accent,
+                                    size: 28,
                                   ),
                                 ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Wrap(
-                                        spacing: 8,
-                                        runSpacing: 8,
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
-                                          infoChip('ETB ${item.purchasePrice.toStringAsFixed(0)}'),
-                                          infoChip(item.code),
-                                          infoChip(item.location),
+                                          Expanded(
+                                            child: Text(
+                                              item.name,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .titleMedium
+                                                  ?.copyWith(
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                      letterSpacing: -0.2),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          statusBadge(item.status),
                                         ],
                                       ),
-                                    ),
-                                    IconButton(
-                                      onPressed: () {},
-                                      icon: const Icon(Icons.more_horiz_rounded,
-                                          color: Color(0xFF64748B)),
-                                    ),
-                                  ],
+                                      const SizedBox(height: 4),
+                                      Wrap(
+                                        spacing: 7,
+                                        runSpacing: 6,
+                                        children: [
+                                          infoChip(item.category,
+                                              bgColor: accent.withOpacity(0.12),
+                                              textColor: accent),
+                                          infoChip(
+                                              '${item.quantity} ${item.unit}'),
+                                          if (item.expiryDate != null)
+                                            infoChip(
+                                                'Expires: ${_formatDate(item.expiryDate!)}',
+                                                bgColor: _expiryColor(
+                                                        item.expiryDate!)
+                                                    .withOpacity(0.12),
+                                                textColor: _expiryColor(
+                                                    item.expiryDate!)),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
-                          ),
+                            const SizedBox(height: 12),
+                            Text('Current stock',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        color: const Color(0xFF64748B))),
+                            const SizedBox(height: 6),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(999),
+                              child: LinearProgressIndicator(
+                                value: stockFraction,
+                                minHeight: 7,
+                                backgroundColor: const Color(0xFFF1F5F9),
+                                color: accent,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children: [
+                                      infoChip(
+                                          'ETB ${item.purchasePrice.toStringAsFixed(0)}'),
+                                      infoChip(item.code),
+                                      infoChip(item.location),
+                                    ],
+                                  ),
+                                ),
+                                IconButton(
+                                  onPressed: () {},
+                                  icon: const Icon(Icons.more_horiz_rounded,
+                                      color: Color(0xFF64748B)),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
-                    );
-                  }, childCount: filteredItems.length),
+                    ),
+                  ),
+                );
+              }, childCount: filteredItems.length),
             ),
           ),
       ],
@@ -317,7 +298,21 @@ class _FoodStockTabState extends State<FoodStockTab> {
   }
 
   String _formatDate(DateTime d) {
-    const months = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      '',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
     return '${d.day} ${months[d.month]} ${d.year}';
   }
 
@@ -335,7 +330,10 @@ class _FoodStockTabState extends State<FoodStockTab> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 14, offset: const Offset(0, 8))
+          BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 14,
+              offset: const Offset(0, 8))
         ],
       ),
       child: Row(
@@ -344,7 +342,8 @@ class _FoodStockTabState extends State<FoodStockTab> {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-                color: color.withOpacity(0.14), borderRadius: BorderRadius.circular(14)),
+                color: color.withOpacity(0.14),
+                borderRadius: BorderRadius.circular(14)),
             child: Icon(icon, color: color, size: 20),
           ),
           const SizedBox(width: 10),
@@ -352,9 +351,13 @@ class _FoodStockTabState extends State<FoodStockTab> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                Text(title,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w700, fontSize: 13)),
                 const SizedBox(height: 2),
-                Text(value, style: const TextStyle(color: Color(0xFF64748B), fontSize: 12)),
+                Text(value,
+                    style: const TextStyle(
+                        color: Color(0xFF64748B), fontSize: 12)),
               ],
             ),
           ),

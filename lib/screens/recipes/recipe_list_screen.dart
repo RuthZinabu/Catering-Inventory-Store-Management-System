@@ -1,3 +1,4 @@
+import 'package:catering_inventory_store_management_system/widgets/search_bar.dart';
 import 'package:flutter/material.dart';
 
 import '../../models/inventory_models.dart';
@@ -29,7 +30,8 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
   List<RecipeItem> get _recipes => MockRepository.recipeItems;
 
   List<RecipeItem> get _filtered => _recipes.where((r) {
-        final matchCat = selectedCategory == 'All' || r.category == selectedCategory;
+        final matchCat =
+            selectedCategory == 'All' || r.category == selectedCategory;
         final matchSearch = searchQuery.isEmpty ||
             r.name.toLowerCase().contains(searchQuery.toLowerCase()) ||
             r.category.toLowerCase().contains(searchQuery.toLowerCase());
@@ -43,7 +45,8 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
     final totalServings = filtered.fold<int>(0, (s, r) => s + r.servings);
     final avgCostPct = filtered.isEmpty
         ? 0.0
-        : filtered.fold<double>(0, (s, r) => s + r.foodCostPercentage) / filtered.length;
+        : filtered.fold<double>(0, (s, r) => s + r.foodCostPercentage) /
+            filtered.length;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6FB),
@@ -74,7 +77,10 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
                         Expanded(
                           child: Text(
                             'Recipes',
-                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineSmall
+                                ?.copyWith(
                                   fontWeight: FontWeight.w800,
                                   letterSpacing: -0.6,
                                 ),
@@ -93,47 +99,18 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
                     const SizedBox(height: 8),
                     Text(
                       'Manage dish recipes, ingredient breakdowns and food costing.',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 14.5),
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(fontSize: 14.5),
                     ),
                     const SizedBox(height: 16),
                     // Search bar
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(50),
-                        boxShadow: [
-                          BoxShadow(
-                              color: Colors.black.withOpacity(0.04),
-                              blurRadius: 16,
-                              offset: const Offset(0, 8))
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.search_rounded, color: Color(0xFF64748B)),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: TextField(
-                              onChanged: (v) => setState(() => searchQuery = v),
-                              decoration: const InputDecoration(
-                                border: InputBorder.none,
-                                hintText: 'Search recipes',
-                                isDense: true,
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                                color: const Color(0xFFF8FAFC),
-                                borderRadius: BorderRadius.circular(12)),
-                            child: const Icon(Icons.tune_rounded, color: Color(0xFF2563EB)),
-                          ),
-                        ],
-                      ),
+                    CateringSearch(
+                      hintText: 'Search recipies...',
+                      onChanged: (value) {
+                        setState(() => searchQuery = value);
+                      },
                     ),
                     const SizedBox(height: 14),
                     // Category chips
@@ -147,7 +124,8 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
                             child: ChoiceChip(
                               label: Text(cat),
                               selected: isSelected,
-                              onSelected: (_) => setState(() => selectedCategory = cat),
+                              onSelected: (_) =>
+                                  setState(() => selectedCategory = cat),
                               selectedColor: const Color(0xFFDCFCE7),
                               labelStyle: TextStyle(
                                 color: isSelected
@@ -167,12 +145,18 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
                       spacing: 10,
                       runSpacing: 10,
                       children: [
-                        _summaryCard('Active Recipes', '$activeCount',
-                            const Color(0xFF16A34A), Icons.restaurant_menu_rounded),
+                        _summaryCard(
+                            'Active Recipes',
+                            '$activeCount',
+                            const Color(0xFF16A34A),
+                            Icons.restaurant_menu_rounded),
                         _summaryCard('Total Servings', '$totalServings',
                             const Color(0xFF2563EB), Icons.people_rounded),
-                        _summaryCard('Avg Food Cost', '${avgCostPct.toStringAsFixed(1)}%',
-                            const Color(0xFFF59E0B), Icons.percent_rounded),
+                        _summaryCard(
+                            'Avg Food Cost',
+                            '${avgCostPct.toStringAsFixed(1)}%',
+                            const Color(0xFFF59E0B),
+                            Icons.percent_rounded),
                         _summaryCard('Total Recipes', '${filtered.length}',
                             const Color(0xFF8B5CF6), Icons.menu_book_rounded),
                       ],
@@ -188,7 +172,8 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
                   ? SliverToBoxAdapter(child: _emptyState())
                   : SliverList(
                       delegate: SliverChildBuilderDelegate(
-                        (context, index) => _recipeCard(context, filtered[index]),
+                        (context, index) =>
+                            _recipeCard(context, filtered[index]),
                         childCount: filtered.length,
                       ),
                     ),
@@ -223,8 +208,8 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(22),
-          onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => RecipeDetailScreen(recipe: recipe))),
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => RecipeDetailScreen(recipe: recipe))),
           child: Padding(
             padding: const EdgeInsets.all(2),
             child: Column(
@@ -253,8 +238,10 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
                               Expanded(
                                 child: Text(
                                   recipe.name,
-                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                      fontWeight: FontWeight.w700),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(fontWeight: FontWeight.w700),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -321,8 +308,8 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
                       ),
                     ),
                     Container(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
                         color: costColor.withOpacity(0.12),
                         borderRadius: BorderRadius.circular(999),
@@ -375,7 +362,8 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(title,
-                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w700, fontSize: 12)),
                 const SizedBox(height: 2),
                 Text(value,
                     style: const TextStyle(

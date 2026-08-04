@@ -1,3 +1,4 @@
+import 'package:catering_inventory_store_management_system/widgets/search_bar.dart';
 import 'package:flutter/material.dart';
 import '../../models/inventory_models.dart';
 import '../../services/mock_repository.dart';
@@ -33,14 +34,12 @@ class _ExpiryListScreenState extends State<ExpiryListScreen> {
         return matchFilter && matchSearch;
       }).toList();
 
-int _daysUntil(DateTime date) =>
-    date.difference(DateTime.now()).inDays;
+  int _daysUntil(DateTime date) => date.difference(DateTime.now()).inDays;
 
   @override
   Widget build(BuildContext context) {
     final filtered = _filtered;
-    final expiredCount =
-        filtered.where((i) => i.status == 'Expired').length;
+    final expiredCount = filtered.where((i) => i.status == 'Expired').length;
     final expiringSoonCount =
         filtered.where((i) => i.status == 'Expiring Soon').length;
     final okCount = filtered.where((i) => i.status == 'OK').length;
@@ -88,47 +87,11 @@ int _daysUntil(DateTime date) =>
                     ),
                     const SizedBox(height: 16),
                     // Search
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(50),
-                        boxShadow: [
-                          BoxShadow(
-                              color: Colors.black.withOpacity(0.04),
-                              blurRadius: 16,
-                              offset: const Offset(0, 8))
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.search_rounded,
-                              color: Color(0xFF64748B)),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: TextField(
-                              onChanged: (v) =>
-                                  setState(() => searchQuery = v),
-                              decoration: const InputDecoration(
-                                border: InputBorder.none,
-                                hintText: 'Search items or batch',
-                                isDense: true,
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                                color: const Color(0xFFF8FAFC),
-                                borderRadius: BorderRadius.circular(12)),
-                            child: const Icon(Icons.tune_rounded,
-                                color: Color(0xFF7C3AED)),
-                          ),
-                        ],
-                      ),
+                    CateringSearch(
+                      hintText: 'Search items or batch...',
+                      onChanged: (value) {
+                        setState(() => searchQuery = value);
+                      },
                     ),
                     const SizedBox(height: 14),
                     // Filter chips
@@ -144,8 +107,7 @@ int _daysUntil(DateTime date) =>
                               selected: isSelected,
                               onSelected: (_) =>
                                   setState(() => selectedFilter = f),
-                              selectedColor:
-                                  _filterAccent(f).withOpacity(0.15),
+                              selectedColor: _filterAccent(f).withOpacity(0.15),
                               labelStyle: TextStyle(
                                 color: isSelected
                                     ? _filterAccent(f)
@@ -165,15 +127,14 @@ int _daysUntil(DateTime date) =>
                       runSpacing: 10,
                       children: [
                         _summaryCard('Expired', '$expiredCount',
-                            const Color(0xFFEF4444),
-                            Icons.event_busy_outlined),
+                            const Color(0xFFEF4444), Icons.event_busy_outlined),
                         _summaryCard('Expiring Soon', '$expiringSoonCount',
-                            const Color(0xFFF59E0B),
-                            Icons.access_time_rounded),
-                        _summaryCard('OK', '$okCount',
-                            const Color(0xFF16A34A),
+                            const Color(0xFFF59E0B), Icons.access_time_rounded),
+                        _summaryCard('OK', '$okCount', const Color(0xFF16A34A),
                             Icons.check_circle_outline_rounded),
-                        _summaryCard('Total Batches', '${filtered.length}',
+                        _summaryCard(
+                            'Total Batches',
+                            '${filtered.length}',
                             const Color(0xFF7C3AED),
                             Icons.inventory_2_outlined),
                       ],
@@ -187,8 +148,7 @@ int _daysUntil(DateTime date) =>
                         decoration: BoxDecoration(
                           color: const Color(0xFFFEE2E2),
                           borderRadius: BorderRadius.circular(18),
-                          border: Border.all(
-                              color: const Color(0xFFFCA5A5)),
+                          border: Border.all(color: const Color(0xFFFCA5A5)),
                         ),
                         child: Row(
                           children: [
@@ -294,8 +254,7 @@ int _daysUntil(DateTime date) =>
                                   style: Theme.of(context)
                                       .textTheme
                                       .titleMedium
-                                      ?.copyWith(
-                                          fontWeight: FontWeight.w700),
+                                      ?.copyWith(fontWeight: FontWeight.w700),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -306,8 +265,7 @@ int _daysUntil(DateTime date) =>
                                     horizontal: 8, vertical: 5),
                                 decoration: BoxDecoration(
                                   color: color.withOpacity(0.12),
-                                  borderRadius:
-                                      BorderRadius.circular(999),
+                                  borderRadius: BorderRadius.circular(999),
                                 ),
                                 child: Text(item.status,
                                     style: TextStyle(
@@ -334,8 +292,7 @@ int _daysUntil(DateTime date) =>
                   runSpacing: 6,
                   children: [
                     _infoChip(item.category),
-                    _infoChip(
-                        '${item.quantity} ${item.unit}'),
+                    _infoChip('${item.quantity} ${item.unit}'),
                     _infoChip(item.location),
                   ],
                 ),
@@ -349,8 +306,7 @@ int _daysUntil(DateTime date) =>
                         size: 14,
                         color: color),
                     const SizedBox(width: 5),
-                    Text(
-                        'Expires: ${_fmt(item.expiryDate)} ($daysLabel)',
+                    Text('Expires: ${_fmt(item.expiryDate)} ($daysLabel)',
                         style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
@@ -366,8 +322,7 @@ int _daysUntil(DateTime date) =>
                             MaterialPageRoute(
                                 builder: (_) =>
                                     ExpiryDetailScreen(item: item))),
-                        icon: const Icon(Icons.visibility_rounded,
-                            size: 16),
+                        icon: const Icon(Icons.visibility_rounded, size: 16),
                         label: const Text('View Details'),
                       ),
                     ),
@@ -376,20 +331,17 @@ int _daysUntil(DateTime date) =>
                       Expanded(
                         child: FilledButton.icon(
                           onPressed: () {
-                            ScaffoldMessenger.of(context)
-                                .showSnackBar(SnackBar(
-                              content: Text(
-                                  '${item.item} marked for disposal.'),
-                              backgroundColor:
-                                  const Color(0xFFEF4444),
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content:
+                                  Text('${item.item} marked for disposal.'),
+                              backgroundColor: const Color(0xFFEF4444),
                             ));
                           },
                           icon: const Icon(Icons.delete_outline_rounded,
                               size: 16),
                           label: const Text('Dispose'),
                           style: FilledButton.styleFrom(
-                              backgroundColor:
-                                  const Color(0xFFEF4444)),
+                              backgroundColor: const Color(0xFFEF4444)),
                         ),
                       ),
                   ],
@@ -402,8 +354,7 @@ int _daysUntil(DateTime date) =>
     );
   }
 
-  Widget _summaryCard(
-      String title, String value, Color color, IconData icon) {
+  Widget _summaryCard(String title, String value, Color color, IconData icon) {
     return Container(
       padding: const EdgeInsets.all(12),
       width: MediaQuery.of(context).size.width > 360 ? 162 : 148,
@@ -449,8 +400,7 @@ int _daysUntil(DateTime date) =>
 
   Widget _infoChip(String value) {
     return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
           color: const Color(0xFFF8FAFC),
           borderRadius: BorderRadius.circular(999)),
@@ -519,12 +469,21 @@ int _daysUntil(DateTime date) =>
     }
   }
 
-  String _fmt(DateTime d) =>
-      '${d.day} ${_month(d.month)} ${d.year}';
+  String _fmt(DateTime d) => '${d.day} ${_month(d.month)} ${d.year}';
 
   String _month(int m) => const [
         '',
-        'Jan','Feb','Mar','Apr','May','Jun',
-        'Jul','Aug','Sep','Oct','Nov','Dec'
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec'
       ][m];
 }

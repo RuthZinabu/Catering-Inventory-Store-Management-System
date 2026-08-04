@@ -1,3 +1,4 @@
+import 'package:catering_inventory_store_management_system/widgets/search_bar.dart';
 import 'package:flutter/material.dart';
 
 import '../../models/inventory_models.dart';
@@ -41,8 +42,7 @@ class _WasteListScreenState extends State<WasteListScreen> {
         filtered.where((r) => r.status == 'Confirmed').length;
     final pendingCount =
         filtered.where((r) => r.status == 'Pending Review').length;
-    final totalCost =
-        filtered.fold<double>(0, (s, r) => s + r.estimatedCost);
+    final totalCost = filtered.fold<double>(0, (s, r) => s + r.estimatedCost);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6FB),
@@ -101,47 +101,11 @@ class _WasteListScreenState extends State<WasteListScreen> {
                     ),
                     const SizedBox(height: 16),
                     // Search
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(50),
-                        boxShadow: [
-                          BoxShadow(
-                              color: Colors.black.withOpacity(0.04),
-                              blurRadius: 16,
-                              offset: const Offset(0, 8))
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.search_rounded,
-                              color: Color(0xFF64748B)),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: TextField(
-                              onChanged: (v) =>
-                                  setState(() => searchQuery = v),
-                              decoration: const InputDecoration(
-                                border: InputBorder.none,
-                                hintText: 'Search waste records',
-                                isDense: true,
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                                color: const Color(0xFFF8FAFC),
-                                borderRadius: BorderRadius.circular(12)),
-                            child: const Icon(Icons.tune_rounded,
-                                color: Color(0xFFEF4444)),
-                          ),
-                        ],
-                      ),
+                    CateringSearch(
+                      hintText: 'Search waste records...',
+                      onChanged: (value) {
+                        setState(() => searchQuery = value);
+                      },
                     ),
                     const SizedBox(height: 14),
                     // Filter chips
@@ -176,13 +140,19 @@ class _WasteListScreenState extends State<WasteListScreen> {
                       spacing: 10,
                       runSpacing: 10,
                       children: [
-                        _summaryCard('Total Records', '${filtered.length}',
+                        _summaryCard(
+                            'Total Records',
+                            '${filtered.length}',
                             const Color(0xFFEF4444),
                             Icons.delete_outline_rounded),
-                        _summaryCard('Confirmed', '$confirmedCount',
+                        _summaryCard(
+                            'Confirmed',
+                            '$confirmedCount',
                             const Color(0xFF64748B),
                             Icons.check_circle_outline_rounded),
-                        _summaryCard('Pending Review', '$pendingCount',
+                        _summaryCard(
+                            'Pending Review',
+                            '$pendingCount',
                             const Color(0xFFF59E0B),
                             Icons.pending_actions_rounded),
                         _summaryCard(
@@ -270,8 +240,7 @@ class _WasteListScreenState extends State<WasteListScreen> {
                                   style: Theme.of(context)
                                       .textTheme
                                       .titleMedium
-                                      ?.copyWith(
-                                          fontWeight: FontWeight.w700),
+                                      ?.copyWith(fontWeight: FontWeight.w700),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -309,11 +278,9 @@ class _WasteListScreenState extends State<WasteListScreen> {
                   runSpacing: 6,
                   children: [
                     _infoChip(record.category),
-                    _infoChip(
-                        '${record.quantity} ${record.unit}'),
+                    _infoChip('${record.quantity} ${record.unit}'),
                     _infoChip(record.reason),
-                    _infoChip(
-                        'ETB ${record.estimatedCost.toStringAsFixed(0)}'),
+                    _infoChip('ETB ${record.estimatedCost.toStringAsFixed(0)}'),
                   ],
                 ),
                 const SizedBox(height: 10),
@@ -345,8 +312,7 @@ class _WasteListScreenState extends State<WasteListScreen> {
                   child: OutlinedButton.icon(
                     onPressed: () => Navigator.of(context).push(
                         MaterialPageRoute(
-                            builder: (_) =>
-                                WasteDetailScreen(record: record))),
+                            builder: (_) => WasteDetailScreen(record: record))),
                     icon: const Icon(Icons.visibility_rounded),
                     label: const Text('View Details'),
                   ),
@@ -359,8 +325,7 @@ class _WasteListScreenState extends State<WasteListScreen> {
     );
   }
 
-  Widget _summaryCard(
-      String title, String value, Color color, IconData icon) {
+  Widget _summaryCard(String title, String value, Color color, IconData icon) {
     return Container(
       padding: const EdgeInsets.all(12),
       width: MediaQuery.of(context).size.width > 360 ? 162 : 148,
@@ -406,8 +371,7 @@ class _WasteListScreenState extends State<WasteListScreen> {
 
   Widget _infoChip(String value) {
     return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
           color: const Color(0xFFF8FAFC),
           borderRadius: BorderRadius.circular(999)),
@@ -452,7 +416,17 @@ class _WasteListScreenState extends State<WasteListScreen> {
 
   String _month(int m) => const [
         '',
-        'Jan','Feb','Mar','Apr','May','Jun',
-        'Jul','Aug','Sep','Oct','Nov','Dec'
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec'
       ][m];
 }

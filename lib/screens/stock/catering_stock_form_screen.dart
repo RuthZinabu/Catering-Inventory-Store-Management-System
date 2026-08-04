@@ -2,19 +2,20 @@ import 'package:flutter/material.dart';
 import '../../models/stock_models.dart';
 import '../../services/mock_repository.dart';
 
-class StockFormScreen extends StatefulWidget {
-  final StockItem? item;
-  final String? category;
+class CateringStockFormScreen extends StatefulWidget {
+  final CateringStockItem? item;
   final String? subtype;
-  const StockFormScreen({super.key, this.item, this.category, this.subtype});
+  const CateringStockFormScreen({super.key, this.item, this.subtype});
 
   @override
-  State<StockFormScreen> createState() => _StockFormScreenState();
+  State<CateringStockFormScreen> createState() =>
+      _CateringStockFormScreenState();
 }
 
-class _StockFormScreenState extends State<StockFormScreen> {
+class _CateringStockFormScreenState extends State<CateringStockFormScreen> {
   int _currentStep = 0;
   bool get _isEditMode => widget.item != null;
+  String _selectedSubtype = 'permanent';
 
   // Step 1 controllers
   final _codeCtrl = TextEditingController();
@@ -31,21 +32,13 @@ class _StockFormScreenState extends State<StockFormScreen> {
   final _minQtyCtrl = TextEditingController();
   final _maxQtyCtrl = TextEditingController();
 
-  // Step 3 controllers (Electronics-specific)
-  final _brandCtrl = TextEditingController();
-  final _modelCtrl = TextEditingController();
-  final _warrantyCtrl = TextEditingController();
-  final _maintenanceCtrl = TextEditingController();
-  final _assetTagCtrl = TextEditingController();
-
-  // Step 4 controllers (Catering-specific) - Removed: quantityPerUnit not in model
-
   final _formKey1 = GlobalKey<FormState>();
   final _formKey2 = GlobalKey<FormState>();
 
   @override
   void initState() {
     super.initState();
+    _selectedSubtype = widget.subtype ?? 'permanent';
     if (_isEditMode) {
       final item = widget.item!;
       _codeCtrl.text = item.code;
@@ -59,33 +52,12 @@ class _StockFormScreenState extends State<StockFormScreen> {
       _quantityCtrl.text = item.quantity.toStringAsFixed(0);
       _minQtyCtrl.text = item.minQuantity.toStringAsFixed(0);
       _maxQtyCtrl.text = item.maxQuantity.toStringAsFixed(0);
-
-      // If it's an electronics item, populate electronics fields
-      if (item is ElectronicsStockItem) {
-        _brandCtrl.text = item.brand;
-        _modelCtrl.text = item.model;
-        _warrantyCtrl.text = item.warrantyStatus;
-        _maintenanceCtrl.text = item.lastMaintenanceDate!.toIso8601String();
-        _assetTagCtrl.text = item.assetTag;
-      }
-
-      // If it's a catering item, no additional fields to populate
-      if (item is CateringStockItem) {
-        // Catering items don't have additional fields beyond base StockItem
-      }
+      _selectedSubtype =
+          item.subtype == CateringSubtype.permanent ? 'permanent' : 'temporary';
     } else {
-      // Set defaults based on category selection
-      if (widget.category == 'electronics') {
-        _categoryCtrl.text = 'Electronics';
-        _unitCtrl.text = 'Pcs';
-      } else if (widget.category == 'catering') {
-        _categoryCtrl.text =
-            widget.subtype == 'permanent' ? 'Permanent Assets' : 'Consumables';
-        _unitCtrl.text = 'Pcs';
-      } else {
-        _categoryCtrl.text = 'Food';
-        _unitCtrl.text = 'Kg';
-      }
+      _categoryCtrl.text =
+          widget.subtype == 'permanent' ? 'Permanent Assets' : 'Consumables';
+      _unitCtrl.text = 'Pcs';
     }
   }
 
@@ -102,11 +74,6 @@ class _StockFormScreenState extends State<StockFormScreen> {
     _quantityCtrl.dispose();
     _minQtyCtrl.dispose();
     _maxQtyCtrl.dispose();
-    _brandCtrl.dispose();
-    _modelCtrl.dispose();
-    _warrantyCtrl.dispose();
-    _maintenanceCtrl.dispose();
-    _assetTagCtrl.dispose();
     super.dispose();
   }
 
@@ -128,7 +95,7 @@ class _StockFormScreenState extends State<StockFormScreen> {
                   ),
                   Expanded(
                     child: Text(
-                      _isEditMode ? 'Edit Stock Item' : 'New Stock Item',
+                      _isEditMode ? 'Edit Catering Item' : 'New Catering Item',
                       style: Theme.of(context)
                           .textTheme
                           .titleLarge
@@ -147,9 +114,7 @@ class _StockFormScreenState extends State<StockFormScreen> {
                 children: [
                   _buildStepIndicator(0, 'Basic Info', true),
                   _buildStepIndicator(1, 'Inventory', true),
-                  if (_isItemCategory('electronics') ||
-                      _isItemCategory('catering'))
-                    _buildStepIndicator(2, 'Details', true),
+                  _buildStepIndicator(2, 'Details', true),
                 ],
               ),
             ),
@@ -163,7 +128,7 @@ class _StockFormScreenState extends State<StockFormScreen> {
                       if (_currentStep > 0)
                         Expanded(
                           child: ElevatedButton(
-                            onPressed: details.onStepContinue,
+                            onPressed: details.onStepCancel,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF64748B),
                               padding: const EdgeInsets.symmetric(vertical: 12),
@@ -206,7 +171,6 @@ class _StockFormScreenState extends State<StockFormScreen> {
                   }
                 },
                 steps: [
-                  // Step 1: Basic Information
                   Step(
                     title: const Text('Basic Info'),
                     content: _buildBasicInfoStep(),
@@ -215,7 +179,6 @@ class _StockFormScreenState extends State<StockFormScreen> {
                         ? StepState.indexed
                         : StepState.disabled,
                   ),
-                  // Step 2: Inventory Details
                   Step(
                     title: const Text('Inventory'),
                     content: _buildInventoryStep(),
@@ -224,26 +187,14 @@ class _StockFormScreenState extends State<StockFormScreen> {
                         ? StepState.indexed
                         : StepState.disabled,
                   ),
-                  if (_isItemCategory('electronics'))
-                    // Step 3: Electronics Details
-                    Step(
-                      title: const Text('Details'),
-                      content: _buildElectronicsStep(),
-                      isActive: _currentStep >= 2,
-                      state: _currentStep >= 2
-                          ? StepState.indexed
-                          : StepState.disabled,
-                    ),
-                  if (_isItemCategory('catering'))
-                    // Step 3: Catering Details
-                    Step(
-                      title: const Text('Details'),
-                      content: _buildCateringStep(),
-                      isActive: _currentStep >= 2,
-                      state: _currentStep >= 2
-                          ? StepState.indexed
-                          : StepState.disabled,
-                    ),
+                  Step(
+                    title: const Text('Details'),
+                    content: _buildDetailsStep(),
+                    isActive: _currentStep >= 2,
+                    state: _currentStep >= 2
+                        ? StepState.indexed
+                        : StepState.disabled,
+                  ),
                 ],
               ),
             ),
@@ -251,16 +202,6 @@ class _StockFormScreenState extends State<StockFormScreen> {
         ),
       ),
     );
-  }
-
-  bool _isItemCategory(String category) {
-    if (widget.category != null) return widget.category == category;
-    if (_isEditMode && widget.item != null) {
-      if (category == 'food') return widget.item is FoodStockItem;
-      if (category == 'catering') return widget.item is CateringStockItem;
-      if (category == 'electronics') return widget.item is ElectronicsStockItem;
-    }
-    return false;
   }
 
   Widget _buildStepIndicator(int step, String label, bool isActive) {
@@ -308,13 +249,13 @@ class _StockFormScreenState extends State<StockFormScreen> {
       child: Column(
         children: [
           _buildTextField(
-              _codeCtrl, 'Item Code', 'e.g., F-001', Icons.tag_rounded),
+              _codeCtrl, 'Item Code', 'e.g., C-001', Icons.tag_rounded),
           _buildTextField(
-              _nameCtrl, 'Item Name', 'e.g., Rice', Icons.title_rounded),
-          _buildTextField(_categoryCtrl, 'Category', 'e.g., Grains',
+              _nameCtrl, 'Item Name', 'e.g., Table', Icons.title_rounded),
+          _buildTextField(_categoryCtrl, 'Category', 'e.g., Furniture',
               Icons.category_rounded),
-          _buildTextField(_unitCtrl, 'Unit', 'e.g., Kg, Pcs', Icons.speed),
-          _buildTextField(_supplierCtrl, 'Supplier', 'e.g., Local Vendor',
+          _buildTextField(_unitCtrl, 'Unit', 'e.g., Pcs', Icons.speed),
+          _buildTextField(_supplierCtrl, 'Supplier', 'e.g., Furniture Co',
               Icons.person_rounded),
           _buildTextField(_locationCtrl, 'Location', 'e.g., Warehouse A',
               Icons.location_on_rounded),
@@ -347,42 +288,41 @@ class _StockFormScreenState extends State<StockFormScreen> {
     );
   }
 
-  Widget _buildElectronicsStep() {
+  Widget _buildDetailsStep() {
     return Column(
       children: [
-        _buildTextField(
-            _brandCtrl, 'Brand', 'e.g., Samsung', Icons.business_rounded),
-        _buildTextField(
-            _modelCtrl, 'Model', 'e.g., XYZ-123', Icons.desktop_windows),
-        _buildTextField(_warrantyCtrl, 'Warranty Status', 'Active/Expired',
-            Icons.shield_rounded),
-        _buildTextField(_maintenanceCtrl, 'Last Maintenance', '2026-01-01',
-            Icons.build_rounded),
-        _buildTextField(_assetTagCtrl, 'Asset Tag', 'e.g., ASSET-001',
-            Icons.barcode_reader),
-      ],
-    );
-  }
-
-  Widget _buildCateringStep() {
-    return Column(
-      children: [
-        DropdownButtonFormField<String>(
-          decoration: InputDecoration(
-            prefixIcon:
-                const Icon(Icons.food_bank_rounded, color: Color(0xFF64748B)),
-            labelText: 'Subtype',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: DropdownButtonFormField<String>(
+            decoration: InputDecoration(
+              prefixIcon:
+                  const Icon(Icons.food_bank_rounded, color: Color(0xFF64748B)),
+              labelText: 'Subtype',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide:
+                    const BorderSide(color: Color(0xFF2563EB), width: 2),
+              ),
             ),
+            value: _selectedSubtype,
+            items: const [
+              DropdownMenuItem(
+                  value: 'permanent', child: Text('Permanent Assets')),
+              DropdownMenuItem(value: 'temporary', child: Text('Consumables')),
+            ],
+            onChanged: (value) {
+              if (value != null) {
+                setState(() => _selectedSubtype = value);
+              }
+            },
           ),
-          value: widget.subtype ?? 'permanent',
-          items: const [
-            DropdownMenuItem(
-                value: 'permanent', child: Text('Permanent Assets')),
-            DropdownMenuItem(value: 'temporary', child: Text('Consumables')),
-          ],
-          onChanged: (value) {},
         ),
       ],
     );
@@ -426,7 +366,6 @@ class _StockFormScreenState extends State<StockFormScreen> {
         setState(() => _currentStep++);
       }
     } else {
-      // Create or update the item
       final code = _codeCtrl.text.trim();
       final name = _nameCtrl.text.trim();
       final category = _categoryCtrl.text.trim();
@@ -439,105 +378,36 @@ class _StockFormScreenState extends State<StockFormScreen> {
       final minQuantity = double.tryParse(_minQtyCtrl.text) ?? 0;
       final maxQuantity = double.tryParse(_maxQtyCtrl.text) ?? 0;
 
-      if (_isItemCategory('electronics')) {
-        final item = ElectronicsStockItem(
-          id: _isEditMode
-              ? widget.item!.id
-              : DateTime.now().millisecondsSinceEpoch.toString(),
-          code: code,
-          name: name,
-          category: category,
-          unit: unit,
-          supplier: supplier,
-          location: location,
-          description: description,
-          purchasePrice: purchasePrice,
-          quantity: quantity,
-          minQuantity: minQuantity,
-          maxQuantity: maxQuantity,
-          status: 'Healthy',
-          lastUpdated: DateTime.now(),
-          brand: _brandCtrl.text.trim(),
-          model: _modelCtrl.text.trim(),
-          serialNumber: _assetTagCtrl.text.trim(),
-          maintenanceStatus: 'OK',
-          assetTag: _assetTagCtrl.text.trim(),
-        );
+      final item = CateringStockItem(
+        id: _isEditMode
+            ? widget.item!.id
+            : DateTime.now().millisecondsSinceEpoch.toString(),
+        code: code,
+        name: name,
+        category: category,
+        unit: unit,
+        purchasePrice: purchasePrice,
+        quantity: quantity,
+        minQuantity: minQuantity,
+        maxQuantity: maxQuantity,
+        location: location,
+        supplier: supplier,
+        status: 'Healthy',
+        description: description,
+        lastUpdated: DateTime.now(),
+        subtype: _selectedSubtype == 'permanent'
+            ? CateringSubtype.permanent
+            : CateringSubtype.temporary,
+      );
 
-        if (_isEditMode) {
-          final index = MockRepository.electronicsStock
-              .indexWhere((i) => i.id == widget.item!.id);
-          if (index != -1) {
-            MockRepository.electronicsStock[index] = item;
-          }
-        } else {
-          MockRepository.electronicsStock.add(item);
-        }
-      } else if (_isItemCategory('catering')) {
-        final subtype = widget.subtype ?? 'permanent';
-        final item = CateringStockItem(
-          id: _isEditMode
-              ? widget.item!.id
-              : DateTime.now().millisecondsSinceEpoch.toString(),
-          code: code,
-          name: name,
-          category: category,
-          unit: unit,
-          supplier: supplier,
-          location: location,
-          description: description,
-          purchasePrice: purchasePrice,
-          quantity: quantity,
-          minQuantity: minQuantity,
-          maxQuantity: maxQuantity,
-          status: 'Healthy',
-          lastUpdated: DateTime.now(),
-          subtype: subtype == 'permanent'
-              ? CateringSubtype.permanent
-              : CateringSubtype.temporary,
-        );
-
-        if (_isEditMode) {
-          final index = MockRepository.cateringStock
-              .indexWhere((i) => i.id == widget.item!.id);
-          if (index != -1) {
-            MockRepository.cateringStock[index] = item;
-          }
-        } else {
-          MockRepository.cateringStock.add(item);
+      if (_isEditMode) {
+        final index = MockRepository.cateringStock
+            .indexWhere((i) => i.id == widget.item!.id);
+        if (index != -1) {
+          MockRepository.cateringStock[index] = item;
         }
       } else {
-        // Food item
-        final item = FoodStockItem(
-          id: _isEditMode
-              ? widget.item!.id
-              : DateTime.now().millisecondsSinceEpoch.toString(),
-          code: code,
-          name: name,
-          category: category,
-          unit: unit,
-          supplier: supplier,
-          location: location,
-          description: description,
-          purchasePrice: purchasePrice,
-          quantity: quantity,
-          minQuantity: minQuantity,
-          maxQuantity: maxQuantity,
-          status: 'Healthy',
-          lastUpdated: DateTime.now(),
-          expiryDate: null,
-          batchNumber: '',
-        );
-
-        if (_isEditMode) {
-          final index = MockRepository.foodStock
-              .indexWhere((i) => i.id == widget.item!.id);
-          if (index != -1) {
-            MockRepository.foodStock[index] = item;
-          }
-        } else {
-          MockRepository.foodStock.add(item);
-        }
+        MockRepository.cateringStock.add(item);
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
