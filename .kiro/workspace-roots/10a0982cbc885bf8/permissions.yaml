@@ -1,0 +1,20 @@
+rules:
+  - capability: shell
+    effect: allow
+    match:
+      - flutter *
+      - New-Item *
+      - dart *
+      - Select-Object *
+  - capability: fs_write
+    effect: allow
+    match:
+      - .kiro/specs/user-management-update/.config.kiro
+      - lib/app.dart
+      - lib/screens/reports/reports_screen.dart
+      - lib/models/stock_models.dart
+      - lib/services/mock_repository.dart
+      - lib/screens/stock/stock_helpers.dart
+      - lib/screens/stock/stock_history_screen.dart
+      - lib/screens/stock/stock_form_screen.dart
+      - lib/screens/stock/stock_detail_screen.dart

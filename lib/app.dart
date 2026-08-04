@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'screens/dashboard_screen.dart';
-import 'screens/inventory_screen.dart';
+import 'screens/stock/stock_screen.dart';
 import 'screens/suppliers/supplier_list_screen.dart';
 import 'screens/purchases/purchase_list_screen.dart';
 import 'screens/stock_transfers/stock_transfer_list_screen.dart';
@@ -134,7 +134,7 @@ class _RootShellState extends State<RootShell> {
 
   final List<Widget> _pages = const [
     DashboardScreen(),
-    InventoryScreen(),
+    StockScreen(),
     SupplierListScreen(),
     PurchaseListScreen(),
     MorePage(),
@@ -179,7 +179,7 @@ class _RootShellState extends State<RootShell> {
             onDestinationSelected: (value) => setState(() => _index = value),
             destinations: const [
               NavigationDestination(icon: Icon(Icons.grid_view_rounded, size: 20), label: 'Dashboard'),
-              NavigationDestination(icon: Icon(Icons.inventory_2_outlined, size: 20), label: 'Inventory'),
+              NavigationDestination(icon: Icon(Icons.inventory_2_outlined, size: 20), label: 'Stock'),
               NavigationDestination(icon: Icon(Icons.business_outlined, size: 20), label: 'Suppliers'),
               NavigationDestination(icon: Icon(Icons.receipt_long, size: 20), label: 'Purchases'),
               NavigationDestination(icon: Icon(Icons.more_horiz_rounded, size: 20), label: 'More'),
