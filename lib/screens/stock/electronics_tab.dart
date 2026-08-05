@@ -17,6 +17,7 @@ class _ElectronicsTabState extends State<ElectronicsTab> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 420;
     final items = MockRepository.electronicsStock;
 
     final filteredItems = items.where((item) {
@@ -53,26 +54,62 @@ class _ElectronicsTabState extends State<ElectronicsTab> {
                 ),
                 const SizedBox(height: 16),
                 // Summary cards - compact responsive layout
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    Expanded(
-                      child: _summaryCard('Healthy', '$healthyCount items',
-                          const Color(0xFF16A34A), Icons.check_circle_rounded),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _summaryCard('Low Stock', '$lowStockCount items',
-                          const Color(0xFFF59E0B), Icons.warning_amber_rounded),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _summaryCard('Maintenance', '$maintenanceDueCount',
-                          const Color(0xFFF59E0B), Icons.build_rounded),
-                    ),
-                  ],
-                ),
+
+                isMobile
+                    ? Column(
+                        children: [
+                          _summaryCard(
+                            'Healthy',
+                            '$healthyCount items',
+                            const Color(0xFF16A34A),
+                            Icons.check_circle_rounded,
+                          ),
+                          const SizedBox(height: 8),
+                          _summaryCard(
+                            'Low Stock',
+                            '$lowStockCount items',
+                            const Color(0xFFF59E0B),
+                            Icons.warning_amber_rounded,
+                          ),
+                          const SizedBox(height: 8),
+                          _summaryCard(
+                            'Maintenance',
+                            '$maintenanceDueCount',
+                            const Color(0xFFF59E0B),
+                            Icons.build_rounded,
+                          ),
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          Expanded(
+                            child: _summaryCard(
+                              'Healthy',
+                              '$healthyCount items',
+                              const Color(0xFF16A34A),
+                              Icons.check_circle_rounded,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _summaryCard(
+                              'Low Stock',
+                              '$lowStockCount items',
+                              const Color(0xFFF59E0B),
+                              Icons.warning_amber_rounded,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _summaryCard(
+                              'Maintenance',
+                              '$maintenanceDueCount',
+                              const Color(0xFFF59E0B),
+                              Icons.build_rounded,
+                            ),
+                          ),
+                        ],
+                      ),
               ],
             ),
           ),
