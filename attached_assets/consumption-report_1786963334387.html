@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+    <title>Consumption Report</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f5f7fa;
+            color: #1a2639;
+            padding: 0;
+            margin: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+        .app-container {
+            max-width: 480px;
+            margin: 0 auto;
+            background: #f5f7fa;
+            min-height: 100vh;
+            padding-bottom: 80px;
+            position: relative;
+        }
+
+        /* Header */
+        .app-header {
+            background: white;
+            padding: 16px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border-bottom: 1px solid #eef2f6;
+        }
+        .app-header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .app-header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .app-header h1 i {
+            color: #2a7de1;
+            font-size: 22px;
+        }
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .header-actions button {
+            background: none;
+            border: none;
+            font-size: 18px;
+            color: #64748b;
+            padding: 6px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: 0.2s;
+        }
+        .header-actions button:hover {
+            background: #f1f5f9;
+        }
+
+        /* Date Range */
+        .date-range-selector {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding: 2px 0;
+            -webkit-overflow-scrolling: touch;
+        }
+        .date-range-selector::-webkit-scrollbar {
+            display: none;
+        }
+        .date-btn {
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748b;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .date-btn.active {
+            background: #2a7de1;
+            color: white;
+            border-color: #2a7de1;
+        }
+        .date-btn:hover:not(.active) {
+            background: #f1f5f9;
+        }
+        .date-btn.custom {
+            background: #f8fafc;
+            border-style: dashed;
+        }
+
+        /* Search & Filters */
+        .search-section {
+            padding: 12px 20px;
+            background: white;
+            border-bottom: 1px solid #eef2f6;
+            position: sticky;
+            top: 78px;
+            z-index: 99;
+        }
+        .search-bar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .search-input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+        .search-input-wrapper i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-size: 14px;
+        }
+        .search-input-wrapper input {
+            width: 100%;
+            padding: 10px 12px 10px 38px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: inherit;
+            background: #f8fafc;
+            transition: 0.2s;
+        }
+        .search-input-wrapper input:focus {
+            outline: none;
+            border-color: #2a7de1;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(42,125,225,0.1);
+        }
+        .filter-btn {
+            padding: 10px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            background: #f8fafc;
+            color: #64748b;
+            font-size: 14px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 500;
+        }
+        .filter-btn.active {
+            background: #2a7de1;
+            color: white;
+            border-color: #2a7de1;
+        }
+        .filter-btn:hover {
+            background: #f1f5f9;
+        }
+        .filter-btn.active:hover {
+            background: #1a5fb0;
+        }
+
+        /* Filter chips */
+        .filter-chips {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #f1f5f9;
+        }
+        .chip {
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 11px;
+            font-weight: 600;
+            background: #f1f5f9;
+            color: #475569;
+            cursor: pointer;
+            transition: 0.2s;
+            border: none;
+            white-space: nowrap;
+        }
+        .chip.active {
+            background: #2a7de1;
+            color: white;
+        }
+        .chip:hover:not(.active) {
+            background: #e2e8f0;
+        }
+        .chip .badge-count {
+            background: rgba(0,0,0,0.1);
+            padding: 0 6px;
+            border-radius: 10px;
+            font-size: 10px;
+            margin-left: 4px;
+        }
+        .chip.active .badge-count {
+            background: rgba(255,255,255,0.2);
+        }
+
+        /* Summary Cards */
+        .summary-section {
+            padding: 16px 20px;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        .summary-card {
+            background: white;
+            border-radius: 12px;
+            padding: 12px 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border: 1px solid #eef2f6;
+        }
+        .summary-card .label {
+            font-size: 10px;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .summary-card .value {
+            font-size: 18px;
+            font-weight: 800;
+            margin-top: 4px;
+            letter-spacing: -0.3px;
+        }
+        .summary-card .sub {
+            font-size: 10px;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+        .summary-card .trend-up { color: #0b8a5e; }
+        .summary-card .trend-down { color: #d1453b; }
+        .summary-card.highlight {
+            background: #2a7de1;
+            border-color: #2a7de1;
+        }
+        .summary-card.highlight .label,
+        .summary-card.highlight .sub {
+            color: rgba(255,255,255,0.7);
+        }
+        .summary-card.highlight .value {
+            color: white;
+        }
+
+        /* Item List */
+        .item-list-section {
+            padding: 0 20px 20px;
+        }
+        .item-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding: 0 4px;
+        }
+        .item-list-header h2 {
+            font-size: 16px;
+            font-weight: 700;
+        }
+        .item-list-header .count {
+            font-size: 13px;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+        .item-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .item-card {
+            background: white;
+            border-radius: 12px;
+            padding: 14px 16px;
+            border: 1px solid #eef2f6;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .item-card:active {
+            transform: scale(0.98);
+            background: #f8fafc;
+        }
+        .item-card .item-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .item-card .item-name {
+            font-weight: 600;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .item-card .item-name .category-tag {
+            font-size: 9px;
+            font-weight: 600;
+            color: #64748b;
+            background: #f1f5f9;
+            padding: 1px 8px;
+            border-radius: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .item-card .item-details {
+            display: flex;
+            gap: 16px;
+            margin-top: 4px;
+            font-size: 12px;
+        }
+        .item-card .item-details span {
+            color: #64748b;
+        }
+        .item-card .item-details .val {
+            font-weight: 600;
+            color: #1a2639;
+        }
+        .item-card .item-stats {
+            text-align: right;
+            flex-shrink: 0;
+            margin-left: 12px;
+        }
+        .item-card .variance-badge {
+            font-size: 13px;
+            font-weight: 700;
+            padding: 2px 10px;
+            border-radius: 12px;
+            display: inline-block;
+        }
+        .variance-badge.normal {
+            background: #dcfce7;
+            color: #0b8a5e;
+        }
+        .variance-badge.moderate {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        .variance-badge.high {
+            background: #fee2e2;
+            color: #d1453b;
+        }
+        .variance-badge .arrow {
+            margin-right: 2px;
+        }
+        .item-card .consumption-value {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1a2639;
+        }
+        .item-card .consumption-label {
+            font-size: 10px;
+            color: #94a3b8;
+        }
+
+        /* Loading / Empty State */
+        .loading-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #94a3b8;
+        }
+        .loading-state i {
+            font-size: 32px;
+            margin-bottom: 12px;
+            display: block;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #94a3b8;
+        }
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 12px;
+            display: block;
+            color: #cbd5e1;
+        }
+
+        /* Item Detail Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            display: none;
+            animation: fadeIn 0.2s;
+        }
+        .modal-overlay.active {
+            display: block;
+        }
+        .modal {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            max-height: 90vh;
+            background: white;
+            border-radius: 20px 20px 0 0;
+            padding: 20px;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        .modal-handle {
+            width: 40px;
+            height: 4px;
+            background: #cbd5e1;
+            border-radius: 4px;
+            margin: 0 auto 16px;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+        .modal-header h2 {
+            font-size: 20px;
+            font-weight: 700;
+        }
+        .modal-header .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 4px;
+        }
+        .modal-header .category-badge {
+            font-size: 11px;
+            font-weight: 600;
+            color: #64748b;
+            background: #f1f5f9;
+            padding: 2px 12px;
+            border-radius: 12px;
+        }
+        .modal .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
+        .modal .status-indicator.normal {
+            background: #dcfce7;
+            color: #0b8a5e;
+        }
+        .modal .status-indicator.moderate {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        .modal .status-indicator.high {
+            background: #fee2e2;
+            color: #d1453b;
+        }
+        .modal .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 16px 0;
+        }
+        .modal .detail-item {
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 10px 12px;
+        }
+        .modal .detail-item .label {
+            font-size: 10px;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .modal .detail-item .value {
+            font-size: 16px;
+            font-weight: 700;
+            margin-top: 2px;
+        }
+        .modal .detail-item .value.positive { color: #0b8a5e; }
+        .modal .detail-item .value.negative { color: #d1453b; }
+        .modal .detail-item .value.warning { color: #d97706; }
+        .modal .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 16px;
+        }
+        .modal .action-btn {
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            background: white;
+            font-size: 12px;
+            font-weight: 600;
+            color: #1a2639;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .modal .action-btn:hover {
+            background: #f1f5f9;
+        }
+        .modal .action-btn i {
+            color: #2a7de1;
+        }
+        .modal .wastage-section {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #f1f5f9;
+        }
+        .modal .wastage-section h4 {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .modal .wastage-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 13px;
+            border-bottom: 1px solid #f8fafc;
+        }
+        .modal .wastage-item .reason {
+            color: #64748b;
+        }
+        .modal .wastage-item .amount {
+            font-weight: 600;
+        }
+
+        /* Load More */
+        .load-more {
+            text-align: center;
+            padding: 16px;
+            color: #2a7de1;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .load-more:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 400px) {
+            .summary-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .modal .detail-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .modal .action-buttons {
+                grid-template-columns: 1fr 1fr;
+            }
+            .item-card {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .item-card .item-stats {
+                text-align: left;
+                margin-left: 0;
+                margin-top: 6px;
+            }
+        }
+        @media (min-width: 481px) {
+            .app-container {
+                max-width: 600px;
+            }
+        }
+
+        /* Scrollbar */
+        .modal::-webkit-scrollbar {
+            width: 4px;
+        }
+        .modal::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .modal::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container" id="app">
+    <!-- Header -->
+    <header class="app-header">
+        <div class="app-header-top">
+            <h1><i class="fas fa-utensils"></i> Consumption</h1>
+            <div class="header-actions">
+                <button onclick="exportReport()" title="Export"><i class="fas fa-file-export"></i></button>
+                <button onclick="refreshData()" title="Refresh"><i class="fas fa-sync-alt"></i></button>
+            </div>
+        </div>
+        <div class="date-range-selector">
+            <button class="date-btn" data-range="today">Today</button>
+            <button class="date-btn active" data-range="week">This Week</button>
+            <button class="date-btn" data-range="month">This Month</button>
+            <button class="date-btn custom" data-range="custom"><i class="fas fa-calendar-alt"></i> Custom</button>
+        </div>
+    </header>
+
+    <!-- Search & Filters -->
+    <div class="search-section">
+        <div class="search-bar">
+            <div class="search-input-wrapper">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Search 300+ items..." oninput="filterItems()" />
+            </div>
+            <button class="filter-btn" id="filterToggle" onclick="toggleFilters()">
+                <i class="fas fa-sliders-h"></i>
+                <span id="filterCount">0</span>
+            </button>
+        </div>
+        <div class="filter-chips" id="filterChips" style="display:none;">
+            <button class="chip" data-filter="all" onclick="applyFilter('all')">All</button>
+            <button class="chip" data-filter="high-variance" onclick="applyFilter('high-variance')">⚠️ High Variance</button>
+            <button class="chip" data-filter="moderate-variance" onclick="applyFilter('moderate-variance')">🟡 Moderate</button>
+            <button class="chip" data-filter="normal" onclick="applyFilter('normal')">✅ Normal</button>
+            <button class="chip" data-filter="wastage" onclick="applyFilter('wastage')">🗑️ Wastage</button>
+            <button class="chip" data-filter="high-consumption" onclick="applyFilter('high-consumption')">📈 High Usage</button>
+        </div>
+        <!-- Category filters -->
+        <div class="filter-chips" id="categoryChips" style="display:none; margin-top:6px; border-top:1px solid #f1f5f9; padding-top:10px;">
+            <button class="chip active" data-category="all" onclick="applyCategory('all')">All</button>
+            <button class="chip" data-category="Meat" onclick="applyCategory('Meat')">🥩 Meat</button>
+            <button class="chip" data-category="Vegetables" onclick="applyCategory('Vegetables')">🥬 Veg</button>
+            <button class="chip" data-category="Fruits" onclick="applyCategory('Fruits')">🍎 Fruits</button>
+            <button class="chip" data-category="Grains" onclick="applyCategory('Grains')">🌾 Grains</button>
+            <button class="chip" data-category="Dairy" onclick="applyCategory('Dairy')">🧀 Dairy</button>
+            <button class="chip" data-category="Spices" onclick="applyCategory('Spices')">🌶️ Spices</button>
+            <button class="chip" data-category="Beverages" onclick="applyCategory('Beverages')">🥤 Beverages</button>
+            <button class="chip" data-category="Cooking Ingredients" onclick="applyCategory('Cooking Ingredients')">🧂 Ingredients</button>
+        </div>
+    </div>
+
+    <!-- Summary -->
+    <div class="summary-section">
+        <div class="summary-grid">
+            <div class="summary-card highlight">
+                <div class="label">Total Consumption</div>
+                <div class="value" id="totalConsumption">1,847</div>
+                <div class="sub">kg</div>
+            </div>
+            <div class="summary-card">
+                <div class="label">Theoretical</div>
+                <div class="value" id="theoreticalConsumption">1,690</div>
+                <div class="sub">kg</div>
+            </div>
+            <div class="summary-card">
+                <div class="label">Wastage</div>
+                <div class="value" style="color:#d97706;" id="totalWastage">87</div>
+                <div class="sub">kg</div>
+            </div>
+            <div class="summary-card">
+                <div class="label">Variance</div>
+                <div class="value" style="color:#d1453b;" id="totalVariance">+157</div>
+                <div class="sub">kg (+9.3%)</div>
+            </div>
+            <div class="summary-card">
+                <div class="label">Consumption Cost</div>
+                <div class="value" id="consumptionCost">$8,240</div>
+                <div class="sub">this period</div>
+            </div>
+            <div class="summary-card">
+                <div class="label">Variance Cost</div>
+                <div class="value" style="color:#d1453b;" id="varianceCost">$710</div>
+                <div class="sub">potential loss</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Item List -->
+    <div class="item-list-section">
+        <div class="item-list-header">
+            <h2>Items <span class="count" id="itemCount">(245)</span></h2>
+            <div>
+                <select id="sortSelect" onchange="sortItems()" style="font-size:12px; padding:4px 8px; border-radius:8px; border:1px solid #e2e8f0; background:white; font-family:inherit;">
+                    <option value="consumption">Sort by Consumption</option>
+                    <option value="variance">Sort by Variance</option>
+                    <option value="wastage">Sort by Wastage</option>
+                    <option value="name">Sort A-Z</option>
+                </select>
+            </div>
+        </div>
+        <div class="item-list" id="itemList">
+            <!-- Items rendered by JS -->
+        </div>
+        <div class="load-more" id="loadMore" onclick="loadMore()">Load more...</div>
+    </div>
+
+    <!-- Item Detail Modal -->
+    <div class="modal-overlay" id="detailModal" onclick="closeModal(event)">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-handle"></div>
+            <div class="modal-header">
+                <div>
+                    <h2 id="modalItemName">Chicken</h2>
+                    <span class="category-badge" id="modalCategory">Meat</span>
+                </div>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div id="modalStatus" class="status-indicator normal">
+                <i class="fas fa-check-circle"></i> Normal
+            </div>
+
+            <div class="detail-grid" id="modalDetails">
+                <div class="detail-item"><div class="label">Opening Stock</div><div class="value" id="modalOpening">0</div></div>
+                <div class="detail-item"><div class="label">Purchases</div><div class="value" id="modalPurchases">0</div></div>
+                <div class="detail-item"><div class="label">Total Available</div><div class="value" id="modalAvailable">0</div></div>
+                <div class="detail-item"><div class="label">Theoretical</div><div class="value" id="modalTheoretical">0</div></div>
+                <div class="detail-item"><div class="label">Actual Consumption</div><div class="value" id="modalActual">0</div></div>
+                <div class="detail-item"><div class="label">Wastage</div><div class="value warning" id="modalWastage">0</div></div>
+                <div class="detail-item"><div class="label">Variance</div><div class="value" id="modalVariance">0</div></div>
+                <div class="detail-item"><div class="label">Variance %</div><div class="value" id="modalVariancePct">0%</div></div>
+                <div class="detail-item"><div class="label">Closing Stock</div><div class="value" id="modalClosing">0</div></div>
+                <div class="detail-item"><div class="label">Consumption Cost</div><div class="value" id="modalCost">$0</div></div>
+                <div class="detail-item" style="grid-column: span 2;"><div class="label">Variance Cost</div><div class="value negative" id="modalVarianceCost">$0</div></div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="action-btn" onclick="alert('View Recipes for this item')"><i class="fas fa-book"></i> Recipes</button>
+                <button class="action-btn" onclick="alert('View Events/Orders using this item')"><i class="fas fa-calendar-check"></i> Events</button>
+                <button class="action-btn" onclick="alert('View Stock Transactions')"><i class="fas fa-exchange-alt"></i> Transactions</button>
+                <button class="action-btn" onclick="alert('View Wastage Records')"><i class="fas fa-trash"></i> Wastage</button>
+            </div>
+
+            <div class="wastage-section">
+                <h4>Wastage Breakdown</h4>
+                <div id="modalWastageBreakdown">
+                    <div class="wastage-item"><span class="reason">Spoilage</span><span class="amount">1.2 kg</span></div>
+                    <div class="wastage-item"><span class="reason">Preparation Waste</span><span class="amount">0.8 kg</span></div>
+                    <div class="wastage-item"><span class="reason">Spillage</span><span class="amount">0.4 kg</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const categories = ['Meat', 'Vegetables', 'Fruits', 'Grains', 'Dairy', 'Spices', 'Beverages', 'Cooking Ingredients', 'Other'];
+const itemNames = {
+    'Meat': ['Chicken', 'Beef', 'Pork', 'Lamb', 'Fish', 'Shrimp', 'Turkey', 'Duck', 'Goat', 'Veal'],
+    'Vegetables': ['Tomato', 'Onion', 'Potato', 'Carrot', 'Bell Pepper', 'Lettuce', 'Spinach', 'Cucumber', 'Celery', 'Mushroom'],
+    'Fruits': ['Apple', 'Banana', 'Orange', 'Lemon', 'Lime', 'Strawberry', 'Blueberry', 'Mango', 'Pineapple', 'Watermelon'],
+    'Grains': ['Rice', 'Flour', 'Pasta', 'Oats', 'Quinoa', 'Barley', 'Cornmeal', 'Wheat', 'Rye', 'Buckwheat'],
+    'Dairy': ['Milk', 'Cheese', 'Butter', 'Yogurt', 'Cream', 'Sour Cream', 'Cottage Cheese', 'Mozzarella', 'Cheddar', 'Parmesan'],
+    'Spices': ['Salt', 'Black Pepper', 'Paprika', 'Garlic Powder', 'Onion Powder', 'Oregano', 'Thyme', 'Cumin', 'Cinnamon', 'Nutmeg'],
+    'Beverages': ['Coffee', 'Tea', 'Juice', 'Soda', 'Water', 'Milk Shake', 'Lemonade', 'Iced Tea', 'Hot Chocolate', 'Energy Drink'],
+    'Cooking Ingredients': ['Oil', 'Sugar', 'Honey', 'Vinegar', 'Soy Sauce', 'Worcestershire', 'Breadcrumbs', 'Cornstarch', 'Baking Powder', 'Vanilla']
+};
+
+// Generate 300+ items
+function generateItems() {
+    const items = [];
+    let id = 1;
+    for (const [category, names] of Object.entries(itemNames)) {
+        // Add variations for each name to reach 300+
+        for (const name of names) {
+            // Main item
+            items.push({ id: id++, name, category, baseUnit: 'kg' });
+            // Add variations with different units for more items
+            if (id < 320) {
+                items.push({ id: id++, name: `${name} (Premium)`, category, baseUnit: 'kg' });
+            }
+            if (id < 350) {
+                items.push({ id: id++, name: `${name} (Organic)`, category, baseUnit: 'kg' });
+            }
+        }
+    }
+    // Ensure we have at least 300 items
+    while (items.length < 300) {
+        items.push({ id: id++, name: `Item ${id}`, category: 'Other', baseUnit: 'kg' });
+    }
+    return items.slice(0, 350);
+}
+
+// Generate consumption data for each item
+function generateConsumptionData(items) {
+    return items.map(item => {
+        // Random but realistic values
+        const theoretical = Math.round((Math.random() * 80 + 5) * 10) / 10;
+        const wastage = Math.round((Math.random() * 8 + 0.5) * 10) / 10;
+        const variance = Math.round(((Math.random() - 0.45) * 15 + 2) * 10) / 10;
+        const actual = Math.round((theoretical + variance + wastage) * 10) / 10;
+        const closing = Math.round((Math.random() * 30 + 2) * 10) / 10;
+        const opening = Math.round((actual + closing - (Math.random() * 20 + 5)) * 10) / 10;
+        const purchases = Math.round((actual + closing - opening) * 10) / 10;
+        const costPerUnit = Math.round((Math.random() * 8 + 2) * 10) / 10;
+
+        // Determine variance status
+        const variancePct = theoretical > 0 ? (variance / theoretical) * 100 : 0;
+        let status = 'normal';
+        if (variancePct > 15) status = 'high';
+        else if (variancePct > 7) status = 'moderate';
+
+        // Wastage reasons
+        const wastageReasons = [
+            { reason: 'Spoilage', amount: Math.round((wastage * 0.4) * 10) / 10 },
+            { reason: 'Preparation Waste', amount: Math.round((wastage * 0.25) * 10) / 10 },
+            { reason: 'Expired', amount: Math.round((wastage * 0.15) * 10) / 10 },
+            { reason: 'Spillage', amount: Math.round((wastage * 0.12) * 10) / 10 },
+            { reason: 'Damaged', amount: Math.round((wastage * 0.08) * 10) / 10 },
+        ].filter(r => r.amount > 0);
+
+        // Recipes using this item
+        const recipes = [
+            { name: `${item.name} Soup`, portion: Math.round((Math.random() * 150 + 50) / 10) * 10 },
+            { name: `${item.name} Curry`, portion: Math.round((Math.random() * 200 + 80) / 10) * 10 },
+            { name: `${item.name} Salad`, portion: Math.round((Math.random() * 100 + 30) / 10) * 10 },
+        ].slice(0, Math.floor(Math.random() * 3) + 1);
+
+        return {
+            ...item,
+            opening,
+            purchases,
+            theoretical,
+            actual,
+            wastage,
+            variance,
+            variancePct,
+            closing,
+            costPerUnit,
+            consumptionCost: Math.round(actual * costPerUnit * 10) / 10,
+            varianceCost: Math.round(variance * costPerUnit * 10) / 10,
+            status,
+            wastageReasons,
+            recipes,
+            portionsSold: Math.round(theoretical / (recipes[0]?.portion || 100) * 100),
+        };
+    });
+}
+
+// ============================================================
+// STATE
+// ============================================================
+const allItems = generateItems();
+let consumptionData = generateConsumptionData(allItems);
+let filteredData = [...consumptionData];
+let displayedCount = 20;
+let currentFilter = 'all';
+let currentCategory = 'all';
+let currentSort = 'consumption';
+let searchQuery = '';
+let filterVisible = false;
+
+// ============================================================
+// RENDER FUNCTIONS
+// ============================================================
+function renderItems() {
+    const list = document.getElementById('itemList');
+    const loadMore = document.getElementById('loadMore');
+    const count = document.getElementById('itemCount');
+
+    // Apply search
+    let data = consumptionData;
+    if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        data = data.filter(item => item.name.toLowerCase().includes(q));
+    }
+
+    // Apply category filter
+    if (currentCategory !== 'all') {
+        data = data.filter(item => item.category === currentCategory);
+    }
+
+    // Apply status filter
+    if (currentFilter === 'high-variance') {
+        data = data.filter(item => item.status === 'high');
+    } else if (currentFilter === 'moderate-variance') {
+        data = data.filter(item => item.status === 'moderate');
+    } else if (currentFilter === 'normal') {
+        data = data.filter(item => item.status === 'normal');
+    } else if (currentFilter === 'wastage') {
+        data = data.filter(item => item.wastage > 3);
+    } else if (currentFilter === 'high-consumption') {
+        data = data.filter(item => item.actual > 30);
+    }
+
+    // Apply sort
+    if (currentSort === 'consumption') {
+        data.sort((a, b) => b.actual - a.actual);
+    } else if (currentSort === 'variance') {
+        data.sort((a, b) => Math.abs(b.variance) - Math.abs(a.variance));
+    } else if (currentSort === 'wastage') {
+        data.sort((a, b) => b.wastage - a.wastage);
+    } else if (currentSort === 'name') {
+        data.sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    filteredData = data;
+    count.textContent = `(${data.length})`;
+
+    // Paginate
+    const displayData = data.slice(0, displayedCount);
+    const hasMore = data.length > displayedCount;
+
+    if (displayData.length === 0) {
+        list.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-search"></i>
+                <p>No items found matching your filters</p>
+                <button onclick="resetFilters()" style="margin-top:8px; padding:8px 20px; border:1px solid #e2e8f0; border-radius:8px; background:white; cursor:pointer; font-weight:600;">Reset Filters</button>
+            </div>
+        `;
+        loadMore.style.display = 'none';
+        return;
+    }
+
+    list.innerHTML = displayData.map(item => {
+        const statusIcon = item.status === 'normal' ? '✅' : item.status === 'moderate' ? '🟡' : '⚠️';
+        const statusClass = item.status === 'normal' ? 'normal' : item.status === 'moderate' ? 'moderate' : 'high';
+        const varianceDisplay = item.variance > 0 ? `+${item.variance}` : `${item.variance}`;
+        const arrow = item.variance > 0 ? '↑' : item.variance < 0 ? '↓' : '→';
+
+        return `
+            <div class="item-card" onclick="openDetail(${item.id})">
+                <div class="item-info">
+                    <div class="item-name">
+                        ${item.name}
+                        <span class="category-tag">${item.category}</span>
+                    </div>
+                    <div class="item-details">
+                        <span>Actual: <span class="val">${item.actual} ${item.baseUnit}</span></span>
+                        <span>Theoretical: <span class="val">${item.theoretical} ${item.baseUnit}</span></span>
+                    </div>
+                </div>
+                <div class="item-stats">
+                    <div class="variance-badge ${statusClass}">
+                        ${statusIcon} ${varianceDisplay} ${item.baseUnit}
+                    </div>
+                    <div class="consumption-label">${item.variancePct.toFixed(1)}% variance</div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    loadMore.style.display = hasMore ? 'block' : 'none';
+    updateSummary();
+}
+
+function updateSummary() {
+    const total = filteredData.reduce((sum, i) => sum + i.actual, 0);
+    const theoretical = filteredData.reduce((sum, i) => sum + i.theoretical, 0);
+    const wastage = filteredData.reduce((sum, i) => sum + i.wastage, 0);
+    const variance = filteredData.reduce((sum, i) => sum + i.variance, 0);
+    const cost = filteredData.reduce((sum, i) => sum + i.consumptionCost, 0);
+    const vCost = filteredData.reduce((sum, i) => sum + i.varianceCost, 0);
+
+    document.getElementById('totalConsumption').textContent = total.toFixed(0);
+    document.getElementById('theoreticalConsumption').textContent = theoretical.toFixed(0);
+    document.getElementById('totalWastage').textContent = wastage.toFixed(0);
+    document.getElementById('totalVariance').textContent = `${variance > 0 ? '+' : ''}${variance.toFixed(0)}`;
+    document.getElementById('consumptionCost').textContent = `$${cost.toFixed(0)}`;
+    document.getElementById('varianceCost').textContent = `$${vCost.toFixed(0)}`;
+}
+
+// ============================================================
+// FILTER FUNCTIONS
+// ============================================================
+function filterItems() {
+    searchQuery = document.getElementById('searchInput').value;
+    displayedCount = 20;
+    renderItems();
+}
+
+function applyFilter(filter) {
+    currentFilter = filter;
+    document.querySelectorAll('.filter-chips .chip[data-filter]').forEach(el => {
+        el.classList.toggle('active', el.dataset.filter === filter);
+    });
+    displayedCount = 20;
+    renderItems();
+}
+
+function applyCategory(category) {
+    currentCategory = category;
+    document.querySelectorAll('#categoryChips .chip[data-category]').forEach(el => {
+        el.classList.toggle('active', el.dataset.category === category);
+    });
+    displayedCount = 20;
+    renderItems();
+}
+
+function sortItems() {
+    currentSort = document.getElementById('sortSelect').value;
+    displayedCount = 20;
+    renderItems();
+}
+
+function toggleFilters() {
+    filterVisible = !filterVisible;
+    document.getElementById('filterChips').style.display = filterVisible ? 'flex' : 'none';
+    document.getElementById('categoryChips').style.display = filterVisible ? 'flex' : 'none';
+    document.getElementById('filterToggle').classList.toggle('active', filterVisible);
+}
+
+function resetFilters() {
+    searchQuery = '';
+    document.getElementById('searchInput').value = '';
+    currentFilter = 'all';
+    currentCategory = 'all';
+    document.querySelectorAll('.filter-chips .chip[data-filter]').forEach(el => {
+        el.classList.toggle('active', el.dataset.filter === 'all');
+    });
+    document.querySelectorAll('#categoryChips .chip[data-category]').forEach(el => {
+        el.classList.toggle('active', el.dataset.category === 'all');
+    });
+    displayedCount = 20;
+    renderItems();
+}
+
+function loadMore() {
+    displayedCount += 20;
+    renderItems();
+}
+
+// ============================================================
+// DETAIL MODAL
+// ============================================================
+function openDetail(id) {
+    const item = consumptionData.find(i => i.id === id);
+    if (!item) return;
+
+    document.getElementById('modalItemName').textContent = item.name;
+    document.getElementById('modalCategory').textContent = item.category;
+
+    const statusEl = document.getElementById('modalStatus');
+    const statusText = item.status === 'normal' ? 'Normal' : item.status === 'moderate' ? 'Moderate Variance' : 'High Variance';
+    const statusIcon = item.status === 'normal' ? 'fa-check-circle' : item.status === 'moderate' ? 'fa-exclamation-triangle' : 'fa-exclamation-circle';
+    statusEl.className = `status-indicator ${item.status}`;
+    statusEl.innerHTML = `<i class="fas ${statusIcon}"></i> ${statusText}`;
+
+    document.getElementById('modalOpening').textContent = `${item.opening} ${item.baseUnit}`;
+    document.getElementById('modalPurchases').textContent = `${item.purchases} ${item.baseUnit}`;
+    document.getElementById('modalAvailable').textContent = `${(item.opening + item.purchases).toFixed(1)} ${item.baseUnit}`;
+    document.getElementById('modalTheoretical').textContent = `${item.theoretical} ${item.baseUnit}`;
+    document.getElementById('modalActual').textContent = `${item.actual} ${item.baseUnit}`;
+    document.getElementById('modalWastage').textContent = `${item.wastage} ${item.baseUnit}`;
+    document.getElementById('modalVariance').textContent = `${item.variance > 0 ? '+' : ''}${item.variance} ${item.baseUnit}`;
+    document.getElementById('modalVariancePct').textContent = `${item.variancePct.toFixed(1)}%`;
+    document.getElementById('modalClosing').textContent = `${item.closing} ${item.baseUnit}`;
+    document.getElementById('modalCost').textContent = `$${item.consumptionCost.toFixed(2)}`;
+    document.getElementById('modalVarianceCost').textContent = `$${item.varianceCost.toFixed(2)}`;
+
+    // Wastage breakdown
+    const wastageContainer = document.getElementById('modalWastageBreakdown');
+    if (item.wastageReasons && item.wastageReasons.length > 0) {
+        wastageContainer.innerHTML = item.wastageReasons.map(w =>
+            `<div class="wastage-item"><span class="reason">${w.reason}</span><span class="amount">${w.amount} ${item.baseUnit}</span></div>`
+        ).join('');
+    } else {
+        wastageContainer.innerHTML = '<div style="color:#94a3b8; font-size:13px;">No wastage recorded</div>';
+    }
+
+    document.getElementById('detailModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeModal(event) {
+    if (event && event.target !== event.currentTarget) return;
+    document.getElementById('detailModal').classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+// ============================================================
+// ACTIONS
+// ============================================================
+function exportReport() {
+    alert('Exporting consumption report...');
+}
+
+function refreshData() {
+    consumptionData = generateConsumptionData(allItems);
+    displayedCount = 20;
+    renderItems();
+    // Update date buttons
+    document.querySelectorAll('.date-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.range === 'week');
+    });
+}
+
+// ============================================================
+// DATE RANGE HANDLING
+// ============================================================
+document.querySelectorAll('.date-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        if (this.dataset.range === 'custom') {
+            alert('Custom date range picker would open here');
+        } else {
+            refreshData();
+        }
+    });
+});
+
+// ============================================================
+// INIT
+// ============================================================
+renderItems();
+
+// Handle escape key for modal
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeModal();
+});
+</script>
+</body>
+</html>
