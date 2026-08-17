@@ -42,258 +42,273 @@ class _FoodStockTabState extends State<FoodStockTab> {
     final lowStockCount =
         filteredItems.where((item) => item.status == 'Low Stock').length;
 
-    return CustomScrollView(
-      slivers: [
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-            child: Column(
-              children: [
-                // Search bar
-                CateringSearch(
-                  hintText: 'Search food items...',
-                  onChanged: (value) {
-                    setState(() => searchQuery = value);
-                  },
-                ),
-                const SizedBox(height: 16),
-                // Categories scroll
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: categories.map((category) {
-                      final isSelected = category == selectedCategory;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: ChoiceChip(
-                          label: Text(category),
-                          selected: isSelected,
-                          onSelected: (_) =>
-                              setState(() => selectedCategory = category),
-                          selectedColor: const Color(0xFFDCEAFE),
-                          labelStyle: TextStyle(
-                            color: isSelected
-                                ? const Color(0xFF1D4ED8)
-                                : const Color(0xFF475569),
-                            fontWeight: FontWeight.w600,
-                          ),
-                          side: BorderSide.none,
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                // Summary cards
-                Row(
-                  children: [
-                    Expanded(
-                      child: _summaryCard('Healthy', '$healthyCount items',
-                          const Color(0xFF16A34A), Icons.check_circle_rounded),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _summaryCard('Low Stock', '$lowStockCount items',
-                          const Color(0xFFF59E0B), Icons.warning_amber_rounded),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-              ],
-            ),
-          ),
-        ),
-        if (filteredItems.isEmpty)
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 112),
-            sliver: SliverToBoxAdapter(
-              child: Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
-                        blurRadius: 14,
-                        offset: const Offset(0, 8))
-                  ],
-                ),
+    return LayoutBuilder(
+      builder: (context, constraints) => SizedBox(
+        height: constraints.maxHeight,
+        width: constraints.maxWidth,
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
                 child: Column(
                   children: [
-                    const Icon(Icons.inventory_2_outlined,
-                        size: 44, color: Color(0xFF64748B)),
-                    const SizedBox(height: 8),
-                    Text('No items match this view',
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 4),
-                    Text('Try a broader search or switch categories.',
-                        style: Theme.of(context).textTheme.bodyMedium),
+                    // Search bar
+                    CateringSearch(
+                      hintText: 'Search food items...',
+                      onChanged: (value) {
+                        setState(() => searchQuery = value);
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    // Categories scroll
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: categories.map((category) {
+                          final isSelected = category == selectedCategory;
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: ChoiceChip(
+                              label: Text(category),
+                              selected: isSelected,
+                              onSelected: (_) =>
+                                  setState(() => selectedCategory = category),
+                              selectedColor: const Color(0xFFDCEAFE),
+                              labelStyle: TextStyle(
+                                color: isSelected
+                                    ? const Color(0xFF1D4ED8)
+                                    : const Color(0xFF475569),
+                                fontWeight: FontWeight.w600,
+                              ),
+                              side: BorderSide.none,
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Summary cards
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _summaryCard(
+                              'Healthy',
+                              '$healthyCount items',
+                              const Color(0xFF16A34A),
+                              Icons.check_circle_rounded),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _summaryCard(
+                              'Low Stock',
+                              '$lowStockCount items',
+                              const Color(0xFFF59E0B),
+                              Icons.warning_amber_rounded),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
                   ],
                 ),
               ),
             ),
-          )
-        else
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 112),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate((context, index) {
-                final item = filteredItems[index];
-                final accent = _accentForCategory(item.category);
-                final statusColor = stockStatusColor(item.status);
-                final stockFraction =
-                    (item.quantity / item.maxQuantity).clamp(0.0, 1.0);
-
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 14),
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(22),
-                    boxShadow: [
-                      BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 18,
-                          offset: const Offset(0, 10))
-                    ],
+            if (filteredItems.isEmpty)
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 112),
+                sliver: SliverToBoxAdapter(
+                  child: Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                            color: Colors.black.withOpacity(0.04),
+                            blurRadius: 14,
+                            offset: const Offset(0, 8))
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        const Icon(Icons.inventory_2_outlined,
+                            size: 44, color: Color(0xFF64748B)),
+                        const SizedBox(height: 8),
+                        Text('No items match this view',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 4),
+                        Text('Try a broader search or switch categories.',
+                            style: Theme.of(context).textTheme.bodyMedium),
+                      ],
+                    ),
                   ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(22),
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => StockDetailScreen(item: item),
-                        ),
+                ),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 112),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final item = filteredItems[index];
+                    final accent = _accentForCategory(item.category);
+                    final statusColor = stockStatusColor(item.status);
+                    final stockFraction = item.maxQuantity > 0
+                        ? (item.quantity / item.maxQuantity).clamp(0.0, 1.0)
+                        : 0.0;
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 14),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(22),
+                        boxShadow: [
+                          BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 18,
+                              offset: const Offset(0, 10))
+                        ],
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(2),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(22),
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => StockDetailScreen(item: item),
+                            ),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(2),
+                            child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Container(
-                                  width: 66,
-                                  height: 66,
-                                  decoration: BoxDecoration(
-                                    color: accent.withOpacity(0.14),
-                                    borderRadius: BorderRadius.circular(18),
-                                  ),
-                                  child: Icon(
-                                    foodCategoryIcon(item.category),
-                                    color: accent,
-                                    size: 28,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      width: 66,
+                                      height: 66,
+                                      decoration: BoxDecoration(
+                                        color: accent.withOpacity(0.14),
+                                        borderRadius: BorderRadius.circular(18),
+                                      ),
+                                      child: Icon(
+                                        foodCategoryIcon(item.category),
+                                        color: accent,
+                                        size: 28,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
-                                          Expanded(
-                                            child: Text(
-                                              item.name,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .titleMedium
-                                                  ?.copyWith(
-                                                      fontWeight:
-                                                          FontWeight.w700,
-                                                      letterSpacing: -0.2),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
+                                          Row(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  item.name,
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .titleMedium
+                                                      ?.copyWith(
+                                                          fontWeight:
+                                                              FontWeight.w700,
+                                                          letterSpacing: -0.2),
+                                                  maxLines: 2,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              statusBadge(item.status),
+                                            ],
                                           ),
-                                          const SizedBox(width: 8),
-                                          statusBadge(item.status),
+                                          const SizedBox(height: 4),
+                                          Wrap(
+                                            spacing: 7,
+                                            runSpacing: 6,
+                                            children: [
+                                              infoChip(item.category,
+                                                  bgColor:
+                                                      accent.withOpacity(0.12),
+                                                  textColor: accent),
+                                              infoChip(
+                                                  '${item.quantity} ${item.unit}'),
+                                              if (item.expiryDate != null)
+                                                infoChip(
+                                                    'Expires: ${_formatDate(item.expiryDate!)}',
+                                                    bgColor: _expiryColor(
+                                                            item.expiryDate!)
+                                                        .withOpacity(0.12),
+                                                    textColor: _expiryColor(
+                                                        item.expiryDate!)),
+                                            ],
+                                          ),
                                         ],
                                       ),
-                                      const SizedBox(height: 4),
-                                      Wrap(
-                                        spacing: 7,
-                                        runSpacing: 6,
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Text('Current stock',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                            color: const Color(0xFF64748B))),
+                                const SizedBox(height: 6),
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(999),
+                                  child: LinearProgressIndicator(
+                                    value: stockFraction,
+                                    minHeight: 7,
+                                    backgroundColor: const Color(0xFFF1F5F9),
+                                    color: accent,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Wrap(
+                                        spacing: 8,
+                                        runSpacing: 8,
                                         children: [
-                                          infoChip(item.category,
-                                              bgColor: accent.withOpacity(0.12),
-                                              textColor: accent),
                                           infoChip(
-                                              '${item.quantity} ${item.unit}'),
-                                          if (item.expiryDate != null)
-                                            infoChip(
-                                                'Expires: ${_formatDate(item.expiryDate!)}',
-                                                bgColor: _expiryColor(
-                                                        item.expiryDate!)
-                                                    .withOpacity(0.12),
-                                                textColor: _expiryColor(
-                                                    item.expiryDate!)),
+                                              'ETB ${item.purchasePrice.toStringAsFixed(0)}'),
+                                          infoChip(item.code),
+                                          infoChip(item.location),
                                         ],
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                    IconButton(
+                                      onPressed: () {},
+                                      icon: const Icon(Icons.more_horiz_rounded,
+                                          color: Color(0xFF64748B)),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 12),
-                            Text('Current stock',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF64748B))),
-                            const SizedBox(height: 6),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(999),
-                              child: LinearProgressIndicator(
-                                value: stockFraction,
-                                minHeight: 7,
-                                backgroundColor: const Color(0xFFF1F5F9),
-                                color: accent,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Wrap(
-                                    spacing: 8,
-                                    runSpacing: 8,
-                                    children: [
-                                      infoChip(
-                                          'ETB ${item.purchasePrice.toStringAsFixed(0)}'),
-                                      infoChip(item.code),
-                                      infoChip(item.location),
-                                    ],
-                                  ),
-                                ),
-                                IconButton(
-                                  onPressed: () {},
-                                  icon: const Icon(Icons.more_horiz_rounded,
-                                      color: Color(0xFF64748B)),
-                                ),
-                              ],
-                            ),
-                          ],
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                );
-              }, childCount: filteredItems.length),
-            ),
-          ),
-      ],
+                    );
+                  }, childCount: filteredItems.length),
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 
