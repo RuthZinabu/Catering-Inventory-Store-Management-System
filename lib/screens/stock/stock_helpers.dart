@@ -102,7 +102,7 @@ Widget sectionTitle(BuildContext context, String title) => Padding(
         title,
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w700,
-               color: AppColors.darkGreen,
+              color: AppColors.darkGreen,
             ),
       ),
     );
@@ -116,13 +116,13 @@ Widget detailRow(String label, String value) => Padding(
               child: Text(label,
                   style: const TextStyle(
                       fontWeight: FontWeight.w600,
-                       color: AppColors.secondaryGray,
+                      color: AppColors.secondaryGray,
                       fontSize: 13))),
           Text(value,
               style: const TextStyle(
                   fontWeight: FontWeight.w700,
                   fontSize: 13,
-                   color: AppColors.darkGreen))),
+                  color: AppColors.darkGreen)),
         ],
       ),
     );
@@ -161,11 +161,13 @@ Widget _detailStatCard(String label, String value, IconData icon) {
         Text(value,
             textAlign: TextAlign.center,
             style: const TextStyle(
-                fontWeight: FontWeight.w700, fontSize: 13,
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
                 color: AppColors.darkGreen)),
         const SizedBox(height: 3),
         Text(label,
-            style: const TextStyle(color: AppColors.secondaryGray, fontSize: 11)),
+            style:
+                const TextStyle(color: AppColors.secondaryGray, fontSize: 11)),
       ],
     ),
   );
@@ -240,9 +242,7 @@ Widget _detailActionBtn(
             const SizedBox(height: 6),
             Text(label,
                 style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: color)),
+                    fontSize: 12, fontWeight: FontWeight.w600, color: color)),
           ],
         ),
       ),
@@ -256,7 +256,8 @@ Widget _detailCategorySection(BuildContext context, StockItem item) {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         sectionTitle(context, 'Food Details'),
-        _detailInfoCard('Batch Number', item.batchNumber, Icons.numbers_rounded),
+        _detailInfoCard(
+            'Batch Number', item.batchNumber, Icons.numbers_rounded),
         _detailInfoCard(
             'Expiry Date',
             item.expiryDate == null
@@ -281,9 +282,7 @@ Widget _detailCategorySection(BuildContext context, StockItem item) {
           sectionTitle(context, 'Asset Details'),
           _detailInfoCard(
               'Condition', item.condition ?? '—', Icons.build_circle_outlined),
-          _detailInfoCard(
-              'Reserved',
-              item.isReserved == true ? 'Yes' : 'No',
+          _detailInfoCard('Reserved', item.isReserved == true ? 'Yes' : 'No',
               Icons.event_available_rounded),
           if (item.isReserved == true && item.reservedFor != null)
             _detailInfoCard(
@@ -299,9 +298,7 @@ Widget _detailCategorySection(BuildContext context, StockItem item) {
               'Pack Size',
               item.packSize != null ? '${item.packSize} units/pack' : '—',
               Icons.inventory_2_outlined),
-          _detailInfoCard(
-              'Consumption Rate',
-              item.consumptionRate ?? '—',
+          _detailInfoCard('Consumption Rate', item.consumptionRate ?? '—',
               Icons.trending_down_rounded),
         ],
       );
@@ -315,8 +312,7 @@ Widget _detailCategorySection(BuildContext context, StockItem item) {
         sectionTitle(context, 'Asset Details'),
         _detailInfoCard('Brand', item.brand, Icons.business_rounded),
         _detailInfoCard('Model', item.model, Icons.devices_rounded),
-        _detailInfoCard(
-            'Serial Number', item.serialNumber, Icons.pin_rounded),
+        _detailInfoCard('Serial Number', item.serialNumber, Icons.pin_rounded),
         _detailInfoCard('Asset Tag', item.assetTag, Icons.label_rounded),
         _detailInfoCard(
             'Warranty',
@@ -516,8 +512,7 @@ Widget buildStockDetailBody(
                             fontSize: 13,
                             color: AppColors.darkGreen)),
                     const Spacer(),
-                    Text(
-                        '${(item.stockFraction * 100).toStringAsFixed(0)}%',
+                    Text('${(item.stockFraction * 100).toStringAsFixed(0)}%',
                         style: TextStyle(
                             fontWeight: FontWeight.w700,
                             fontSize: 13,
@@ -547,14 +542,14 @@ Widget buildStockDetailBody(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Row(
             children: [
-              _detailActionBtn(
-                  'Stock In', Icons.arrow_downward_rounded, AppColors.accentGreen, () {}),
+              _detailActionBtn('Stock In', Icons.arrow_downward_rounded,
+                  AppColors.accentGreen, () {}),
               const SizedBox(width: 10),
-              _detailActionBtn(
-                  'Stock Out', Icons.arrow_upward_rounded, AppColors.errorRed, () {}),
+              _detailActionBtn('Stock Out', Icons.arrow_upward_rounded,
+                  AppColors.errorRed, () {}),
               const SizedBox(width: 10),
-              _detailActionBtn(
-                  'Transfer', Icons.swap_horiz_rounded, AppColors.primaryBlue, () {}),
+              _detailActionBtn('Transfer', Icons.swap_horiz_rounded,
+                  AppColors.primaryBlue, () {}),
             ],
           ),
         ),
@@ -569,19 +564,24 @@ Widget buildStockDetailBody(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               sectionTitle(context, 'General Information'),
-              _detailInfoCard('Category', item.category, Icons.category_outlined),
+              _detailInfoCard(
+                  'Category', item.category, Icons.category_outlined),
               _detailInfoCard('Unit', item.unit, Icons.straighten_rounded),
-              _detailInfoCard('Purchase Price', 'ETB ${item.purchasePrice.toStringAsFixed(2)}',
+              _detailInfoCard(
+                  'Purchase Price',
+                  'ETB ${item.purchasePrice.toStringAsFixed(2)}',
                   Icons.payments_outlined),
-              _detailInfoCard('Supplier', item.supplier, Icons.business_outlined),
-              _detailInfoCard('Location', item.location, Icons.location_on_outlined),
+              _detailInfoCard(
+                  'Supplier', item.supplier, Icons.business_outlined),
+              _detailInfoCard(
+                  'Location', item.location, Icons.location_on_outlined),
               _detailInfoCard(
                   'Last Updated',
                   '${item.lastUpdated.day}/${item.lastUpdated.month}/${item.lastUpdated.year}',
                   Icons.update_rounded),
               if (item.description.isNotEmpty)
-                _detailInfoCard(
-                    'Description', item.description, Icons.description_outlined),
+                _detailInfoCard('Description', item.description,
+                    Icons.description_outlined),
             ],
           ),
         ),
@@ -645,7 +645,8 @@ Widget buildStockDetailBody(
                             Text(
                                 '$movementCount record${movementCount == 1 ? '' : 's'} found',
                                 style: const TextStyle(
-                                    color: AppColors.secondaryGray, fontSize: 12)),
+                                    color: AppColors.secondaryGray,
+                                    fontSize: 12)),
                           ],
                         ),
                       ),

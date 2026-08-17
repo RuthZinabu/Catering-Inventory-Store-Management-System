@@ -115,7 +115,8 @@ class CateringInventoryApp extends StatelessWidget {
             backgroundColor: AppColors.primaryBlue,
             foregroundColor: AppColors.darkGreen,
             elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           ),
         ),
         chipTheme: ChipThemeData(
@@ -138,19 +139,24 @@ class CateringInventoryApp extends StatelessWidget {
               borderSide: const BorderSide(color: AppColors.border)),
           focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(18),
-              borderSide: const BorderSide(color: AppColors.primaryBlue, width: 1.5)),
+              borderSide:
+                  const BorderSide(color: AppColors.primaryBlue, width: 1.5)),
           hintStyle: const TextStyle(color: AppColors.textGray),
           labelStyle: const TextStyle(color: AppColors.secondaryGray),
         ),
         dividerTheme: const DividerThemeData(color: AppColors.border),
         checkboxTheme: CheckboxThemeData(
           fillColor: WidgetStateProperty.resolveWith((states) =>
-              states.contains(WidgetState.selected) ? AppColors.primaryBlue : null),
+              states.contains(WidgetState.selected)
+                  ? AppColors.accentGreen
+                  : null),
           checkColor: WidgetStateProperty.all(AppColors.darkGreen),
         ),
         switchTheme: SwitchThemeData(
           thumbColor: WidgetStateProperty.resolveWith((states) =>
-              states.contains(WidgetState.selected) ? AppColors.accentGreen : null),
+              states.contains(WidgetState.selected)
+                  ? AppColors.accentGreen
+                  : null),
           trackColor: WidgetStateProperty.resolveWith((states) =>
               states.contains(WidgetState.selected)
                   ? AppColors.accentGreen.withOpacity(.35)
@@ -225,7 +231,7 @@ class _RootShellState extends State<RootShell> {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(24),
           child: NavigationBar(
-            backgroundColor: AppColors.darkGreen,
+            backgroundColor: AppColors.softSurface,
             elevation: 0,
             // Smaller overall bar: reduced height, compact icons, and a
             // smaller label so the bar takes up noticeably less vertical
@@ -233,14 +239,15 @@ class _RootShellState extends State<RootShell> {
             height: 56,
             selectedIndex: _index,
             onDestinationSelected: (value) => setState(() => _index = value),
-            indicatorColor: AppColors.primaryBlue,
+            indicatorColor: AppColors.glassGold,
             surfaceTintColor: Colors.transparent,
-            labelTextStyle: WidgetStateProperty.resolveWith((states) => TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                color: states.contains(WidgetState.selected)
-                    ? AppColors.darkGreen
-                    : Colors.white)),
+            labelTextStyle: WidgetStateProperty.resolveWith((states) =>
+                TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: states.contains(WidgetState.selected)
+                        ? AppColors.accentGold
+                        : Colors.white)),
             destinations: const [
               NavigationDestination(
                   icon: Icon(Icons.grid_view_rounded, size: 20),
