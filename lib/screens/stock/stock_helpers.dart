@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import '../../models/stock_models.dart';
+import '../../theme/app_colors.dart';
 
 // Status color
 Color stockStatusColor(String status) {
   switch (status) {
     case 'Healthy':
-      return const Color(0xFF16A34A);
+      return AppColors.accentGreen;
     case 'Low Stock':
-      return const Color(0xFFF59E0B);
+      return AppColors.accentGold;
     case 'Out of Stock':
-      return const Color(0xFFEF4444);
+      return AppColors.errorRed;
     default:
-      return const Color(0xFF64748B);
+      return AppColors.secondaryGray;
   }
 }
 
@@ -20,25 +21,25 @@ Color stockAccentColor(StockItem item) {
   if (item is FoodStockItem) {
     switch (item.category) {
       case 'Meat':
-        return const Color(0xFFEF4444);
+        return AppColors.errorRed;
       case 'Dairy':
-        return const Color(0xFF3B82F6);
+        return AppColors.primaryBlue;
       case 'Oil':
-        return const Color(0xFF0F766E);
+        return AppColors.darkGreen;
       case 'Vegetables':
-        return const Color(0xFF10B981);
+        return AppColors.accentGreen;
       case 'Dry Food':
-        return const Color(0xFFF59E0B);
+        return AppColors.accentGold;
       default:
-        return const Color(0xFF2563EB);
+        return AppColors.primaryBlue;
     }
   }
   if (item is CateringStockItem) {
     return item.subtype == CateringSubtype.permanent
-        ? const Color(0xFF7C3AED)
-        : const Color(0xFFF59E0B);
+        ? AppColors.darkGreen
+        : AppColors.accentGold;
   }
-  return const Color(0xFF0369A1);
+  return AppColors.secondaryGray;
 }
 
 // Icon for food category
@@ -64,7 +65,7 @@ Widget infoChip(String label, {Color? bgColor, Color? textColor}) {
   return Container(
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
     decoration: BoxDecoration(
-      color: bgColor ?? const Color(0xFFF8FAFC),
+      color: bgColor ?? AppColors.softSurface,
       borderRadius: BorderRadius.circular(999),
     ),
     child: Text(
@@ -72,7 +73,7 @@ Widget infoChip(String label, {Color? bgColor, Color? textColor}) {
       style: TextStyle(
         fontSize: 11,
         fontWeight: FontWeight.w600,
-        color: textColor ?? const Color(0xFF334155),
+        color: textColor ?? AppColors.secondaryGray,
       ),
     ),
   );
@@ -101,7 +102,7 @@ Widget sectionTitle(BuildContext context, String title) => Padding(
         title,
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w700,
-              color: const Color(0xFF10162B),
+               color: AppColors.darkGreen,
             ),
       ),
     );
@@ -115,13 +116,13 @@ Widget detailRow(String label, String value) => Padding(
               child: Text(label,
                   style: const TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF475569),
+                       color: AppColors.secondaryGray,
                       fontSize: 13))),
           Text(value,
               style: const TextStyle(
                   fontWeight: FontWeight.w700,
                   fontSize: 13,
-                  color: Color(0xFF10162B))),
+                   color: AppColors.darkGreen))),
         ],
       ),
     );
@@ -155,16 +156,16 @@ Widget _detailStatCard(String label, String value, IconData icon) {
     ),
     child: Column(
       children: [
-        Icon(icon, color: const Color(0xFF2563EB), size: 22),
+        Icon(icon, color: AppColors.primaryBlue, size: 22),
         const SizedBox(height: 6),
         Text(value,
             textAlign: TextAlign.center,
             style: const TextStyle(
                 fontWeight: FontWeight.w700, fontSize: 13,
-                color: Color(0xFF10162B))),
+                color: AppColors.darkGreen)),
         const SizedBox(height: 3),
         Text(label,
-            style: const TextStyle(color: Color(0xFF64748B), fontSize: 11)),
+            style: const TextStyle(color: AppColors.secondaryGray, fontSize: 11)),
       ],
     ),
   );
@@ -191,10 +192,10 @@ Widget _detailInfoCard(String label, String value, IconData icon) {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
+              color: AppColors.softSurface,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: const Color(0xFF64748B), size: 18),
+            child: Icon(icon, color: AppColors.secondaryGray, size: 18),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -205,13 +206,13 @@ Widget _detailInfoCard(String label, String value, IconData icon) {
                     style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF94A3B8))),
+                        color: AppColors.textGray)),
                 const SizedBox(height: 3),
                 Text(value,
                     style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF10162B))),
+                        color: AppColors.darkGreen)),
               ],
             ),
           ),
@@ -373,7 +374,7 @@ Widget buildStockDetailBody(
                     ],
                   ),
                   child: const Icon(Icons.arrow_back_ios_new_rounded,
-                      size: 18, color: Color(0xFF10162B)),
+                      size: 18, color: AppColors.darkGreen),
                 ),
               ),
               const SizedBox(width: 14),
@@ -381,7 +382,7 @@ Widget buildStockDetailBody(
                 child: Text('Item Detail',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w800,
-                        color: const Color(0xFF10162B),
+                        color: AppColors.darkGreen,
                         letterSpacing: -0.4)),
               ),
               GestureDetector(
@@ -389,11 +390,11 @@ Widget buildStockDetailBody(
                 child: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2563EB).withOpacity(0.1),
+                    color: AppColors.primaryBlue.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: const Icon(Icons.edit_rounded,
-                      size: 18, color: Color(0xFF2563EB)),
+                      size: 18, color: AppColors.primaryBlue),
                 ),
               ),
             ],
@@ -513,7 +514,7 @@ Widget buildStockDetailBody(
                         style: TextStyle(
                             fontWeight: FontWeight.w700,
                             fontSize: 13,
-                            color: Color(0xFF10162B))),
+                            color: AppColors.darkGreen)),
                     const Spacer(),
                     Text(
                         '${(item.stockFraction * 100).toStringAsFixed(0)}%',
@@ -529,7 +530,7 @@ Widget buildStockDetailBody(
                   child: LinearProgressIndicator(
                     value: item.stockFraction,
                     minHeight: 8,
-                    backgroundColor: const Color(0xFFF1F5F9),
+                    backgroundColor: AppColors.softSurface,
                     color: accent,
                   ),
                 ),
@@ -547,13 +548,13 @@ Widget buildStockDetailBody(
           child: Row(
             children: [
               _detailActionBtn(
-                  'Stock In', Icons.arrow_downward_rounded, const Color(0xFF16A34A), () {}),
+                  'Stock In', Icons.arrow_downward_rounded, AppColors.accentGreen, () {}),
               const SizedBox(width: 10),
               _detailActionBtn(
-                  'Stock Out', Icons.arrow_upward_rounded, const Color(0xFFEF4444), () {}),
+                  'Stock Out', Icons.arrow_upward_rounded, AppColors.errorRed, () {}),
               const SizedBox(width: 10),
               _detailActionBtn(
-                  'Transfer', Icons.swap_horiz_rounded, const Color(0xFF4F46E5), () {}),
+                  'Transfer', Icons.swap_horiz_rounded, AppColors.primaryBlue, () {}),
             ],
           ),
         ),
@@ -624,11 +625,11 @@ Widget buildStockDetailBody(
                         width: 42,
                         height: 42,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF2563EB).withOpacity(0.1),
+                          color: AppColors.primaryBlue.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(Icons.history_rounded,
-                            color: Color(0xFF2563EB), size: 20),
+                            color: AppColors.primaryBlue, size: 20),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -639,17 +640,17 @@ Widget buildStockDetailBody(
                                 style: TextStyle(
                                     fontWeight: FontWeight.w700,
                                     fontSize: 14,
-                                    color: Color(0xFF10162B))),
+                                    color: AppColors.darkGreen)),
                             const SizedBox(height: 2),
                             Text(
                                 '$movementCount record${movementCount == 1 ? '' : 's'} found',
                                 style: const TextStyle(
-                                    color: Color(0xFF64748B), fontSize: 12)),
+                                    color: AppColors.secondaryGray, fontSize: 12)),
                           ],
                         ),
                       ),
                       const Icon(Icons.arrow_forward_ios_rounded,
-                          size: 14, color: Color(0xFF94A3B8)),
+                          size: 14, color: AppColors.textGray),
                     ],
                   ),
                 ),

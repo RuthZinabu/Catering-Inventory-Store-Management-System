@@ -98,7 +98,7 @@ class _KitchenIssueListScreenState extends State<KitchenIssueListScreen> {
         filtered.map((issue) => issue.department).toSet().length;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FB),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.of(context).push(MaterialPageRoute(
             builder: (_) => const KitchenIssueCreateScreen())),

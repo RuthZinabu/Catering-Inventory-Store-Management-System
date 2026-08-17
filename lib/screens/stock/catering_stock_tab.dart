@@ -70,7 +70,7 @@ class _CateringStockTabState extends State<CateringStockTab>
           SliverAppBar(
             floating: true,
             snap: true,
-            backgroundColor: const Color(0xFFF4F6FB),
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             elevation: 0,
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

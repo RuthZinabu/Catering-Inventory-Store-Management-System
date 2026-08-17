@@ -64,7 +64,7 @@ class _StockTransferListScreenState extends State<StockTransferListScreen> {
     final completed = filtered.where((t) => t.status == 'Completed').length;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FB),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.of(context).push(MaterialPageRoute(
             builder: (_) => const StockTransferCreateScreen())),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/mock_repository.dart';
 import '../utils/responsive.dart';
+import '../theme/app_colors.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -33,7 +34,7 @@ class DashboardScreen extends StatelessWidget {
                 ),
                 CircleAvatar(
                   radius: 22,
-                  backgroundColor: const Color(0xFF2563EB),
+                  backgroundColor: AppColors.primaryBlue,
                   child: const Text('R', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
                 ),
               ],
@@ -46,9 +47,9 @@ class DashboardScreen extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(colors: [Color(0xFF2563EB), Color(0xFF4F46E5)]),
+             gradient: const LinearGradient(colors: [AppColors.primaryBlue, AppColors.darkGreen]),
             borderRadius: BorderRadius.circular(28),
-            boxShadow: [BoxShadow(color: Colors.blue.withOpacity(0.18), blurRadius: 24, offset: const Offset(0, 14))],
+             boxShadow: [BoxShadow(color: AppColors.primaryBlue.withOpacity(0.18), blurRadius: 24, offset: const Offset(0, 14))],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -90,13 +91,13 @@ class DashboardScreen extends StatelessWidget {
       spacing: spacing,
       runSpacing: spacing,
       children: [
-        SizedBox(width: itemWidth, child: _healthCard(context, 'Total Stock', '128', Icons.inventory_2_rounded, const Color(0xFF2563EB), '+12%')),
-        SizedBox(width: itemWidth, child: _healthCard(context, 'Low Alerts', '4', Icons.warning_amber_rounded, const Color(0xFFF59E0B), 'Watch')),
-        SizedBox(width: itemWidth, child: _healthCard(context, 'Expiring', '7', Icons.access_time_filled, const Color(0xFFEF4444), '3 soon')),
-        SizedBox(width: itemWidth, child: _healthCard(context, 'Today\'s Purchase', 'ETB 54k', Icons.shopping_cart_outlined, const Color(0xFF10B981), '+8%')),
-        SizedBox(width: itemWidth, child: _healthCard(context, 'Today\'s Stock Out', '3', Icons.remove_circle_outline, const Color(0xFF7C3AED), 'Stable')),
-        SizedBox(width: itemWidth, child: _healthCard(context, 'Inventory Value', 'ETB 840k', Icons.account_balance_wallet_outlined, const Color(0xFF0F766E), '+4%')),
-        SizedBox(width: itemWidth, child: _healthCard(context, 'Recent Transactions', '24', Icons.receipt_long, const Color(0xFF0EA5E9), 'Live')),
+         SizedBox(width: itemWidth, child: _healthCard(context, 'Total Stock', '128', Icons.inventory_2_rounded, AppColors.primaryBlue, '+12%')),
+         SizedBox(width: itemWidth, child: _healthCard(context, 'Low Alerts', '4', Icons.warning_amber_rounded, AppColors.accentGold, 'Watch')),
+         SizedBox(width: itemWidth, child: _healthCard(context, 'Expiring', '7', Icons.access_time_filled, AppColors.errorRed, '3 soon')),
+         SizedBox(width: itemWidth, child: _healthCard(context, 'Today\'s Purchase', 'ETB 54k', Icons.shopping_cart_outlined, AppColors.accentGreen, '+8%')),
+         SizedBox(width: itemWidth, child: _healthCard(context, 'Today\'s Stock Out', '3', Icons.remove_circle_outline, AppColors.secondaryGray, 'Stable')),
+         SizedBox(width: itemWidth, child: _healthCard(context, 'Inventory Value', 'ETB 840k', Icons.account_balance_wallet_outlined, AppColors.darkGreen, '+4%')),
+         SizedBox(width: itemWidth, child: _healthCard(context, 'Recent Transactions', '24', Icons.receipt_long, AppColors.primaryBlue, 'Live')),
       ],
     );
   },
@@ -109,10 +110,10 @@ class DashboardScreen extends StatelessWidget {
           spacing: 12,
           runSpacing: 12,
           children: [
-            _actionButton(context, Icons.add_rounded, 'Add Item', const Color(0xFF2563EB)),
-            _actionButton(context, Icons.receipt_long, 'New Purchase', const Color(0xFF4F46E5)),
-            _actionButton(context, Icons.local_shipping_outlined, 'Issue Stock', const Color(0xFF0F766E)),
-            _actionButton(context, Icons.inventory_2_outlined, 'Receive Goods', const Color(0xFFF59E0B)),
+             _actionButton(context, Icons.add_rounded, 'Add Item', AppColors.primaryBlue),
+             _actionButton(context, Icons.receipt_long, 'New Purchase', AppColors.darkGreen),
+             _actionButton(context, Icons.local_shipping_outlined, 'Issue Stock', AppColors.secondaryGray),
+             _actionButton(context, Icons.inventory_2_outlined, 'Receive Goods', AppColors.accentGold),
           ],
         ),
         const SizedBox(height: 20),
@@ -135,10 +136,10 @@ class DashboardScreen extends StatelessWidget {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Expanded(child: _buildBar(38, const Color(0xFF60A5FA), 'W1')),
-                      Expanded(child: _buildBar(58, const Color(0xFF818CF8), 'W2')),
-                      Expanded(child: _buildBar(48, const Color(0xFF34D399), 'W3')),
-                      Expanded(child: _buildBar(72, const Color(0xFFF59E0B), 'W4')),
+                       Expanded(child: _buildBar(38, AppColors.primaryBlue, 'W1')),
+                       Expanded(child: _buildBar(58, AppColors.darkGreen, 'W2')),
+                       Expanded(child: _buildBar(48, AppColors.accentGreen, 'W3')),
+                       Expanded(child: _buildBar(72, AppColors.accentGold, 'W4')),
                     ],
                   ),
                 ),
@@ -150,16 +151,16 @@ class DashboardScreen extends StatelessWidget {
         Text('Low stock', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 12),
         ...[
-          _lowStockCard(context, 'Basmati Rice', '14 / 30 kg left', 0.47, const Color(0xFFF59E0B)),
-          _lowStockCard(context, 'Chicken Breast', '18 / 40 kg left', 0.45, const Color(0xFFEF4444)),
+           _lowStockCard(context, 'Basmati Rice', '14 / 30 kg left', 0.47, AppColors.accentGold),
+           _lowStockCard(context, 'Chicken Breast', '18 / 40 kg left', 0.45, AppColors.errorRed),
         ],
         const SizedBox(height: 20),
         Text('Recent activities', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 12),
         ...[
-          _activityRow(context, Icons.add_circle_outline, 'PO-1048 received', '2 min ago', const Color(0xFF2563EB)),
-          _activityRow(context, Icons.local_shipping_outlined, 'Issued to kitchen', '18 min ago', const Color(0xFF10B981)),
-          _activityRow(context, Icons.warning_amber_rounded, 'Low stock alert', '1 hr ago', const Color(0xFFF59E0B)),
+           _activityRow(context, Icons.add_circle_outline, 'PO-1048 received', '2 min ago', AppColors.primaryBlue),
+           _activityRow(context, Icons.local_shipping_outlined, 'Issued to kitchen', '18 min ago', AppColors.accentGreen),
+           _activityRow(context, Icons.warning_amber_rounded, 'Low stock alert', '1 hr ago', AppColors.accentGold),
         ],
       ],
     );

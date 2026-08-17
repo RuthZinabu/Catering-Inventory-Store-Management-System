@@ -44,7 +44,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
     final lowStockCount = filteredItems.where((item) => item.status == 'Low Stock').length;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FB),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 70),
       child: FloatingActionButton.extended(

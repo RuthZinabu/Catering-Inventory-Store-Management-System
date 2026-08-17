@@ -45,7 +45,7 @@ class _ExpiryListScreenState extends State<ExpiryListScreen> {
     final okCount = filtered.where((i) => i.status == 'OK').length;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FB),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: CustomScrollView(
           slivers: [

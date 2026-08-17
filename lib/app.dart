@@ -14,13 +14,25 @@ import 'screens/barcode/barcode_management_screen.dart';
 import 'screens/multistore/multistore_screen.dart';
 import 'widgets/module_card.dart';
 import 'utils/responsive.dart';
+import 'theme/app_colors.dart';
 
 class CateringInventoryApp extends StatelessWidget {
   const CateringInventoryApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final scheme = ColorScheme.fromSeed(seedColor: const Color(0xFF2563EB));
+    final scheme = const ColorScheme.light(
+      primary: AppColors.primaryBlue,
+      onPrimary: AppColors.darkGreen,
+      secondary: AppColors.secondaryGray,
+      onSecondary: Colors.white,
+      tertiary: AppColors.accentGreen,
+      onTertiary: AppColors.darkGreen,
+      error: AppColors.errorRed,
+      onError: Colors.white,
+      surface: AppColors.cardSurface,
+      onSurface: AppColors.darkGreen,
+    );
     return MaterialApp(
       title: 'Catering Control',
       debugShowCheckedModeBanner: false,
@@ -31,7 +43,7 @@ class CateringInventoryApp extends StatelessWidget {
         useMaterial3: true,
         brightness: Brightness.light,
         colorScheme: scheme,
-        scaffoldBackgroundColor: const Color(0xFFF4F6FB),
+        scaffoldBackgroundColor: AppColors.creamBackground,
         cardTheme: const CardThemeData(
             elevation: 0,
             shape: RoundedRectangleBorder(
@@ -39,62 +51,51 @@ class CateringInventoryApp extends StatelessWidget {
         appBarTheme: const AppBarTheme(
             centerTitle: false,
             elevation: 0,
-            backgroundColor: Colors.transparent,
-            foregroundColor: Color(0xFF10162B)),
-        // IMPORTANT: `Typography.material2021().englishLike` only provides font
-        // metrics (size/weight/spacing) - it does NOT set a text color. Any
-        // style pulled from it (headlineSmall, titleLarge, titleMedium,
-        // titleSmall, etc.) therefore has `color: null`, which Flutter then
-        // resolves using the ambient platform brightness. That resolves to
-        // black on most desktop browsers but white on many phones/mobile
-        // browsers - which is exactly the "black in browser, white on phone"
-        // bug reported for the dashboard ('Admin', metric numbers), the
-        // 'Inventory' heading, supplier name/company text, and the More
-        // section. Fixing this means every text style must carry an explicit
-        // color instead of relying on that platform-dependent fallback.
+            backgroundColor: AppColors.darkGreen,
+            foregroundColor: Colors.white),
         textTheme: Typography.material2021()
             .englishLike
             .apply(
-              bodyColor: const Color(0xFF10162B),
-              displayColor: const Color(0xFF10162B),
+              bodyColor: AppColors.secondaryGray,
+              displayColor: AppColors.darkGreen,
             )
             .copyWith(
               headlineSmall:
                   Typography.material2021().englishLike.headlineSmall?.copyWith(
                         fontWeight: FontWeight.w700,
                         letterSpacing: -0.5,
-                        color: const Color(0xFF10162B),
+                        color: AppColors.darkGreen,
                       ),
               titleLarge:
                   Typography.material2021().englishLike.titleLarge?.copyWith(
-                        color: const Color(0xFF10162B),
+                        color: AppColors.darkGreen,
                       ),
               titleMedium:
                   Typography.material2021().englishLike.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFF10162B),
+                        color: AppColors.darkGreen,
                       ),
               titleSmall:
                   Typography.material2021().englishLike.titleSmall?.copyWith(
-                        color: const Color(0xFF10162B),
+                        color: AppColors.darkGreen,
                       ),
               bodyMedium:
                   Typography.material2021().englishLike.bodyMedium?.copyWith(
-                        color: const Color(0xFF58627A),
+                        color: AppColors.secondaryGray,
                       ),
               bodyLarge:
                   Typography.material2021().englishLike.bodyLarge?.copyWith(
-                        color: const Color(0xFF10162B),
+                        color: AppColors.secondaryGray,
                       ),
               bodySmall:
                   Typography.material2021().englishLike.bodySmall?.copyWith(
-                        color: const Color(0xFF58627A),
+                        color: AppColors.textGray,
                       ),
             ),
         filledButtonTheme: FilledButtonThemeData(
           style: FilledButton.styleFrom(
-            backgroundColor: const Color(0xFF2563EB),
-            foregroundColor: Colors.white,
+            backgroundColor: AppColors.primaryBlue,
+            foregroundColor: AppColors.darkGreen,
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
@@ -103,29 +104,57 @@ class CateringInventoryApp extends StatelessWidget {
         outlinedButtonTheme: OutlinedButtonThemeData(
           style: OutlinedButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-            side: const BorderSide(color: Color(0xFFDCE4F0)),
+            foregroundColor: AppColors.secondaryGray,
+            side: const BorderSide(color: AppColors.secondaryGray),
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          ),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primaryBlue,
+            foregroundColor: AppColors.darkGreen,
+            elevation: 0,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           ),
         ),
         chipTheme: ChipThemeData(
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          labelStyle: const TextStyle(fontWeight: FontWeight.w600),
+          labelStyle: const TextStyle(
+              fontWeight: FontWeight.w600, color: AppColors.secondaryGray),
+          selectedColor: AppColors.primaryBlue,
+          checkmarkColor: AppColors.darkGreen,
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: Colors.white,
+          fillColor: AppColors.cardSurface,
           border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(18),
-              borderSide: const BorderSide(color: Color(0xFFE3E8F0))),
+              borderSide: const BorderSide(color: AppColors.border)),
           enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(18),
-              borderSide: const BorderSide(color: Color(0xFFE3E8F0))),
+              borderSide: const BorderSide(color: AppColors.border)),
           focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(18),
-              borderSide: BorderSide(color: scheme.primary, width: 1.5)),
+              borderSide: const BorderSide(color: AppColors.primaryBlue, width: 1.5)),
+          hintStyle: const TextStyle(color: AppColors.textGray),
+          labelStyle: const TextStyle(color: AppColors.secondaryGray),
+        ),
+        dividerTheme: const DividerThemeData(color: AppColors.border),
+        checkboxTheme: CheckboxThemeData(
+          fillColor: WidgetStateProperty.resolveWith((states) =>
+              states.contains(WidgetState.selected) ? AppColors.primaryBlue : null),
+          checkColor: WidgetStateProperty.all(AppColors.darkGreen),
+        ),
+        switchTheme: SwitchThemeData(
+          thumbColor: WidgetStateProperty.resolveWith((states) =>
+              states.contains(WidgetState.selected) ? AppColors.accentGreen : null),
+          trackColor: WidgetStateProperty.resolveWith((states) =>
+              states.contains(WidgetState.selected)
+                  ? AppColors.accentGreen.withOpacity(.35)
+                  : null),
         ),
       ),
       // Applied once, app-wide, so every screen - including screens pushed
@@ -183,7 +212,7 @@ class _RootShellState extends State<RootShell> {
       bottomNavigationBar: Container(
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.85),
+          color: AppColors.darkGreen,
           borderRadius: BorderRadius.circular(40),
           boxShadow: [
             BoxShadow(
@@ -191,22 +220,27 @@ class _RootShellState extends State<RootShell> {
                 blurRadius: 24,
                 offset: const Offset(0, 12)),
           ],
-          border: Border.all(color: const Color(0xFFE9EEF6)),
+          border: Border.all(color: AppColors.darkGreen),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(24),
           child: NavigationBar(
-            backgroundColor: Colors.transparent,
+            backgroundColor: AppColors.darkGreen,
             elevation: 0,
             // Smaller overall bar: reduced height, compact icons, and a
             // smaller label so the bar takes up noticeably less vertical
             // space than the Material 3 default (~80px).
             height: 56,
-            labelTextStyle: WidgetStateProperty.all(
-              const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
-            ),
             selectedIndex: _index,
             onDestinationSelected: (value) => setState(() => _index = value),
+            indicatorColor: AppColors.primaryBlue,
+            surfaceTintColor: Colors.transparent,
+            labelTextStyle: WidgetStateProperty.resolveWith((states) => TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: states.contains(WidgetState.selected)
+                    ? AppColors.darkGreen
+                    : Colors.white)),
             destinations: const [
               NavigationDestination(
                   icon: Icon(Icons.grid_view_rounded, size: 20),

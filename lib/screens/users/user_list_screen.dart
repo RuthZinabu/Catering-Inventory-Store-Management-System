@@ -45,7 +45,7 @@ class _UserListScreenState extends State<UserListScreen> {
     final roles = filtered.map((u) => u.role).toSet().length;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FB),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 70),
         child: FloatingActionButton.extended(

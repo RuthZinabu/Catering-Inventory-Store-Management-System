@@ -45,7 +45,7 @@ class _WasteListScreenState extends State<WasteListScreen> {
     final totalCost = filtered.fold<double>(0, (s, r) => s + r.estimatedCost);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FB),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 70),
         child: FloatingActionButton.extended(

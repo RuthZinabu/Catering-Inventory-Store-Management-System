@@ -103,7 +103,7 @@ void main() {
   sb.writeln("        .toList();");
   sb.writeln();
   sb.writeln("    return Scaffold(");
-  sb.writeln("      backgroundColor: const Color(0xFFF4F6FB),");
+  sb.writeln("      backgroundColor: Theme.of(context).scaffoldBackgroundColor,");
   sb.writeln("      body: CustomScrollView(");
   sb.writeln("        slivers: [");
   // Gradient header

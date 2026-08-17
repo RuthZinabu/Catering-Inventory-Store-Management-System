@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 
 class ModuleCard extends StatelessWidget {
   final String title;
@@ -24,10 +25,10 @@ class ModuleCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.cardSurface,
           borderRadius: BorderRadius.circular(24),
           boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 18, offset: const Offset(0, 10))],
-          border: Border.all(color: const Color(0xFFE9EEF8)),
+          border: Border.all(color: AppColors.border),
         ),
         // LayoutBuilder + Expanded/Flexible below means this card renders
         // safely at whatever height its parent grid cell gives it - it

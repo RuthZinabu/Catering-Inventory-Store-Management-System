@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 
 class CateringSearch extends StatelessWidget {
   final String hintText;
@@ -16,7 +17,7 @@ class CateringSearch extends StatelessWidget {
       height: 35,
       padding: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardSurface,
         borderRadius: BorderRadius.circular(50),
         boxShadow: [
           BoxShadow(
@@ -30,7 +31,7 @@ class CateringSearch extends StatelessWidget {
         children: [
           const Icon(
             Icons.search_rounded,
-            color: Color(0xFF64748B),
+            color: AppColors.secondaryGray,
             size: 15,
           ),
           const SizedBox(width: 10),
