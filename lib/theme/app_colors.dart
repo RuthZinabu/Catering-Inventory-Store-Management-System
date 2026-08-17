@@ -9,7 +9,8 @@ abstract final class AppColors {
   static const secondaryGray = Color(0xFF54595F);
   static const textGray = Color(0xFF7A7A7A);
   static const accentGreen = Color(0xFF61CE70);
-  static const accentGold = Color(0xFFE8C45C);`r`n  static const glassGold = Color(0x80E8C45C);
+  static const accentGold = Color(0xFFE8C45C);
+  static const glassGold = Color(0x80E8C45C);
   static const darkGreen = Color(0xFF283C2C);
   static const creamBackground = Color(0xFFFFFCEC);
   static const errorRed = Color(0xFFD1453B);
