@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'screens/dashboard_screen.dart';
 import 'screens/stock/stock_screen.dart';
 import 'screens/suppliers/supplier_list_screen.dart';
@@ -12,6 +13,7 @@ import 'screens/users/user_list_screen.dart';
 import 'screens/reports/reports_screen.dart';
 import 'screens/barcode/barcode_management_screen.dart';
 import 'screens/multistore/multistore_screen.dart';
+
 import 'widgets/module_card.dart';
 import 'utils/responsive.dart';
 import 'theme/app_colors.dart';
@@ -33,26 +35,33 @@ class CateringInventoryApp extends StatelessWidget {
       surface: AppColors.cardSurface,
       onSurface: AppColors.darkGreen,
     );
+
     return MaterialApp(
       title: 'Catering Control',
       debugShowCheckedModeBanner: false,
-      // Force light appearance regardless of the device's system theme so
-      // text/background colors never flip between platforms.
+
+      // Force light appearance regardless of device theme.
       themeMode: ThemeMode.light,
+
       theme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.light,
         colorScheme: scheme,
         scaffoldBackgroundColor: AppColors.creamBackground,
         cardTheme: const CardThemeData(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.circular(24)))),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(
+              Radius.circular(24),
+            ),
+          ),
+        ),
         appBarTheme: const AppBarTheme(
-            centerTitle: false,
-            elevation: 0,
-            backgroundColor: AppColors.darkGreen,
-            foregroundColor: Colors.white),
+          centerTitle: false,
+          elevation: 0,
+          backgroundColor: AppColors.darkGreen,
+          foregroundColor: Colors.white,
+        ),
         textTheme: Typography.material2021()
             .englishLike
             .apply(
@@ -96,18 +105,28 @@ class CateringInventoryApp extends StatelessWidget {
           style: FilledButton.styleFrom(
             backgroundColor: AppColors.primaryBlue,
             foregroundColor: AppColors.darkGreen,
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 18,
+              vertical: 14,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+            ),
           ),
         ),
         outlinedButtonTheme: OutlinedButtonThemeData(
           style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 18,
+              vertical: 14,
+            ),
             foregroundColor: AppColors.secondaryGray,
-            side: const BorderSide(color: AppColors.secondaryGray),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            side: const BorderSide(
+              color: AppColors.secondaryGray,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+            ),
           ),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
@@ -115,16 +134,23 @@ class CateringInventoryApp extends StatelessWidget {
             backgroundColor: AppColors.primaryBlue,
             foregroundColor: AppColors.darkGreen,
             elevation: 0,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+            ),
           ),
         ),
         chipTheme: ChipThemeData(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+          ),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 10,
+            vertical: 8,
+          ),
           labelStyle: const TextStyle(
-              fontWeight: FontWeight.w600, color: AppColors.secondaryGray),
+            fontWeight: FontWeight.w600,
+            color: AppColors.secondaryGray,
+          ),
           selectedColor: AppColors.primaryBlue,
           checkmarkColor: AppColors.darkGreen,
         ),
@@ -132,53 +158,75 @@ class CateringInventoryApp extends StatelessWidget {
           filled: true,
           fillColor: AppColors.cardSurface,
           border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(18),
-              borderSide: const BorderSide(color: AppColors.border)),
+            borderRadius: BorderRadius.circular(18),
+            borderSide: const BorderSide(
+              color: AppColors.border,
+            ),
+          ),
           enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(18),
-              borderSide: const BorderSide(color: AppColors.border)),
+            borderRadius: BorderRadius.circular(18),
+            borderSide: const BorderSide(
+              color: AppColors.border,
+            ),
+          ),
           focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(18),
-              borderSide:
-                  const BorderSide(color: AppColors.primaryBlue, width: 1.5)),
-          hintStyle: const TextStyle(color: AppColors.textGray),
-          labelStyle: const TextStyle(color: AppColors.secondaryGray),
+            borderRadius: BorderRadius.circular(18),
+            borderSide: const BorderSide(
+              color: AppColors.primaryBlue,
+              width: 1.5,
+            ),
+          ),
+          hintStyle: const TextStyle(
+            color: AppColors.textGray,
+          ),
+          labelStyle: const TextStyle(
+            color: AppColors.secondaryGray,
+          ),
         ),
-        dividerTheme: const DividerThemeData(color: AppColors.border),
+        dividerTheme: const DividerThemeData(
+          color: AppColors.border,
+        ),
         checkboxTheme: CheckboxThemeData(
-          fillColor: WidgetStateProperty.resolveWith((states) =>
-              states.contains(WidgetState.selected)
-                  ? AppColors.accentGreen
-                  : null),
-          checkColor: WidgetStateProperty.all(AppColors.darkGreen),
+          fillColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected)
+                ? AppColors.accentGreen
+                : null,
+          ),
+          checkColor: WidgetStateProperty.all(
+            AppColors.darkGreen,
+          ),
         ),
         switchTheme: SwitchThemeData(
-          thumbColor: WidgetStateProperty.resolveWith((states) =>
-              states.contains(WidgetState.selected)
-                  ? AppColors.accentGreen
-                  : null),
-          trackColor: WidgetStateProperty.resolveWith((states) =>
-              states.contains(WidgetState.selected)
-                  ? AppColors.accentGreen.withOpacity(.35)
-                  : null),
+          thumbColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected)
+                ? AppColors.accentGreen
+                : null,
+          ),
+          trackColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected)
+                ? AppColors.accentGreen.withOpacity(.35)
+                : null,
+          ),
         ),
       ),
-      // Applied once, app-wide, so every screen - including screens pushed
-      // via Navigator.push for details/forms - is responsive without needing
-      // individual per-screen changes:
-      //  1. Caps content to a readable max width and centers it on large
-      //     screens (tablets, desktop browser windows) instead of letting
-      //     it stretch edge-to-edge.
-      //  2. Clamps extreme system font-scaling so large accessibility text
-      //     sizes can't break card/grid layouts.
+
+      // Applied once, app-wide, so every screen remains responsive.
       builder: (context, child) {
-        final clampedScaler = MediaQuery.textScalerOf(context)
-            .clamp(minScaleFactor: 0.85, maxScaleFactor: 1.3);
+        final clampedScaler = MediaQuery.textScalerOf(context).clamp(
+          minScaleFactor: 0.85,
+          maxScaleFactor: 1.3,
+        );
+
         return MediaQuery(
-          data: MediaQuery.of(context).copyWith(textScaler: clampedScaler),
-          child: ResponsiveContainer(child: child ?? const SizedBox.shrink()),
+          data: MediaQuery.of(context).copyWith(
+            textScaler: clampedScaler,
+          ),
+          child: ResponsiveContainer(
+            child: child ?? const SizedBox.shrink(),
+          ),
         );
       },
+
       home: const RootShell(),
     );
   }
@@ -206,63 +254,132 @@ class _RootShellState extends State<RootShell> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
+
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
         child: _pages[_index],
       ),
-      // floatingActionButton: FloatingActionButton.extended(
-      //   onPressed: () {},
-      //   icon: const Icon(Icons.add_rounded),
-      //   label: const Text('New'),
-      // ),
+
+      // ---------------------------------------------------------
+      // DARK GREEN + GOLD BOTTOM NAVIGATION
+      // ---------------------------------------------------------
       bottomNavigationBar: Container(
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+        margin: const EdgeInsets.fromLTRB(
+          16,
+          0,
+          16,
+          10,
+        ),
         decoration: BoxDecoration(
           color: AppColors.darkGreen,
-          borderRadius: BorderRadius.circular(40),
+          borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withOpacity(0.08),
-                blurRadius: 24,
-                offset: const Offset(0, 12)),
+              color: Colors.black.withOpacity(0.18),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
           ],
-          border: Border.all(color: AppColors.darkGreen),
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(28),
           child: NavigationBar(
-            backgroundColor: AppColors.softSurface,
+            backgroundColor: AppColors.darkGreen,
             elevation: 0,
-            // Smaller overall bar: reduced height, compact icons, and a
-            // smaller label so the bar takes up noticeably less vertical
-            // space than the Material 3 default (~80px).
-            height: 56,
+            height: 64,
             selectedIndex: _index,
-            onDestinationSelected: (value) => setState(() => _index = value),
+
+            onDestinationSelected: (value) {
+              setState(() {
+                _index = value;
+              });
+            },
+
+            // Subtle glass-gold selected indicator
             indicatorColor: AppColors.glassGold,
             surfaceTintColor: Colors.transparent,
-            labelTextStyle: WidgetStateProperty.resolveWith((states) =>
-                TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: states.contains(WidgetState.selected)
-                        ? AppColors.accentGold
-                        : Colors.white)),
+
+            // Gold text
+            labelTextStyle: WidgetStateProperty.resolveWith(
+              (states) {
+                final isSelected = states.contains(WidgetState.selected);
+
+                return TextStyle(
+                  fontSize: 10,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isSelected
+                      ? AppColors.accentGold
+                      : const Color(0xFFD8C78A),
+                );
+              },
+            ),
+
             destinations: const [
               NavigationDestination(
-                  icon: Icon(Icons.grid_view_rounded, size: 20),
-                  label: 'Dashboard'),
+                icon: Icon(
+                  Icons.grid_view_rounded,
+                  color: Color(0xFFD8C78A),
+                  size: 20,
+                ),
+                selectedIcon: Icon(
+                  Icons.grid_view_rounded,
+                  color: AppColors.accentGold,
+                  size: 22,
+                ),
+                label: 'Dashboard',
+              ),
               NavigationDestination(
-                  icon: Icon(Icons.inventory_2_outlined, size: 20),
-                  label: 'Stock'),
+                icon: Icon(
+                  Icons.inventory_2_outlined,
+                  color: Color(0xFFD8C78A),
+                  size: 20,
+                ),
+                selectedIcon: Icon(
+                  Icons.inventory_2_rounded,
+                  color: AppColors.accentGold,
+                  size: 22,
+                ),
+                label: 'Stock',
+              ),
               NavigationDestination(
-                  icon: Icon(Icons.business_outlined, size: 20),
-                  label: 'Suppliers'),
+                icon: Icon(
+                  Icons.business_outlined,
+                  color: Color(0xFFD8C78A),
+                  size: 20,
+                ),
+                selectedIcon: Icon(
+                  Icons.business_rounded,
+                  color: AppColors.accentGold,
+                  size: 22,
+                ),
+                label: 'Suppliers',
+              ),
               NavigationDestination(
-                  icon: Icon(Icons.receipt_long, size: 20), label: 'Purchases'),
+                icon: Icon(
+                  Icons.receipt_long_outlined,
+                  color: Color(0xFFD8C78A),
+                  size: 20,
+                ),
+                selectedIcon: Icon(
+                  Icons.receipt_long,
+                  color: AppColors.accentGold,
+                  size: 22,
+                ),
+                label: 'Purchases',
+              ),
               NavigationDestination(
-                  icon: Icon(Icons.more_horiz_rounded, size: 20),
-                  label: 'More'),
+                icon: Icon(
+                  Icons.more_horiz_rounded,
+                  color: Color(0xFFD8C78A),
+                  size: 20,
+                ),
+                selectedIcon: Icon(
+                  Icons.more_horiz_rounded,
+                  color: AppColors.accentGold,
+                  size: 22,
+                ),
+                label: 'More',
+              ),
             ],
           ),
         ),
@@ -279,6 +396,7 @@ class MorePage extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         int crossAxisCount;
+
         if (constraints.maxWidth < 375) {
           crossAxisCount = 1;
         } else if (isDesktopWidth(constraints.maxWidth)) {
@@ -288,39 +406,48 @@ class MorePage extends StatelessWidget {
         } else {
           crossAxisCount = 2;
         }
-        final basePad =
-            responsiveValue(context, mobile: 16.0, tablet: 24.0, desktop: 32.0);
-        // Extra bottom padding so the Reports card scrolls fully above the nav bar.
+
+        final basePad = responsiveValue(
+          context,
+          mobile: 16.0,
+          tablet: 24.0,
+          desktop: 32.0,
+        );
+
+        // Extra bottom padding so the Reports card scrolls
+        // fully above the navigation bar.
         final bottomPad = basePad + MediaQuery.of(context).padding.bottom + 80;
+
         return ListView(
-          padding: EdgeInsets.fromLTRB(basePad, basePad, basePad, bottomPad),
+          padding: EdgeInsets.fromLTRB(
+            basePad,
+            basePad,
+            basePad,
+            bottomPad,
+          ),
           children: [
             Text(
               'More modules',
-              style: Theme.of(context)
-                  .textTheme
-                  .headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.w700),
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
             ),
-
             const SizedBox(height: 12),
-
-            // A fixed childAspectRatio ties card height directly to cell
-            // width (height = width / aspectRatio). Since cell width swings a
-            // lot as the grid resizes and recalculates its column count, that
-            // made card height balloon or shrink abnormally during resize.
-            // Instead we target a constant, responsive card height and derive
-            // the aspect ratio from it, using this GridView's own measured
-            // width (not the outer LayoutBuilder's) so the math stays correct
-            // even though it sits inside a padded ListView.
             LayoutBuilder(
               builder: (context, gridConstraints) {
                 const spacing = 12.0;
-                final cardHeight = responsiveValue(context,
-                    mobile: 150, tablet: 160, desktop: 172);
+
+                final cardHeight = responsiveValue(
+                  context,
+                  mobile: 150,
+                  tablet: 160,
+                  desktop: 172,
+                );
+
                 final itemWidth = (gridConstraints.maxWidth -
                         spacing * (crossAxisCount - 1)) /
                     crossAxisCount;
+
                 final aspectRatio = itemWidth / cardHeight;
 
                 return GridView.count(
