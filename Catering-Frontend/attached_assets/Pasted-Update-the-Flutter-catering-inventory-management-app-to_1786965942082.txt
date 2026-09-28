@@ -1,0 +1,101 @@
+Update the Flutter catering/inventory management app to use the following color palette consistently throughout the entire application.
+
+### Color Palette
+
+* Primary Blue: `#6EC1E4`
+* Secondary Gray: `#54595F`
+* Text Gray: `#7A7A7A`
+* Accent Green: `#61CE70`
+* Accent Gold: `#E8C45C`
+* Dark Green: `#283C2C`
+* Cream Background: `#FFFCEC`
+
+### Implementation Requirements
+
+1. **Create a centralized theme**
+
+   * Do not hardcode colors throughout individual screens.
+   * Create/update the application's central Flutter `ThemeData` / `ColorScheme`.
+   * Define reusable named color constants if necessary.
+   * Make the theme easy to maintain and modify later.
+
+2. **Overall visual hierarchy**
+
+   * Main application background: `#FFFCEC`
+   * App bars/navigation/strong structural elements: `#283C2C`
+   * Primary actions and selected states: `#6EC1E4`
+   * Success/completed/available states: `#61CE70`
+   * Warning/low-stock states: `#E8C45C`
+   * Main headings: `#283C2C`
+   * Normal text: `#54595F`
+   * Secondary/hint text: `#7A7A7A`
+
+3. **Buttons**
+
+   * Primary buttons → `#6EC1E4`
+   * Success/save/complete buttons → `#61CE70`
+   * Warning actions → `#E8C45C`
+   * Secondary buttons → `#54595F`
+   * Ensure button text has sufficient contrast.
+
+4. **Inventory and stock status**
+
+   * Available/in-stock → `#61CE70`
+   * Low stock/warning → `#E8C45C`
+   * Consumption/usage indicators → `#6EC1E4`
+   * Out-of-stock/error → use an appropriate red color; do not force the existing palette to represent errors.
+
+5. **Cards and forms**
+
+   * Use the cream background as the main page background.
+   * Keep cards clean and readable.
+   * Apply the theme consistently to TextFields, dropdowns, dialogs, checkboxes, switches, chips, tabs, and other Material components.
+   * Avoid excessive use of bright colors.
+
+6. **Navigation**
+
+   * Use `#283C2C` for major navigation surfaces where appropriate.
+   * Use `#6EC1E4` for active/selected navigation states.
+   * Keep navigation visually consistent across mobile screens.
+
+7. **Typography**
+
+   * Headings → `#283C2C`
+   * Primary body text → `#54595F`
+   * Secondary/hint text → `#7A7A7A`
+   * Make sure disabled text remains visually distinguishable.
+
+8. **Existing UI**
+
+   * Audit the existing project for hardcoded colors.
+   * Replace existing arbitrary colors with the centralized theme where appropriate.
+   * Preserve existing functionality, layouts, navigation, business logic, API calls, database logic, and state management.
+   * Do not redesign screens unnecessarily.
+   * Do not remove existing features.
+
+9. **Mobile-first requirement**
+
+   * The application must remain clean and readable on small phone screens.
+   * Do not increase padding, font sizes, card sizes, or component heights unnecessarily just to apply the theme.
+   * Maintain the existing responsive behavior.
+
+10. **Code quality**
+
+* Follow the existing project architecture and coding conventions.
+* Avoid duplicate color definitions.
+* Use semantic theme colors instead of directly referencing hex values in widgets.
+* If the project already has a theme/colors file, extend and clean it rather than creating unnecessary duplicate files.
+
+### Important
+
+Before making changes, inspect the existing Flutter project structure and determine where the application's current theme and colors are defined.
+
+Then implement the theme centrally and update existing screens/components to use it.
+
+After implementation:
+
+* Run formatting.
+* Run static analysis.
+* Fix any errors introduced by the changes.
+* Do not change business logic.
+* Provide a concise summary of the files changed and the theme changes made.
