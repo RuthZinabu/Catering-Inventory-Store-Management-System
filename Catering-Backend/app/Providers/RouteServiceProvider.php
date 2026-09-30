@@ -28,6 +28,17 @@ class RouteServiceProvider extends ServiceProvider
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
 
+        // Strict rate limiting for authentication endpoints
+        RateLimiter::for('auth', function (Request $request) {
+            return Limit::perMinute(5)->by($request->ip())
+                ->response(function () {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Too many authentication attempts. Please try again later.'
+                    ], 429);
+                });
+        });
+
         $this->routes(function () {
             Route::middleware('api')
                 ->prefix('api')
