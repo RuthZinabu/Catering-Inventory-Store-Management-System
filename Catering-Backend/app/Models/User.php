@@ -27,8 +27,6 @@ class User extends Authenticatable
         'department',
         'status',
         'permissions',
-        'two_factor_enabled',
-        'two_factor_secret',
         'failed_login_attempts',
         'locked_until',
         'password_changed_at',
@@ -45,7 +43,6 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
-        'two_factor_secret',
     ];
 
     /**
@@ -59,7 +56,6 @@ class User extends Authenticatable
         'last_login_at' => 'datetime',
         'locked_until' => 'datetime',
         'permissions' => 'array',
-        'two_factor_enabled' => 'boolean',
         'must_change_password' => 'boolean',
         'failed_login_attempts' => 'integer',
         'password' => 'hashed',
@@ -108,14 +104,6 @@ class User extends Authenticatable
     public function stockMovements()
     {
         return $this->hasMany(StockMovement::class, 'performed_by');
-    }
-
-    /**
-     * Get audit logs for this user.
-     */
-    public function auditLogs()
-    {
-        return $this->hasMany(AuditLog::class);
     }
 
     /**

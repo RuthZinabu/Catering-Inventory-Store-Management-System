@@ -1,0 +1,31 @@
+$kind: http-request
+url: http://localhost:8000/api/items
+method: POST
+body:
+  type: json
+  content: " {\r
+
+    \    \"code\": \"FOOD-MEAT-002\",\r
+
+    \    \"name\": \"Beef Steak\",\r
+
+    \    \"description\": \"Premium beef steak cuts\",\r
+
+    \    \"category\": \"Meat & Poultry\",\r
+
+    \    \"item_type\": \"food\",\r
+
+    \    \"unit\": \"kg\",\r
+
+    \    \"default_purchase_price\": 280.00,\r
+
+    \    \"shelf_life_days\": 5,\r
+
+    \    \"requires_refrigeration\": true\r
+
+    }"
+auth:
+  type: bearer
+  credentials:
+    token: 1|9BANUdbJMfHGtWmF3XvnawpxOCg9X0gzO2vmp5Thadd7323e
+order: 4470107516813671

@@ -1,0 +1,8 @@
+$kind: http-request
+url: http://localhost:8000/api/items
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: 1|9BANUdbJMfHGtWmF3XvnawpxOCg9X0gzO2vmp5Thadd7323e
+order: 4485482551174191

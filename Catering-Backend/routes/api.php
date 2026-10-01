@@ -24,13 +24,6 @@ Route::prefix('auth')->middleware('throttle:auth')->group(function () {
     Route::post('logout', [App\Http\Controllers\AuthController::class, 'logout'])->middleware('auth:sanctum');
     Route::post('refresh', [App\Http\Controllers\AuthController::class, 'refresh'])->middleware('auth:sanctum');
     Route::get('profile', [App\Http\Controllers\AuthController::class, 'profile'])->middleware('auth:sanctum');
-    
-    // 2FA routes
-    Route::middleware('auth:sanctum')->group(function () {
-        Route::post('2fa/setup', [App\Http\Controllers\TwoFactorController::class, 'setup']);
-        Route::post('2fa/verify', [App\Http\Controllers\TwoFactorController::class, 'verify']);
-        Route::post('2fa/disable', [App\Http\Controllers\TwoFactorController::class, 'disable']);
-    });
 });
 
 // Protected routes with permission checks

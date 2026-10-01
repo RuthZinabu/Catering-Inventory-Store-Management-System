@@ -1,0 +1,37 @@
+$kind: http-request
+url: http://localhost:8000/api/users
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \    \"name\": \"John Doe\",\r
+
+    \    \"email\": \"john.doe@example.com\",\r
+
+    \    \"password\": \"securepassword123\",\r
+
+    \    \"password_confirmation\": \"securepassword123\",\r
+
+    \    \"phone\": \"+251911234567\",\r
+
+    \    \"role\": \"store_manager\",\r
+
+    \    \"department\": \"Main Store\",\r
+
+    \    \"permissions\": [\r
+
+    \        \"inventory.view\",\r
+
+    \        \"inventory.create\",\r
+
+    \        \"suppliers.view\"\r
+
+    \    ]\r
+
+    }"
+auth:
+  type: bearer
+  credentials:
+    token: 1|9BANUdbJMfHGtWmF3XvnawpxOCg9X0gzO2vmp5Thadd7323e
+order: 3216577009921330

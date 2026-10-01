@@ -51,14 +51,23 @@ class AuthController extends Controller
             ]);
         }
 
-        // Reset login attempts on successful login
+        // Reset login attempts on successful password verification
         $user->resetLoginAttempts();
-        
+
+        // Complete the login process
+        return $this->completeLogin($user, $request->device_name);
+    }
+
+    /**
+     * Complete the login process and issue token
+     */
+    private function completeLogin(User $user, string $deviceName)
+    {
         // Update last login
         $user->update(['last_login_at' => now()]);
 
         // Create token
-        $token = $user->createToken($request->device_name)->plainTextToken;
+        $token = $user->createToken($deviceName)->plainTextToken;
 
         // Load user relationships
         $user->load(['stores:id,name,code', 'storeAssignments:user_id,store_id,role_in_store,can_transfer_to,can_transfer_from']);
@@ -123,7 +132,6 @@ class AuthController extends Controller
                 'department' => $user->department,
                 'status' => $user->status,
                 'permissions' => $user->permissions ?? [],
-                'two_factor_enabled' => $user->two_factor_enabled,
                 'assigned_stores' => $user->stores->map(function ($store) {
                     $assignment = $store->pivot;
                     return [
