@@ -15,8 +15,8 @@ class ConnectivityManager extends ChangeNotifier {
   }
 
   final Connectivity _connectivity = Connectivity();
-  StreamSubscription<ConnectivityResult>? _connectivitySubscription;
-  
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+
   bool _isConnected = true;
   bool _hasShownOfflineMessage = false;
 
@@ -26,32 +26,52 @@ class ConnectivityManager extends ChangeNotifier {
   void _init() {
     // Check initial connectivity
     _checkConnectivity();
-    
+
     // Listen for connectivity changes
     _connectivitySubscription = _connectivity.onConnectivityChanged.listen(
-      (ConnectivityResult result) {
-        _updateConnectionStatus(result != ConnectivityResult.none);
+      (List<ConnectivityResult> results) {
+        _updateConnectionStatus(_hasActiveConnection(results));
       },
     );
   }
 
   Future<void> _checkConnectivity() async {
     try {
-      final result = await _connectivity.checkConnectivity();
-      _updateConnectionStatus(result != ConnectivityResult.none);
+      final results = await _connectivity.checkConnectivity();
+      _updateConnectionStatus(_hasActiveConnection(results));
     } catch (e) {
       _updateConnectionStatus(false);
     }
   }
 
+  /// Determines if the device has an active internet connection
+  /// based on the list of connectivity results
+  bool _hasActiveConnection(List<ConnectivityResult> results) {
+    // If the list is empty, consider it as no connection
+    if (results.isEmpty) {
+      return false;
+    }
+
+    // Check if all results are ConnectivityResult.none
+    // If any result is not 'none', we have some form of connectivity
+    for (final result in results) {
+      if (result != ConnectivityResult.none) {
+        return true;
+      }
+    }
+
+    // All results are 'none', so no connection
+    return false;
+  }
+
   void _updateConnectionStatus(bool isConnected) {
     if (_isConnected != isConnected) {
       _isConnected = isConnected;
-      
+
       if (isConnected) {
         _hasShownOfflineMessage = false;
       }
-      
+
       notifyListeners();
     }
   }
@@ -59,8 +79,8 @@ class ConnectivityManager extends ChangeNotifier {
   /// Check if device is connected to internet with actual network test
   Future<bool> hasInternetConnection() async {
     try {
-      final result = await _connectivity.checkConnectivity();
-      if (result == ConnectivityResult.none) {
+      final results = await _connectivity.checkConnectivity();
+      if (!_hasActiveConnection(results)) {
         return false;
       }
 
@@ -76,7 +96,7 @@ class ConnectivityManager extends ChangeNotifier {
   void showOfflineNotification(BuildContext context) {
     if (!_hasShownOfflineMessage && isOffline) {
       _hasShownOfflineMessage = true;
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Row(
