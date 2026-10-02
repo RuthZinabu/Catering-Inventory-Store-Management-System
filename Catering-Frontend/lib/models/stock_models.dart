@@ -1,3 +1,7 @@
+import 'package:json_annotation/json_annotation.dart';
+
+part 'stock_models.g.dart';
+
 // Unified stock model hierarchy
 // StockItem (base) → FoodStockItem | CateringStockItem | ElectronicsStockItem
 
@@ -7,12 +11,16 @@ enum CateringSubtype { permanent, temporary }
 
 // ── Stock movement entry ──────────────────────────────────────────────────────
 
+@JsonSerializable()
 class StockMovementEntry {
   final String id;
+  @JsonKey(name: 'stock_item_id')
   final String stockItemId;
-  final String type; // 'Stock In', 'Stock Out', 'Transfer', 'Adjustment', 'Return'
+  final String
+      type; // 'Stock In', 'Stock Out', 'Transfer', 'Adjustment', 'Return'
   final double quantity;
   final String unit;
+  @JsonKey(name: 'performed_by')
   final String performedBy;
   final DateTime date;
   final String note;
@@ -27,25 +35,36 @@ class StockMovementEntry {
     required this.date,
     required this.note,
   });
+
+  factory StockMovementEntry.fromJson(Map<String, dynamic> json) =>
+      _$StockMovementEntryFromJson(json);
+
+  Map<String, dynamic> toJson() => _$StockMovementEntryToJson(this);
 }
 
 // ── Base stock item ───────────────────────────────────────────────────────────
 
+@JsonSerializable()
 class StockItem {
   final String id;
   final String code;
   final String name;
-  final String category;       // sub-category label (e.g. 'Meat', 'Tables')
+  final String category; // sub-category label (e.g. 'Meat', 'Tables')
+  @JsonKey(name: 'stock_category')
   final StockCategory stockCategory;
   final String unit;
+  @JsonKey(name: 'purchase_price')
   final double purchasePrice;
-  final double quantity;       // current quantity on hand
+  final double quantity; // current quantity on hand
+  @JsonKey(name: 'min_quantity')
   final double minQuantity;
+  @JsonKey(name: 'max_quantity')
   final double maxQuantity;
-  final String location;       // store / shelf
+  final String location; // store / shelf
   final String supplier;
-  final String status;         // 'Healthy', 'Low Stock', 'Out of Stock'
+  final String status; // 'Healthy', 'Low Stock', 'Out of Stock'
   final String description;
+  @JsonKey(name: 'last_updated')
   final DateTime lastUpdated;
 
   const StockItem({
@@ -67,14 +86,24 @@ class StockItem {
   });
 
   double get totalValue => quantity * purchasePrice;
-  double get stockFraction => maxQuantity > 0 ? (quantity / maxQuantity).clamp(0.0, 1.0) : 0;
+  double get stockFraction =>
+      maxQuantity > 0 ? (quantity / maxQuantity).clamp(0.0, 1.0) : 0;
+
+  factory StockItem.fromJson(Map<String, dynamic> json) =>
+      _$StockItemFromJson(json);
+
+  Map<String, dynamic> toJson() => _$StockItemToJson(this);
 }
 
 // ── Food stock item ───────────────────────────────────────────────────────────
 
+@JsonSerializable()
 class FoodStockItem extends StockItem {
+  @JsonKey(name: 'expiry_date')
   final DateTime? expiryDate;
+  @JsonKey(name: 'batch_number')
   final String batchNumber;
+  @JsonKey(name: 'requires_refrigeration')
   final bool requiresRefrigeration;
 
   const FoodStockItem({
@@ -104,18 +133,29 @@ class FoodStockItem extends StockItem {
     if (diff <= 7) return 'Expiring Soon';
     return 'OK';
   }
+
+  factory FoodStockItem.fromJson(Map<String, dynamic> json) =>
+      _$FoodStockItemFromJson(json);
+
+  @override
+  Map<String, dynamic> toJson() => _$FoodStockItemToJson(this);
 }
 
 // ── Catering stock item ───────────────────────────────────────────────────────
 
+@JsonSerializable()
 class CateringStockItem extends StockItem {
   final CateringSubtype subtype; // permanent | temporary
   // Permanent-specific
-  final String? condition;       // 'Good', 'Fair', 'Needs Repair'
+  final String? condition; // 'Good', 'Fair', 'Needs Repair'
+  @JsonKey(name: 'is_reserved')
   final bool? isReserved;
-  final String? reservedFor;     // event name
+  @JsonKey(name: 'reserved_for')
+  final String? reservedFor; // event name
   // Temporary-specific
-  final int? packSize;           // units per pack
+  @JsonKey(name: 'pack_size')
+  final int? packSize; // units per pack
+  @JsonKey(name: 'consumption_rate')
   final String? consumptionRate; // e.g. '50 pcs/event'
 
   const CateringStockItem({
@@ -140,17 +180,29 @@ class CateringStockItem extends StockItem {
     this.packSize,
     this.consumptionRate,
   }) : super(stockCategory: StockCategory.catering);
+
+  factory CateringStockItem.fromJson(Map<String, dynamic> json) =>
+      _$CateringStockItemFromJson(json);
+
+  @override
+  Map<String, dynamic> toJson() => _$CateringStockItemToJson(this);
 }
 
 // ── Electronics stock item ────────────────────────────────────────────────────
 
+@JsonSerializable()
 class ElectronicsStockItem extends StockItem {
   final String brand;
   final String model;
+  @JsonKey(name: 'serial_number')
   final String serialNumber;
+  @JsonKey(name: 'warranty_expiry')
   final DateTime? warrantyExpiry;
+  @JsonKey(name: 'maintenance_status')
   final String maintenanceStatus; // 'OK', 'Due', 'Overdue'
+  @JsonKey(name: 'last_maintenance_date')
   final DateTime? lastMaintenanceDate;
+  @JsonKey(name: 'asset_tag')
   final String assetTag;
 
   const ElectronicsStockItem({
@@ -184,4 +236,10 @@ class ElectronicsStockItem extends StockItem {
     if (diff <= 30) return 'Expiring Soon';
     return 'Active';
   }
+
+  factory ElectronicsStockItem.fromJson(Map<String, dynamic> json) =>
+      _$ElectronicsStockItemFromJson(json);
+
+  @override
+  Map<String, dynamic> toJson() => _$ElectronicsStockItemToJson(this);
 }

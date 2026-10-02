@@ -1,3 +1,8 @@
+import 'package:json_annotation/json_annotation.dart';
+
+part 'store_model.g.dart';
+
+@JsonSerializable()
 class Store {
   final String id;
   final String name;
@@ -7,9 +12,18 @@ class Store {
   final String phone;
   final String email;
   final String manager;
+  @JsonKey(name: 'is_active')
   final bool isActive;
+  @JsonKey(name: 'created_at')
   final DateTime createdAt;
+  @JsonKey(name: 'updated_at')
   final DateTime updatedAt;
+  @JsonKey(name: 'store_type')
+  final String? storeType;
+  @JsonKey(name: 'store_level')
+  final int? storeLevel;
+  @JsonKey(name: 'parent_store_id')
+  final String? parentStoreId;
 
   const Store({
     required this.id,
@@ -23,6 +37,9 @@ class Store {
     this.isActive = true,
     required this.createdAt,
     required this.updatedAt,
+    this.storeType,
+    this.storeLevel,
+    this.parentStoreId,
   });
 
   static const List<Map<String, String>> storeTypes = [
@@ -48,6 +65,9 @@ class Store {
     bool? isActive,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? storeType,
+    int? storeLevel,
+    String? parentStoreId,
   }) {
     return Store(
       id: id ?? this.id,
@@ -61,34 +81,13 @@ class Store {
       isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      storeType: storeType ?? this.storeType,
+      storeLevel: storeLevel ?? this.storeLevel,
+      parentStoreId: parentStoreId ?? this.parentStoreId,
     );
   }
 
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'code': code,
-        'description': description,
-        'location': location,
-        'phone': phone,
-        'email': email,
-        'manager': manager,
-        'isActive': isActive,
-        'createdAt': createdAt.toIso8601String(),
-        'updatedAt': updatedAt.toIso8601String(),
-      };
+  factory Store.fromJson(Map<String, dynamic> json) => _$StoreFromJson(json);
 
-  factory Store.fromJson(Map<String, dynamic> json) => Store(
-        id: json['id'] as String,
-        name: json['name'] as String,
-        code: json['code'] as String,
-        description: json['description'] as String? ?? '',
-        location: json['location'] as String? ?? '',
-        phone: json['phone'] as String? ?? '',
-        email: json['email'] as String? ?? '',
-        manager: json['manager'] as String? ?? '',
-        isActive: json['isActive'] as bool? ?? true,
-        createdAt: DateTime.parse(json['createdAt'] as String),
-        updatedAt: DateTime.parse(json['updatedAt'] as String),
-      );
+  Map<String, dynamic> toJson() => _$StoreToJson(this);
 }

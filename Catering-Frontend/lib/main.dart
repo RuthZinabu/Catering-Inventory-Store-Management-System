@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'app.dart';
+import 'app_wrapper.dart';
 
 void main() {
-  runApp(const CateringInventoryApp());
+  runApp(const AppWrapper());
 }

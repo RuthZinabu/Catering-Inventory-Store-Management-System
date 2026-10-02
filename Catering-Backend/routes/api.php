@@ -14,6 +14,17 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+// Health check endpoint (no authentication required)
+Route::get('health', function () {
+    return response()->json([
+        'status' => 'ok',
+        'message' => 'Catering Inventory API is running',
+        'timestamp' => now(),
+        'version' => '1.0.0',
+        'cors_enabled' => true,
+    ]);
+});
+
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
