@@ -48,7 +48,7 @@ dependencies:
   
   # State management and utilities
   shared_preferences: ^2.2.2
-  connectivity_plus: ^5.0.2
+  connectivity_plus: ^6.0.5
   
   # Local database for offline support
   sqflite: ^2.3.0
