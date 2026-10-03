@@ -3,6 +3,8 @@ import 'package:catering_inventory_store_management_system/services/api/base_api
 import '../models/inventory_models.dart';
 import '../models/stock_models.dart';
 import '../models/store_model.dart';
+import '../screens/stock_transfers/stock_transfer_models.dart';
+import '../screens/kitchen_issues/kitchen_issue_models.dart';
 import 'user_service.dart';
 import 'store_service.dart';
 import 'inventory_service.dart';
@@ -10,6 +12,8 @@ import 'supplier_service.dart';
 import 'stock_service.dart';
 import 'waste_service.dart';
 import 'recipe_service.dart';
+import 'transfer_service.dart';
+import 'kitchen_issue_service.dart';
 
 /// Main repository that coordinates API services for all data operations
 class ApiRepository {
@@ -19,10 +23,6 @@ class ApiRepository {
     return _instance!;
   }
 
-import 'transfer_service.dart';
-import '../screens/stock_transfers/stock_transfer_models.dart';
-import '../screens/kitchen_issues/kitchen_issue_models.dart';
-import 'kitchen_issue_service.dart';
   ApiRepository._internal();
 
   // Service instances
@@ -31,10 +31,10 @@ import 'kitchen_issue_service.dart';
   final InventoryService _inventoryService = InventoryService.instance;
   final SupplierService _supplierService = SupplierService.instance;
   final StockService _stockService = StockService.instance;
+  final WasteService _wasteService = WasteService.instance;
   final RecipeService _recipeService = RecipeService();
   final TransferService _transferService = TransferService.instance;
   final KitchenIssueService _kitchenIssueService = KitchenIssueService.instance;
-  final RecipeService _recipeService = RecipeService();
 
   // User Management
   Future<List<AppUser>> getUsers({
@@ -112,8 +112,8 @@ import 'kitchen_issue_service.dart';
 
   Future<List<InventoryItem>> searchInventoryItems(String barcode) {
     return _inventoryService.search(barcode, limit: 50).then(
-      (items) => items.where((item) => item.code == barcode).toList(),
-    );
+          (items) => items.where((item) => item.code == barcode).toList(),
+        );
   }
 
   Future<InventoryItem?> getInventoryItemById(String id) async {
@@ -203,7 +203,8 @@ import 'kitchen_issue_service.dart';
     return _transferService.getStock(storeId);
   }
 
-  Future<StockTransferViewModel> createStockTransfer(Map<String, dynamic> data) {
+  Future<StockTransferViewModel> createStockTransfer(
+      Map<String, dynamic> data) {
     return _transferService.create(data);
   }
 
@@ -213,24 +214,24 @@ import 'kitchen_issue_service.dart';
       _transferService.receive(id, notes: notes);
   Future<void> cancelStockTransfer(String id) => _transferService.cancel(id);
 
-    // Kitchen Issues
-    Future<List<KitchenIssueViewModel>> getKitchenIssues() =>
+  // Kitchen Issues
+  Future<List<KitchenIssueViewModel>> getKitchenIssues() =>
       _kitchenIssueService.getAll();
 
-    Future<List<KitchenIssueIngredientViewModel>> getKitchenIssueStock(
+  Future<List<KitchenIssueIngredientViewModel>> getKitchenIssueStock(
     String storeId,
-    ) =>
+  ) =>
       _kitchenIssueService.getStoreStock(storeId);
 
-    Future<KitchenIssueViewModel> createKitchenIssue(Map<String, dynamic> data) =>
+  Future<KitchenIssueViewModel> createKitchenIssue(Map<String, dynamic> data) =>
       _kitchenIssueService.create(data);
 
-    Future<void> approveKitchenIssue(String id, {String? notes}) =>
+  Future<void> approveKitchenIssue(String id, {String? notes}) =>
       _kitchenIssueService.approve(id, notes: notes);
 
-    Future<void> issueKitchenIssue(String id) => _kitchenIssueService.issue(id);
+  Future<void> issueKitchenIssue(String id) => _kitchenIssueService.issue(id);
 
-    Future<void> cancelKitchenIssue(String id) => _kitchenIssueService.cancel(id);
+  Future<void> cancelKitchenIssue(String id) => _kitchenIssueService.cancel(id);
 
   // Purchase Orders - TODO: Implement API endpoints
   Future<List<PurchaseRecord>> getPurchaseRecords() async {

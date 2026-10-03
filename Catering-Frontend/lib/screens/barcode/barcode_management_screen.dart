@@ -420,8 +420,8 @@ class _BarcodeScannerScreenState extends State<_BarcodeScannerScreen> {
                     decoration: BoxDecoration(
                       border: Border.all(
                         color: const Color(0xFF2563EB),
-                                    Text(
-                                      'Camera scanner opens when you start a scan',
+                        width: 2,
+                      ),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Column(
@@ -477,7 +477,8 @@ class _BarcodeScannerScreenState extends State<_BarcodeScannerScreen> {
                 child: ElevatedButton.icon(
                   onPressed: _startScan,
                   icon: const Icon(Icons.qr_code_scanner),
-                  label: Text(_isScanning ? 'Opening camera…' : 'Scan with Camera'),
+                  label: Text(
+                      _isScanning ? 'Opening camera…' : 'Scan with Camera'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _isScanning
                         ? const Color(0xFFEF4444)
@@ -549,12 +550,6 @@ class _BarcodeScannerScreenState extends State<_BarcodeScannerScreen> {
                   icon: const Icon(Icons.search),
                   label: const Text('Find Product'),
                   style: ElevatedButton.styleFrom(
-                                        Text(
-                                          _scanController.text.trim(),
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 14,
-                                          ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
