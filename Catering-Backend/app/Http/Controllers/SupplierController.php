@@ -4,34 +4,28 @@ namespace App\Http\Controllers;
 
 use App\Models\Supplier;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class SupplierController extends Controller
 {
-    /**
-     * Display a listing of suppliers
-     */
     public function index(Request $request)
     {
         $query = Supplier::query();
-
-        // Search
-        if ($request->has('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'ILIKE', "%{$search}%")
-                  ->orWhere('company', 'ILIKE', "%{$search}%")
-                  ->orWhere('contact_person', 'ILIKE', "%{$search}%");
+        if ($request->filled('search')) {
+            $search = '%' . $request->string('search') . '%';
+            $query->where(function ($builder) use ($search) {
+                $builder->where('company', 'like', $search)
+                    ->orWhere('name', 'like', $search)
+                    ->orWhere('contact_person', 'like', $search)
+                    ->orWhere('phone', 'like', $search);
             });
         }
-
-        // Filter by active status
-        if ($request->has('active')) {
-            $query->where('is_active', $request->boolean('active'));
+        if ($request->filled('status')) {
+            $query->where('status', $request->string('status'));
         }
 
-        $suppliers = $query->orderBy('name')
-            ->paginate($request->get('per_page', 15));
-
+        $suppliers = $query->orderBy('company')->paginate($request->integer('per_page', 50));
         return $this->success([
             'suppliers' => $suppliers->items(),
             'pagination' => [
@@ -43,68 +37,76 @@ class SupplierController extends Controller
         ]);
     }
 
-    /**
-     * Store a newly created supplier
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'company' => 'nullable|string|max:255',
-            'contact_person' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:50',
-            'email' => 'nullable|string|email|max:255',
-            'address' => 'nullable|string',
-            'tax_number' => 'nullable|string|max:100',
-            'payment_terms' => 'nullable|string|max:255',
+            'name' => 'nullable|string|max:255',
+            'company' => 'required|string|max:255',
+            'contact_person' => 'required|string|max:255',
+            'phone' => 'required|string|max:50',
+            'email' => 'required|email|max:255',
+            'address' => 'required|string',
+            'tax_number' => 'required|string|max:50',
+            'category' => 'required|string|max:100',
+            'registration_number' => 'nullable|string|max:100',
             'notes' => 'nullable|string',
-            'is_active' => 'boolean',
+            'status' => ['sometimes', Rule::in([Supplier::STATUS_ACTIVE, Supplier::STATUS_PENDING, Supplier::STATUS_INACTIVE])],
+            'payment_terms' => 'nullable|string|max:100',
+            'credit_limit' => 'nullable|numeric|min:0',
         ]);
 
+        $validated['name'] = $validated['name'] ?? $validated['company'];
         $supplier = Supplier::create($validated);
-
         return $this->success($supplier, 'Supplier created successfully', 201);
     }
 
-    /**
-     * Display the specified supplier
-     */
     public function show(Supplier $supplier)
     {
-        return $this->success($supplier);
+        return $this->success($supplier->load('purchaseOrders:id,supplier_id,number,order_date,status,total_amount'));
     }
 
-    /**
-     * Update the specified supplier
-     */
     public function update(Request $request, Supplier $supplier)
     {
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
-            'company' => 'nullable|string|max:255',
-            'contact_person' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:50',
-            'email' => 'nullable|string|email|max:255',
-            'address' => 'nullable|string',
-            'tax_number' => 'nullable|string|max:100',
-            'payment_terms' => 'nullable|string|max:255',
+            'company' => 'sometimes|required|string|max:255',
+            'contact_person' => 'sometimes|required|string|max:255',
+            'phone' => 'sometimes|required|string|max:50',
+            'email' => 'sometimes|required|email|max:255',
+            'address' => 'sometimes|required|string',
+            'tax_number' => 'sometimes|required|string|max:50',
+            'category' => 'sometimes|required|string|max:100',
+            'registration_number' => 'nullable|string|max:100',
             'notes' => 'nullable|string',
-            'is_active' => 'boolean',
+            'status' => ['sometimes', Rule::in([Supplier::STATUS_ACTIVE, Supplier::STATUS_PENDING, Supplier::STATUS_INACTIVE])],
+            'payment_terms' => 'nullable|string|max:100',
+            'credit_limit' => 'nullable|numeric|min:0',
         ]);
 
         $supplier->update($validated);
-
-        return $this->success($supplier, 'Supplier updated successfully');
+        return $this->success($supplier->fresh(), 'Supplier updated successfully');
     }
 
-    /**
-     * Remove the specified supplier
-     */
     public function destroy(Supplier $supplier)
     {
-        // TODO: Check for existing purchase orders or other references
-        $supplier->delete();
+        if ($supplier->purchaseOrders()->whereIn('status', ['Pending', 'Approved', 'Partially Received'])->exists()) {
+            return $this->error('Supplier has open purchase orders and cannot be deleted.', 409);
+        }
 
+        $supplier->delete();
         return $this->success(null, 'Supplier deleted successfully');
+    }
+
+    public function uploadLogo(Request $request, Supplier $supplier)
+    {
+        $validated = $request->validate([
+            'logo' => 'required|image|max:5120',
+        ]);
+        if ($supplier->logo_path) {
+            Storage::disk('public')->delete($supplier->logo_path);
+        }
+        $path = $validated['logo']->store('supplier-logos', 'public');
+        $supplier->update(['logo_path' => $path]);
+        return $this->success($supplier->fresh(), 'Supplier logo uploaded successfully');
     }
 }
