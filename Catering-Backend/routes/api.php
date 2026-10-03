@@ -174,6 +174,23 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::middleware('permission:transfers.approve')->group(function () {
         Route::post('transfers/{transfer}/approve', [App\Http\Controllers\TransferController::class, 'approve']);
     });
+
+    Route::middleware('permission:inventory.view')->group(function () {
+        Route::get('kitchen-issues', [App\Http\Controllers\KitchenIssueController::class, 'index']);
+        Route::get('kitchen-issues/{kitchenIssue}', [App\Http\Controllers\KitchenIssueController::class, 'show']);
+    });
+
+    Route::middleware('permission:inventory.create')->group(function () {
+        Route::post('kitchen-issues', [App\Http\Controllers\KitchenIssueController::class, 'store']);
+    });
+
+    Route::middleware('permission:inventory.update')->group(function () {
+        Route::put('kitchen-issues/{kitchenIssue}', [App\Http\Controllers\KitchenIssueController::class, 'update']);
+        Route::patch('kitchen-issues/{kitchenIssue}', [App\Http\Controllers\KitchenIssueController::class, 'update']);
+        Route::post('kitchen-issues/{kitchenIssue}/approve', [App\Http\Controllers\KitchenIssueController::class, 'approve']);
+        Route::post('kitchen-issues/{kitchenIssue}/issue', [App\Http\Controllers\KitchenIssueController::class, 'issue']);
+        Route::delete('kitchen-issues/{kitchenIssue}', [App\Http\Controllers\KitchenIssueController::class, 'destroy']);
+    });
     
     // Suppliers - require supplier permissions
     Route::middleware('permission:suppliers.view')->group(function () {

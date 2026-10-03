@@ -19,6 +19,10 @@ class ApiRepository {
     return _instance!;
   }
 
+import 'transfer_service.dart';
+import '../screens/stock_transfers/stock_transfer_models.dart';
+import '../screens/kitchen_issues/kitchen_issue_models.dart';
+import 'kitchen_issue_service.dart';
   ApiRepository._internal();
 
   // Service instances
@@ -27,7 +31,9 @@ class ApiRepository {
   final InventoryService _inventoryService = InventoryService.instance;
   final SupplierService _supplierService = SupplierService.instance;
   final StockService _stockService = StockService.instance;
-  final WasteService _wasteService = WasteService.instance;
+  final RecipeService _recipeService = RecipeService();
+  final TransferService _transferService = TransferService.instance;
+  final KitchenIssueService _kitchenIssueService = KitchenIssueService.instance;
   final RecipeService _recipeService = RecipeService();
 
   // User Management
@@ -181,6 +187,44 @@ class ApiRepository {
       {String? storeId}) async {
     return await _stockService.getElectronicsStock(storeId: storeId);
   }
+
+  // Stock Transfers
+  Future<List<StockTransferViewModel>> getStockTransfers() {
+    return _transferService.getAll();
+  }
+
+  Future<List<TransferStockItemViewModel>> getTransferStock(String storeId) {
+    return _transferService.getStock(storeId);
+  }
+
+  Future<StockTransferViewModel> createStockTransfer(Map<String, dynamic> data) {
+    return _transferService.create(data);
+  }
+
+  Future<void> approveStockTransfer(String id) => _transferService.approve(id);
+  Future<void> shipStockTransfer(String id) => _transferService.ship(id);
+  Future<void> receiveStockTransfer(String id, {String? notes}) =>
+      _transferService.receive(id, notes: notes);
+  Future<void> cancelStockTransfer(String id) => _transferService.cancel(id);
+
+    // Kitchen Issues
+    Future<List<KitchenIssueViewModel>> getKitchenIssues() =>
+      _kitchenIssueService.getAll();
+
+    Future<List<KitchenIssueIngredientViewModel>> getKitchenIssueStock(
+    String storeId,
+    ) =>
+      _kitchenIssueService.getStoreStock(storeId);
+
+    Future<KitchenIssueViewModel> createKitchenIssue(Map<String, dynamic> data) =>
+      _kitchenIssueService.create(data);
+
+    Future<void> approveKitchenIssue(String id, {String? notes}) =>
+      _kitchenIssueService.approve(id, notes: notes);
+
+    Future<void> issueKitchenIssue(String id) => _kitchenIssueService.issue(id);
+
+    Future<void> cancelKitchenIssue(String id) => _kitchenIssueService.cancel(id);
 
   // Purchase Orders - TODO: Implement API endpoints
   Future<List<PurchaseRecord>> getPurchaseRecords() async {

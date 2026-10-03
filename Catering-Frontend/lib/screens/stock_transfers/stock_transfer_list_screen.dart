@@ -1,5 +1,6 @@
 import 'package:catering_inventory_store_management_system/widgets/search_bar.dart';
 import 'package:flutter/material.dart';
+import '../../services/api_repository.dart';
 
 import 'stock_transfer_create_screen.dart';
 import 'stock_transfer_detail_screen.dart';
@@ -15,39 +16,52 @@ class StockTransferListScreen extends StatefulWidget {
 
 class _StockTransferListScreenState extends State<StockTransferListScreen> {
   String searchQuery = '';
+  List<StockTransferViewModel> transfers = [];
+  bool _loading = true;
+  String? _error;
 
-  final List<StockTransferViewModel> transfers = const [
-    StockTransferViewModel(
-      number: 'TR-1001',
-      fromStore: 'Main Store',
-      toStore: 'Branch2 Store',
-      items: 4,
-      quantity: 48,
-      date: '24 Jul 2026',
-      person: 'Alemu Bekele',
-      status: 'Pending',
-    ),
-    StockTransferViewModel(
-      number: 'TR-1002',
-      fromStore: 'Main Store',
-      toStore: 'Branch1 Store',
-      items: 3,
-      quantity: 21,
-      date: '22 Jul 2026',
-      person: 'Selam Tadesse',
-      status: 'In Transit',
-    ),
-    StockTransferViewModel(
-      number: 'TR-1003',
-      fromStore: 'Branch1 Store',
-      toStore: 'Main Store',
-      items: 2,
-      quantity: 16,
-      date: '20 Jul 2026',
-      person: 'Mekdes Hailu',
-      status: 'Completed',
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final result = await ApiRepository.instance.getStockTransfers();
+      if (!mounted) return;
+      setState(() {
+        transfers = result;
+        _loading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _error = error.toString();
+        _loading = false;
+      });
+    }
+  }
+
+  Future<void> _runAction(
+    StockTransferViewModel transfer,
+    Future<void> Function(String) action,
+  ) async {
+    try {
+      await action(transfer.id);
+      await _load();
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Transfer action failed: $error')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,16 +74,24 @@ class _StockTransferListScreenState extends State<StockTransferListScreen> {
           transfer.status.toLowerCase().contains(query);
     }).toList();
 
-    final pending = filtered.where((t) => t.status == 'Pending').length;
-    final completed = filtered.where((t) => t.status == 'Completed').length;
+    final pending = filtered.where((t) => t.status == 'pending').length;
+    final completed = filtered.where((t) => t.status == 'received').length;
+    final totalItems = filtered.fold<int>(0, (sum, transfer) => sum + transfer.items);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-            builder: (_) => const StockTransferCreateScreen())),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('New Transfer'),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 72),
+        child: FloatingActionButton.extended(
+          onPressed: () async {
+            final created = await Navigator.of(context).push<bool>(
+              MaterialPageRoute(builder: (_) => const StockTransferCreateScreen()),
+            );
+            if (created == true) _load();
+          },
+          icon: const Icon(Icons.add_rounded),
+          label: const Text('New Transfer'),
+        ),
       ),
       body: SafeArea(
         child: CustomScrollView(
@@ -123,7 +145,7 @@ class _StockTransferListScreenState extends State<StockTransferListScreen> {
                             Icons.check_circle_rounded),
                         _summaryCard(
                             'Total Items Transferred',
-                            '84',
+                            '$totalItems',
                             const Color(0xFF8B5CF6),
                             Icons.inventory_2_outlined),
                       ],
@@ -135,7 +157,28 @@ class _StockTransferListScreenState extends State<StockTransferListScreen> {
             ),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 112),
-              sliver: filtered.isEmpty
+              sliver: _loading
+                  ? const SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.all(32),
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                    )
+                  : _error != null
+                      ? SliverToBoxAdapter(
+                          child: Column(
+                            children: [
+                              Text(_error!, textAlign: TextAlign.center),
+                              const SizedBox(height: 12),
+                              OutlinedButton.icon(
+                                onPressed: _load,
+                                icon: const Icon(Icons.refresh),
+                                label: const Text('Retry'),
+                              ),
+                            ],
+                          ),
+                        )
+                      : filtered.isEmpty
                   ? SliverToBoxAdapter(
                       child: Container(
                         padding: const EdgeInsets.all(24),
@@ -215,7 +258,7 @@ class _StockTransferListScreenState extends State<StockTransferListScreen> {
                                             .withOpacity(0.14),
                                         borderRadius:
                                             BorderRadius.circular(999)),
-                                    child: Text(transfer.status,
+                                    child: Text(_statusLabel(transfer.status),
                                         style: TextStyle(
                                             color:
                                                 _statusColor(transfer.status),
@@ -249,14 +292,42 @@ class _StockTransferListScreenState extends State<StockTransferListScreen> {
                                       icon:
                                           const Icon(Icons.visibility_rounded),
                                       label: const Text('View Details')),
-                                  OutlinedButton.icon(
-                                      onPressed: () {},
-                                      icon: const Icon(Icons.edit_rounded),
-                                      label: const Text('Update Transfer')),
-                                  OutlinedButton.icon(
-                                      onPressed: () {},
-                                      icon: const Icon(Icons.print_rounded),
-                                      label: const Text('Print Transfer Note')),
+                                  if (transfer.status == 'pending') ...[
+                                    OutlinedButton.icon(
+                                      onPressed: () => _runAction(
+                                        transfer,
+                                        ApiRepository.instance.approveStockTransfer,
+                                      ),
+                                      icon: const Icon(Icons.check_circle_outline),
+                                      label: const Text('Approve'),
+                                    ),
+                                    OutlinedButton.icon(
+                                      onPressed: () => _runAction(
+                                        transfer,
+                                        ApiRepository.instance.cancelStockTransfer,
+                                      ),
+                                      icon: const Icon(Icons.cancel_outlined),
+                                      label: const Text('Cancel'),
+                                    ),
+                                  ],
+                                  if (transfer.status == 'approved')
+                                    OutlinedButton.icon(
+                                      onPressed: () => _runAction(
+                                        transfer,
+                                        ApiRepository.instance.shipStockTransfer,
+                                      ),
+                                      icon: const Icon(Icons.local_shipping_outlined),
+                                      label: const Text('Dispatch'),
+                                    ),
+                                  if (transfer.status == 'in_transit')
+                                    OutlinedButton.icon(
+                                      onPressed: () => _runAction(
+                                        transfer,
+                                        ApiRepository.instance.receiveStockTransfer,
+                                      ),
+                                      icon: const Icon(Icons.inventory_outlined),
+                                      label: const Text('Receive'),
+                                    ),
                                 ],
                               ),
                             ],
@@ -327,14 +398,27 @@ class _StockTransferListScreenState extends State<StockTransferListScreen> {
 
   Color _statusColor(String status) {
     switch (status) {
-      case 'Pending':
+      case 'pending':
         return const Color(0xFFF59E0B);
-      case 'In Transit':
+      case 'approved':
         return const Color(0xFF2563EB);
-      case 'Completed':
+      case 'in_transit':
+        return const Color(0xFF8B5CF6);
+      case 'received':
         return const Color(0xFF14B8A6);
+      case 'cancelled':
+        return const Color(0xFFEF4444);
       default:
         return const Color(0xFFEF4444);
     }
   }
+
+  String _statusLabel(String status) => switch (status) {
+        'in_transit' => 'In Transit',
+        'received' => 'Received',
+        'pending' => 'Pending',
+        'approved' => 'Approved',
+        'cancelled' => 'Cancelled',
+        _ => status,
+      };
 }

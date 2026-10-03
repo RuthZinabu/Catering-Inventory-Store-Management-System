@@ -33,7 +33,7 @@ class StockTransferDetailScreen extends StatelessWidget {
                     const SizedBox(height: 10),
                     _row('Transfer Date', transfer.date),
                     _row('Person Responsible', transfer.person),
-                    _row('Status', transfer.status),
+                    _row('Status', _statusLabel(transfer.status)),
                     _row('Items', '${transfer.items}'),
                     _row('Total Quantity', '${transfer.quantity}'),
                   ],
@@ -46,13 +46,26 @@ class StockTransferDetailScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Timeline', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                    Text('Transfer Items', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
                     const SizedBox(height: 10),
-                    _timelineStep('Transfer Created', '24 Jul 2026', true),
-                    _timelineStep('Approved', '24 Jul 2026', true),
-                    _timelineStep('Items Dispatched', '25 Jul 2026', true),
-                    _timelineStep('Items Received', '25 Jul 2026', false),
-                    _timelineStep('Transfer Completed', '26 Jul 2026', false),
+                    ...transfer.lines.map((line) => Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('${line.name} (${line.code})', style: const TextStyle(fontWeight: FontWeight.w700)),
+                              const SizedBox(height: 3),
+                              Text(
+                                'Requested ${line.quantityRequested} ${line.unit} · Shipped ${line.quantityShipped} · Received ${line.quantityReceived}',
+                                style: const TextStyle(color: Color(0xFF64748B)),
+                              ),
+                            ],
+                          ),
+                        )),
+                    if (transfer.notes.isNotEmpty) ...[
+                      const Divider(),
+                      _row('Notes', transfer.notes),
+                    ],
                   ],
                 ),
               ),
@@ -70,13 +83,12 @@ class StockTransferDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _timelineStep(String title, String date, bool active) {
-    return Row(
-      children: [
-        Container(width: 14, height: 14, decoration: BoxDecoration(color: active ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0), borderRadius: BorderRadius.circular(999))),
-        const SizedBox(width: 12),
-        Expanded(child: Row(children: [Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.w700))), Text(date, style: const TextStyle(color: Color(0xFF64748B)))])),
-      ],
-    );
-  }
+  String _statusLabel(String status) => switch (status) {
+        'in_transit' => 'In Transit',
+        'received' => 'Received',
+        'pending' => 'Pending',
+        'approved' => 'Approved',
+        'cancelled' => 'Cancelled',
+        _ => status,
+      };
 }

@@ -62,6 +62,7 @@ class StockMovement extends Model
     const REFERENCE_TRANSFER = 'transfer';
     const REFERENCE_WASTE_RECORD = 'waste_record';
     const REFERENCE_MANUAL = 'manual';
+    const REFERENCE_KITCHEN_ISSUE = 'kitchen_issue';
 
     /**
      * Sync statuses
@@ -151,6 +152,7 @@ class StockMovement extends Model
             self::REFERENCE_PURCHASE_ORDER => $this->belongsTo(PurchaseOrder::class, 'reference_id'),
             self::REFERENCE_TRANSFER => $this->belongsTo(Transfer::class, 'reference_id'),
             self::REFERENCE_WASTE_RECORD => $this->belongsTo(WasteRecord::class, 'reference_id'),
+            self::REFERENCE_KITCHEN_ISSUE => $this->belongsTo(KitchenIssue::class, 'reference_id'),
             default => null,
         };
     }

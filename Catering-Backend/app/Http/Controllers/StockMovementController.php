@@ -96,7 +96,7 @@ class StockMovementController extends Controller
             'type' => 'required|string|in:Stock In,Stock Out,Adjustment',
             'quantity' => 'required|numeric',
             'note' => 'nullable|string|max:500',
-            'reference_type' => 'nullable|string|in:manual,purchase_order,transfer,waste_record',
+            'reference_type' => 'nullable|string|in:manual,purchase_order,transfer,waste_record,kitchen_issue',
             'reference_id' => 'nullable|uuid',
         ]);
 

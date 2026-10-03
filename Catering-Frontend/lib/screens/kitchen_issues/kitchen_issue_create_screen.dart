@@ -1,7 +1,22 @@
 import 'package:flutter/material.dart';
 
+import '../../models/auth_models.dart';
+import '../../services/api_repository.dart';
+import '../../services/auth_service.dart';
 import 'kitchen_issue_models.dart';
 import 'kitchen_issue_success_screen.dart';
+
+class _KitchenIssueStoreOption {
+  final String id;
+  final String name;
+  final String code;
+
+  const _KitchenIssueStoreOption({
+    required this.id,
+    required this.name,
+    required this.code,
+  });
+}
 
 class KitchenIssueCreateScreen extends StatefulWidget {
   final bool isEditing;
@@ -17,21 +32,16 @@ class _KitchenIssueCreateScreenState extends State<KitchenIssueCreateScreen> {
   int _step = 0;
   late String _department;
   late String _kitchen;
-  late String _requestedBy;
-  late String _approvedBy;
-  late String _status;
   late String _requestedDate;
   late String _approvalNotes;
-  late String _issueNumber;
+  List<_KitchenIssueStoreOption> _stores = [];
+  _KitchenIssueStoreOption? _store;
+  List<KitchenIssueIngredientViewModel> _inventory = [];
+  bool _loadingStores = true;
+  bool _loadingStock = false;
+  bool _saving = false;
+  String? _error;
   final TextEditingController _searchController = TextEditingController();
-
-  final List<KitchenIssueIngredientViewModel> _inventory = [
-    KitchenIssueIngredientViewModel(name: 'Chicken Breast', category: 'Meat', unit: 'Kg', availableStock: 80, quantity: 0),
-    KitchenIssueIngredientViewModel(name: 'Basmati Rice', category: 'Dry Food', unit: 'Kg', availableStock: 60, quantity: 0),
-    KitchenIssueIngredientViewModel(name: 'Onions', category: 'Vegetables', unit: 'Kg', availableStock: 45, quantity: 0),
-    KitchenIssueIngredientViewModel(name: 'Cooking Oil', category: 'Pantry', unit: 'L', availableStock: 24, quantity: 0),
-    KitchenIssueIngredientViewModel(name: 'Milk', category: 'Dairy', unit: 'L', availableStock: 30, quantity: 0),
-  ];
 
   final List<KitchenIssueIngredientViewModel> _selectedIngredients = [];
   final Map<String, String> _quantities = {};
@@ -39,45 +49,84 @@ class _KitchenIssueCreateScreenState extends State<KitchenIssueCreateScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.isEditing && widget.issue != null) {
-      _department = widget.issue!.department;
-      _kitchen = widget.issue!.kitchen;
-      _requestedBy = widget.issue!.requestedBy;
-      _approvedBy = widget.issue!.approvedBy;
-      _status = widget.issue!.status;
-      _requestedDate = widget.issue!.issueDate;
-      _approvalNotes = 'Updated for current service window';
-      _issueNumber = widget.issue!.number;
-      _selectedIngredients.addAll(
-        widget.issue!.ingredients.map(
-          (ingredient) => KitchenIssueIngredientViewModel(
-            name: ingredient.name,
-            category: ingredient.category,
-            unit: ingredient.unit,
-            availableStock: ingredient.availableStock,
-            quantity: ingredient.quantity,
-          ),
-        ),
-      );
-      for (final ingredient in _selectedIngredients) {
-        _quantities[ingredient.name] = ingredient.quantity.toString();
-      }
-    } else {
-      _department = 'Banquet Hall';
-      _kitchen = 'Main Kitchen';
-      _requestedBy = 'Selam K.';
-      _approvedBy = 'Alemu B.';
-      _status = 'Pending Approval';
-      _requestedDate = '24 Jul 2026';
-      _approvalNotes = 'Urgent for evening service';
-      _issueNumber = 'KI-2004';
-    }
+    _department = widget.issue?.department ?? 'Banquet Hall';
+    _kitchen = widget.issue?.kitchen ?? 'Main Kitchen';
+    _requestedDate = widget.issue?.issueDate ??
+        DateTime.now().toIso8601String().split('T').first;
+    _approvalNotes = widget.issue?.notes ?? '';
+    _loadStores();
   }
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadStores() async {
+    try {
+      final user = AuthService.instance.currentUser;
+      final stores = user?.isAdmin == true
+          ? (await ApiRepository.instance.getStores(active: true))
+              .map((store) => _KitchenIssueStoreOption(
+                    id: store.id,
+                    name: store.name,
+                    code: store.code,
+                  ))
+              .toList()
+          : AuthService.instance.accessibleStores
+              .map((store) => _KitchenIssueStoreOption(
+                    id: store.storeId,
+                    name: store.storeName,
+                    code: store.storeCode,
+                  ))
+              .toList();
+      if (!mounted) return;
+      setState(() {
+        _stores = stores;
+        _store = stores.isEmpty
+            ? null
+            : stores.firstWhere(
+                (store) => store.id == widget.issue?.storeId,
+                orElse: () => stores.first,
+              );
+        _loadingStores = false;
+      });
+      if (_store != null) await _loadInventory(_store!.id);
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _loadingStores = false;
+          _error = error.toString();
+        });
+      }
+    }
+  }
+
+  Future<void> _loadInventory(String storeId) async {
+    setState(() {
+      _loadingStock = true;
+      _inventory = [];
+      _selectedIngredients.clear();
+      _quantities.clear();
+    });
+    try {
+      final inventory = await ApiRepository.instance.getKitchenIssueStock(storeId);
+      if (mounted) {
+        setState(() {
+          _inventory = inventory;
+          _loadingStock = false;
+          _error = null;
+        });
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _loadingStock = false;
+          _error = error.toString();
+        });
+      }
+    }
   }
 
   @override
@@ -103,6 +152,10 @@ class _KitchenIssueCreateScreenState extends State<KitchenIssueCreateScreen> {
               const SizedBox(height: 8),
               Text('A premium, guided workflow for issuing ingredients to kitchens.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 14.5)),
               const SizedBox(height: 16),
+              if (_error != null) ...[
+                Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                const SizedBox(height: 10),
+              ],
               Row(
                 children: [
                   Expanded(child: _stepBadge(0, 'Request', _step >= 0)),
@@ -141,9 +194,26 @@ class _KitchenIssueCreateScreenState extends State<KitchenIssueCreateScreen> {
           children: [
             Text('Step 1 • Request Information', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
             const SizedBox(height: 10),
+            if (_loadingStores)
+              const Center(child: CircularProgressIndicator())
+            else
+              DropdownButtonFormField<_KitchenIssueStoreOption>(
+                value: _store,
+                decoration: const InputDecoration(labelText: 'Source Store'),
+                items: _stores
+                    .map((store) => DropdownMenuItem(
+                          value: store,
+                          child: Text('${store.name} (${store.code})'),
+                        ))
+                    .toList(),
+                onChanged: (store) {
+                  if (store == null) return;
+                  setState(() => _store = store);
+                  _loadInventory(store.id);
+                },
+              ),
             _buildDropdown('Department / Branch', _department, ['Banquet Hall', 'Branch 2', 'Executive Lounge'], (value) => setState(() => _department = value!)),
             _buildDropdown('Kitchen', _kitchen, ['Main Kitchen', 'Satellite Kitchen', 'Prep Kitchen'], (value) => setState(() => _kitchen = value!)),
-            _buildTextField('Requested By', _requestedBy, (value) => setState(() => _requestedBy = value)),
             _buildTextField('Requested Date', _requestedDate, (value) => setState(() => _requestedDate = value)),
             const SizedBox(height: 8),
             Container(
@@ -151,9 +221,9 @@ class _KitchenIssueCreateScreenState extends State<KitchenIssueCreateScreen> {
               decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(18)),
               child: Row(
                 children: [
-                  const Icon(Icons.auto_awesome_rounded, color: Color(0xFF2563EB)),
+                  const Icon(Icons.verified_user_outlined, color: Color(0xFF2563EB)),
                   const SizedBox(width: 8),
-                  Expanded(child: Text('Issue Number: $_issueNumber', style: const TextStyle(fontWeight: FontWeight.w700))),
+                  const Expanded(child: Text('Requester identity and issue number are recorded by the server.', style: TextStyle(fontWeight: FontWeight.w700))),
                 ],
               ),
             ),
@@ -162,7 +232,7 @@ class _KitchenIssueCreateScreenState extends State<KitchenIssueCreateScreen> {
               children: [
                 Expanded(child: OutlinedButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel'))),
                 const SizedBox(width: 12),
-                Expanded(child: FilledButton(onPressed: () => setState(() => _step = 1), child: const Text('Next'))),
+                Expanded(child: FilledButton(onPressed: _store == null ? null : () => setState(() => _step = 1), child: const Text('Next'))),
               ],
             ),
           ],
@@ -173,10 +243,12 @@ class _KitchenIssueCreateScreenState extends State<KitchenIssueCreateScreen> {
           children: [
             Text('Step 2 • Approval', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
             const SizedBox(height: 10),
-            _infoRow('Requested By', _requestedBy),
-            _buildDropdown('Approved By', _approvedBy, ['Alemu B.', 'Dawit T.', 'Sara M.'], (value) => setState(() => _approvedBy = value!)),
-            _buildTextField('Approval Notes', _approvalNotes, (value) => setState(() => _approvalNotes = value)),
-            _buildDropdown('Status', _status, ['Pending Approval', 'Approved', 'Issued'], (value) => setState(() => _status = value!)),
+            _infoRow('Requested By', AuthService.instance.currentUser?.name ?? 'Signed-in user'),
+            _buildTextField('Request Notes', _approvalNotes, (value) => setState(() => _approvalNotes = value)),
+            const Padding(
+              padding: EdgeInsets.only(bottom: 10),
+              child: Text('New requests start pending. Stock changes only after an authorized user approves and issues the request.'),
+            ),
             const SizedBox(height: 12),
             Row(
               children: [
@@ -199,8 +271,13 @@ class _KitchenIssueCreateScreenState extends State<KitchenIssueCreateScreen> {
             const SizedBox(height: 10),
             TextField(controller: _searchController, onChanged: (_) => setState(() {}), decoration: const InputDecoration(hintText: 'Search inventory')),
             const SizedBox(height: 10),
+            if (_loadingStock)
+              const Center(child: CircularProgressIndicator())
+            else if (_inventory.isEmpty)
+              const Text('No stock is available at the selected store.')
+            else
             ...filtered.map((item) {
-              final selected = _selectedIngredients.any((ingredient) => ingredient.name == item.name);
+              final selected = _selectedIngredients.any((ingredient) => ingredient.itemId == item.itemId);
               return Padding(
                 padding: const EdgeInsets.only(bottom: 10),
                 child: Container(
@@ -230,6 +307,7 @@ class _KitchenIssueCreateScreenState extends State<KitchenIssueCreateScreen> {
                           setState(() {
                             if (value == true) {
                               _selectedIngredients.add(KitchenIssueIngredientViewModel(
+                                itemId: item.itemId,
                                 name: item.name,
                                 category: item.category,
                                 unit: item.unit,
@@ -237,8 +315,8 @@ class _KitchenIssueCreateScreenState extends State<KitchenIssueCreateScreen> {
                                 quantity: 0,
                               ));
                             } else {
-                              _selectedIngredients.removeWhere((ingredient) => ingredient.name == item.name);
-                              _quantities.remove(item.name);
+                              _selectedIngredients.removeWhere((ingredient) => ingredient.itemId == item.itemId);
+                              _quantities.remove(item.itemId);
                             }
                           });
                         },
@@ -271,8 +349,8 @@ class _KitchenIssueCreateScreenState extends State<KitchenIssueCreateScreen> {
             Text('Step 4 • Enter Quantities', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
             const SizedBox(height: 10),
             ..._selectedIngredients.map((ingredient) {
-              final quantity = _quantities[ingredient.name] ?? '';
-              final parsed = int.tryParse(quantity) ?? 0;
+              final quantity = _quantities[ingredient.itemId] ?? '';
+              final parsed = double.tryParse(quantity) ?? 0;
               final isValid = parsed <= ingredient.availableStock && parsed > 0;
               return Padding(
                 padding: const EdgeInsets.only(bottom: 10),
@@ -288,9 +366,9 @@ class _KitchenIssueCreateScreenState extends State<KitchenIssueCreateScreen> {
                       const SizedBox(height: 8),
                       TextFormField(
                         initialValue: quantity,
-                        keyboardType: TextInputType.number,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         decoration: InputDecoration(labelText: 'Quantity to Issue', suffixText: ingredient.unit),
-                        onChanged: (value) => setState(() => _quantities[ingredient.name] = value),
+                        onChanged: (value) => setState(() => _quantities[ingredient.itemId] = value),
                       ),
                       if (!isValid && quantity.isNotEmpty) ...[
                         const SizedBox(height: 6),
@@ -309,7 +387,7 @@ class _KitchenIssueCreateScreenState extends State<KitchenIssueCreateScreen> {
                 children: [
                   const Icon(Icons.calculate_rounded, color: Color(0xFF2563EB)),
                   const SizedBox(width: 8),
-                  Expanded(child: Text('Running total: ${_totalQuantity()} ${_selectedIngredients.isEmpty ? 'units' : _selectedIngredients.first.unit}', style: const TextStyle(fontWeight: FontWeight.w700))),
+                  Expanded(child: Text('Selected items: ${_selectedIngredients.length} · Total requested: ${_totalQuantity().toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.w700))),
                 ],
               ),
             ),
@@ -337,12 +415,11 @@ class _KitchenIssueCreateScreenState extends State<KitchenIssueCreateScreen> {
                 children: [
                   const Text('Issue Information', style: TextStyle(fontWeight: FontWeight.w800)),
                   const SizedBox(height: 8),
-                  _reviewRow('Issue Number', _issueNumber),
+                  _reviewRow('Source Store', _store?.name ?? ''),
                   _reviewRow('Department', _department),
                   _reviewRow('Kitchen', _kitchen),
-                  _reviewRow('Requested By', _requestedBy),
-                  _reviewRow('Approved By', _approvedBy),
                   _reviewRow('Date', _requestedDate),
+                  _reviewRow('Status', 'Pending Approval'),
                 ],
               ),
             ),
@@ -360,7 +437,7 @@ class _KitchenIssueCreateScreenState extends State<KitchenIssueCreateScreen> {
                         child: Row(
                           children: [
                             Expanded(child: Text(ingredient.name, style: const TextStyle(fontWeight: FontWeight.w600))),
-                            Text('${_quantities[ingredient.name] ?? '0'} ${ingredient.unit}', style: const TextStyle(color: Color(0xFF64748B))),
+                            Text('${_quantities[ingredient.itemId] ?? '0'} ${ingredient.unit}', style: const TextStyle(color: Color(0xFF64748B))),
                           ],
                         ),
                       )),
@@ -395,28 +472,8 @@ class _KitchenIssueCreateScreenState extends State<KitchenIssueCreateScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: FilledButton(
-                    onPressed: () {
-                      final issue = KitchenIssueViewModel(
-                        number: _issueNumber,
-                        department: _department,
-                        kitchen: _kitchen,
-                        requestedBy: _requestedBy,
-                        approvedBy: _approvedBy,
-                        issueDate: _requestedDate,
-                        status: _status,
-                        itemsIssued: _selectedIngredients.length,
-                        totalQuantity: _totalQuantity(),
-                        ingredients: _selectedIngredients.map((ingredient) => KitchenIssueIngredientViewModel(
-                          name: ingredient.name,
-                          category: ingredient.category,
-                          unit: ingredient.unit,
-                          availableStock: ingredient.availableStock,
-                          quantity: int.tryParse(_quantities[ingredient.name] ?? '0') ?? 0,
-                        )).toList(),
-                      );
-                      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => KitchenIssueSuccessScreen(issue: issue)));
-                    },
-                    child: const Text('Issue Ingredients'),
+                    onPressed: _saving || !_canReview() ? null : _submitRequest,
+                    child: Text(_saving ? 'Submitting…' : 'Submit for Approval'),
                   ),
                 ),
               ],
@@ -498,19 +555,51 @@ class _KitchenIssueCreateScreenState extends State<KitchenIssueCreateScreen> {
   }
 
   bool _canReview() {
-    if (_selectedIngredients.isEmpty) return false;
+    if (_store == null || _selectedIngredients.isEmpty) return false;
     for (final ingredient in _selectedIngredients) {
-      final parsed = int.tryParse(_quantities[ingredient.name] ?? '') ?? 0;
+      final parsed = double.tryParse(_quantities[ingredient.itemId] ?? '') ?? 0;
       if (parsed <= 0 || parsed > ingredient.availableStock) return false;
     }
     return true;
   }
 
-  int _totalQuantity() {
-    int total = 0;
+  double _totalQuantity() {
+    double total = 0;
     for (final ingredient in _selectedIngredients) {
-      total += int.tryParse(_quantities[ingredient.name] ?? '') ?? 0;
+      total += double.tryParse(_quantities[ingredient.itemId] ?? '') ?? 0;
     }
     return total;
+  }
+
+  Future<void> _submitRequest() async {
+    if (!_canReview()) return;
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      final issue = await ApiRepository.instance.createKitchenIssue({
+        'store_id': _store!.id,
+        'department': _department,
+        'kitchen': _kitchen,
+        'requested_date': _requestedDate,
+        'notes': _approvalNotes.trim(),
+        'items': _selectedIngredients.map((ingredient) => {
+              'item_id': ingredient.itemId,
+              'quantity_requested': double.parse(_quantities[ingredient.itemId]!),
+            }).toList(),
+      });
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement<bool, bool>(
+        MaterialPageRoute<bool>(
+          builder: (_) => KitchenIssueSuccessScreen(issue: issue),
+        ),
+        result: true,
+      );
+    } catch (error) {
+      if (mounted) setState(() => _error = error.toString());
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 }

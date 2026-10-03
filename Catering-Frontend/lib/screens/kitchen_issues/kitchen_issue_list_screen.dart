@@ -1,6 +1,7 @@
 import 'package:catering_inventory_store_management_system/widgets/search_bar.dart';
 import 'package:flutter/material.dart';
 
+import '../../services/api_repository.dart';
 import 'kitchen_issue_create_screen.dart';
 import 'kitchen_issue_detail_screen.dart';
 import 'kitchen_issue_models.dart';
@@ -14,71 +15,52 @@ class KitchenIssueListScreen extends StatefulWidget {
 
 class _KitchenIssueListScreenState extends State<KitchenIssueListScreen> {
   String searchQuery = '';
-  final List<KitchenIssueViewModel> issues = [
-    KitchenIssueViewModel(
-      number: 'KI-2001',
-      department: 'Banquet Hall',
-      kitchen: 'Main Kitchen',
-      requestedBy: 'Selam K.',
-      approvedBy: 'Alemu B.',
-      issueDate: '24 Jul 2026',
-      status: 'Pending Approval',
-      itemsIssued: 4,
-      totalQuantity: 28,
-      ingredients: [
-        KitchenIssueIngredientViewModel(
-            name: 'Chicken Breast',
-            category: 'Meat',
-            unit: 'Kg',
-            availableStock: 80,
-            quantity: 12),
-        KitchenIssueIngredientViewModel(
-            name: 'Rice',
-            category: 'Dry Food',
-            unit: 'Kg',
-            availableStock: 60,
-            quantity: 16),
-      ],
-    ),
-    KitchenIssueViewModel(
-      number: 'KI-2002',
-      department: 'Branch 2',
-      kitchen: 'Satellite Kitchen',
-      requestedBy: 'Mekdes H.',
-      approvedBy: 'Dawit T.',
-      issueDate: '23 Jul 2026',
-      status: 'Approved',
-      itemsIssued: 3,
-      totalQuantity: 21,
-      ingredients: [
-        KitchenIssueIngredientViewModel(
-            name: 'Onions',
-            category: 'Vegetables',
-            unit: 'Kg',
-            availableStock: 45,
-            quantity: 9),
-      ],
-    ),
-    KitchenIssueViewModel(
-      number: 'KI-2003',
-      department: 'Executive Lounge',
-      kitchen: 'Prep Kitchen',
-      requestedBy: 'Netsanet Y.',
-      approvedBy: 'Sara M.',
-      issueDate: '22 Jul 2026',
-      status: 'Issued',
-      itemsIssued: 2,
-      totalQuantity: 14,
-      ingredients: [
-        KitchenIssueIngredientViewModel(
-            name: 'Milk',
-            category: 'Dairy',
-            unit: 'L',
-            availableStock: 30,
-            quantity: 8),
-      ],
-    ),
-  ];
+  bool _loading = true;
+  String? _error;
+  List<KitchenIssueViewModel> issues = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final records = await ApiRepository.instance.getKitchenIssues();
+      if (!mounted) return;
+      setState(() {
+        issues = records;
+        _loading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _error = error.toString();
+        _loading = false;
+      });
+    }
+  }
+
+  Future<void> _runAction(
+    KitchenIssueViewModel issue,
+    Future<void> Function(String) action,
+  ) async {
+    try {
+      await action(issue.id);
+      await _load();
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Kitchen issue action failed: $error')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -99,11 +81,18 @@ class _KitchenIssueListScreenState extends State<KitchenIssueListScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-            builder: (_) => const KitchenIssueCreateScreen())),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('New Kitchen Issue'),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 72),
+        child: FloatingActionButton.extended(
+          onPressed: () async {
+            final created = await Navigator.of(context).push<bool>(
+              MaterialPageRoute(builder: (_) => const KitchenIssueCreateScreen()),
+            );
+            if (created == true) _load();
+          },
+          icon: const Icon(Icons.add_rounded),
+          label: const Text('New Kitchen Issue'),
+        ),
       ),
       body: SafeArea(
         child: CustomScrollView(
@@ -163,7 +152,35 @@ class _KitchenIssueListScreenState extends State<KitchenIssueListScreen> {
             ),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 112),
-              sliver: SliverList(
+              sliver: _loading
+                  ? const SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.all(32),
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                    )
+                  : _error != null
+                      ? SliverToBoxAdapter(
+                          child: Column(
+                            children: [
+                              Text(_error!, textAlign: TextAlign.center),
+                              const SizedBox(height: 12),
+                              OutlinedButton.icon(
+                                onPressed: _load,
+                                icon: const Icon(Icons.refresh),
+                                label: const Text('Retry'),
+                              ),
+                            ],
+                          ),
+                        )
+                      : filtered.isEmpty
+                          ? const SliverToBoxAdapter(
+                              child: Padding(
+                                padding: EdgeInsets.all(24),
+                                child: Center(child: Text('No kitchen issues found.')),
+                              ),
+                            )
+                          : SliverList(
                 delegate: SliverChildBuilderDelegate((context, index) {
                   final issue = filtered[index];
                   return Container(
@@ -218,20 +235,21 @@ class _KitchenIssueListScreenState extends State<KitchenIssueListScreen> {
                                   Navigator.of(context).push(MaterialPageRoute(
                                       builder: (_) => KitchenIssueDetailScreen(
                                           issue: issue)));
-                                } else if (value == 'update') {
-                                  Navigator.of(context)
-                                      .push(MaterialPageRoute(
-                                          builder: (_) =>
-                                              KitchenIssueCreateScreen(
-                                                  isEditing: true,
-                                                  issue: issue)))
-                                      .then((_) => setState(() {}));
+                                } else if (value == 'approve') {
+                                  _runAction(
+                                    issue,
+                                    (id) => ApiRepository.instance.approveKitchenIssue(id),
+                                  );
+                                } else if (value == 'issue') {
+                                  _runAction(
+                                    issue,
+                                    ApiRepository.instance.issueKitchenIssue,
+                                  );
                                 } else if (value == 'cancel') {
-                                  setState(() => issue.status = 'Cancelled');
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                          content: Text(
-                                              'Issue marked as cancelled.')));
+                                  _runAction(
+                                    issue,
+                                    ApiRepository.instance.cancelKitchenIssue,
+                                  );
                                 } else {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
@@ -239,18 +257,17 @@ class _KitchenIssueListScreenState extends State<KitchenIssueListScreen> {
                                               'Issue note ready for print.')));
                                 }
                               },
-                              itemBuilder: (_) => const [
-                                PopupMenuItem(
-                                    value: 'view', child: Text('View Details')),
-                                PopupMenuItem(
-                                    value: 'update',
-                                    child: Text('Update Issue')),
-                                PopupMenuItem(
-                                    value: 'print',
-                                    child: Text('Print Issue Note')),
-                                PopupMenuItem(
-                                    value: 'cancel',
-                                    child: Text('Cancel Issue')),
+                              itemBuilder: (_) => [
+                                const PopupMenuItem(value: 'view', child: Text('View Details')),
+                                if (issue.status == 'Pending Approval') ...[
+                                  const PopupMenuItem(value: 'approve', child: Text('Approve')),
+                                  const PopupMenuItem(value: 'cancel', child: Text('Cancel Issue')),
+                                ],
+                                if (issue.status == 'Approved') ...[
+                                  const PopupMenuItem(value: 'issue', child: Text('Issue Stock')),
+                                  const PopupMenuItem(value: 'cancel', child: Text('Cancel Issue')),
+                                ],
+                                const PopupMenuItem(value: 'print', child: Text('Print Issue Note')),
                               ],
                               icon: const Icon(Icons.more_vert_rounded,
                                   color: Color(0xFF64748B)),

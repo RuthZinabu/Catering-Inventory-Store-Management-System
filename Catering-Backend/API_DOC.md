@@ -892,6 +892,27 @@ All endpoints below require the Sanctum bearer token. Supplier profile fields us
 
 Purchasing persistence is in `purchase_orders`, `purchase_order_items`, `purchase_receipts`, `purchase_receipt_items`, `purchase_returns`, and `purchase_return_items`. Supplier form extensions are added to `suppliers` with a forward migration.
 
+## Transfers
+
+All transfer endpoints require a Sanctum bearer token and `transfers.view`, `transfers.create`, or `transfers.approve`, as appropriate. Non-admin users must have access to both stores in a transfer.
+
+- `GET /transfers?store_id={uuid}&status={pending|approved|in_transit|received|cancelled}&per_page={count}` returns `data.items` and pagination metadata.
+- `POST /transfers` requires `from_store_id`, `to_store_id`, and `items` containing `item_id` plus positive `quantity_requested`. The API creates a `pending` request; it does not change stock.
+- `POST /transfers/{transfer}/approve` moves a pending request to `approved`.
+- `POST /transfers/{transfer}/ship` requires an approved request and sufficient unreserved source stock. It atomically decrements source stock and records outbound transfer movements, then sets `in_transit`.
+- `POST /transfers/{transfer}/receive` receives all shipped quantities, atomically increments destination stock and records inbound transfer movements, then sets `received`. A transfer cannot be received twice.
+- `DELETE /transfers/{transfer}` cancels pending requests. Only pending requests can be updated or cancelled.
+
+## Kitchen Issues
+
+Kitchen issue reads require `inventory.view`, request creation requires `inventory.create`, and approval/issuance/cancellation require `inventory.update`. Users can act only on stores they can access.
+
+- `GET /kitchen-issues?store_id={uuid}&status={Pending Approval|Approved|Issued|Cancelled}&per_page={count}` returns `data.items` with ingredient details.
+- `POST /kitchen-issues` requires `store_id`, `department`, `kitchen`, `requested_date`, and `items` containing `item_id` plus positive `quantity_requested`. The request starts as `Pending Approval`; stock is unchanged.
+- `POST /kitchen-issues/{kitchenIssue}/approve` records the approving user and optional `approval_notes`.
+- `POST /kitchen-issues/{kitchenIssue}/issue` is allowed only after approval. It locks stock rows, checks unreserved quantities, decrements inventory, and writes stock-out movements in one transaction.
+- `DELETE /kitchen-issues/{kitchenIssue}` cancels pending or approved requests. Issued requests cannot be cancelled.
+
 ## Recipes
 
 All recipe endpoints require a Sanctum bearer token and the corresponding `recipes.view`, `recipes.create`, `recipes.update`, or `recipes.delete` permission.

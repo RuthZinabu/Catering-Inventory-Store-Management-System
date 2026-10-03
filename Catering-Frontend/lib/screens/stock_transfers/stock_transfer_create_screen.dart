@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../models/store_model.dart';
+import '../../services/api_repository.dart';
+import 'stock_transfer_models.dart';
 
 class StockTransferCreateScreen extends StatefulWidget {
   const StockTransferCreateScreen({super.key});
@@ -9,6 +12,145 @@ class StockTransferCreateScreen extends StatefulWidget {
 
 class _StockTransferCreateScreenState extends State<StockTransferCreateScreen> {
   int _step = 0;
+  final _requestedDate = TextEditingController(
+    text: DateTime.now().toIso8601String().split('T').first,
+  );
+  final _notes = TextEditingController();
+  final Map<String, TextEditingController> _quantities = {};
+  final Set<String> _selectedItemIds = {};
+  List<Store> _stores = [];
+  List<TransferStockItemViewModel> _sourceStock = [];
+  Store? _fromStore;
+  Store? _toStore;
+  bool _loadingStores = true;
+  bool _loadingStock = false;
+  bool _saving = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStores();
+  }
+
+  @override
+  void dispose() {
+    _requestedDate.dispose();
+    _notes.dispose();
+    for (final controller in _quantities.values) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  Future<void> _loadStores() async {
+    try {
+      final stores = await ApiRepository.instance.getStores(active: true);
+      if (!mounted) return;
+      setState(() {
+        _stores = stores;
+        _fromStore = stores.isNotEmpty ? stores.first : null;
+        _toStore = stores.length > 1 ? stores[1] : null;
+        _loadingStores = false;
+        if (stores.length < 2) {
+          _error = 'At least two accessible active stores are required.';
+        }
+      });
+      if (stores.isNotEmpty) await _loadSourceStock(stores.first.id);
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _loadingStores = false;
+          _error = error.toString();
+        });
+      }
+    }
+  }
+
+  Future<void> _loadSourceStock(String storeId) async {
+    setState(() {
+      _loadingStock = true;
+      _selectedItemIds.clear();
+      for (final controller in _quantities.values) {
+        controller.dispose();
+      }
+      _quantities.clear();
+    });
+    try {
+      final stock = await ApiRepository.instance.getTransferStock(storeId);
+      if (!mounted) return;
+      setState(() {
+        _sourceStock = stock;
+        _loadingStock = false;
+      });
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _sourceStock = [];
+          _loadingStock = false;
+          _error = error.toString();
+        });
+      }
+    }
+  }
+
+  void _selectItem(TransferStockItemViewModel item, bool selected) {
+    setState(() {
+      if (selected) {
+        _selectedItemIds.add(item.itemId);
+        _quantities[item.itemId] = TextEditingController(text: '');
+      } else {
+        _selectedItemIds.remove(item.itemId);
+        _quantities.remove(item.itemId)?.dispose();
+      }
+    });
+  }
+
+  bool get _quantitiesValid {
+    if (_selectedItemIds.isEmpty) return false;
+    for (final item in _sourceStock.where((item) => _selectedItemIds.contains(item.itemId))) {
+      final quantity = double.tryParse(_quantities[item.itemId]?.text ?? '') ?? 0;
+      if (quantity <= 0 || quantity > item.availableQuantity) return false;
+    }
+    return true;
+  }
+
+  Future<void> _submitTransfer() async {
+    if (_fromStore == null || _toStore == null || _fromStore!.id == _toStore!.id) {
+      setState(() => _error = 'Choose different source and destination stores.');
+      return;
+    }
+    if (!_quantitiesValid) {
+      setState(() => _error = 'Select items and enter quantities within available stock.');
+      return;
+    }
+
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      await ApiRepository.instance.createStockTransfer({
+        'from_store_id': _fromStore!.id,
+        'to_store_id': _toStore!.id,
+        'requested_date': _requestedDate.text.trim(),
+        'notes': _notes.text.trim(),
+        'items': _sourceStock
+            .where((item) => _selectedItemIds.contains(item.itemId))
+            .map((item) => {
+                  'item_id': item.itemId,
+                  'quantity_requested':
+                      double.parse(_quantities[item.itemId]!.text),
+                })
+            .toList(),
+      });
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (error) {
+      if (mounted) setState(() => _error = error.toString());
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
 
   Widget _stepBadge(int index, String label, bool active) {
     return Container(
@@ -62,7 +204,7 @@ class _StockTransferCreateScreenState extends State<StockTransferCreateScreen> {
               Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 16, offset: const Offset(0, 8))]),
-                child: _buildStepContent(),
+                child: _buildDataStepContent(),
               ),
             ],
           ),
@@ -179,6 +321,201 @@ class _StockTransferCreateScreenState extends State<StockTransferCreateScreen> {
           ],
         );
     }
+  }
+
+  Widget _buildDataStepContent() {
+    if (_loadingStores) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final selectedItems = _sourceStock
+        .where((item) => _selectedItemIds.contains(item.itemId))
+        .toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_error != null) ...[
+          Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+          const SizedBox(height: 12),
+        ],
+        if (_step == 0) ...[
+          Text('Select locations', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 12),
+          _storeDropdown(
+            'From Store',
+            _fromStore,
+            _stores,
+            (store) async {
+              if (store == null) return;
+              setState(() {
+                _fromStore = store;
+                if (_toStore?.id == store.id) {
+                  _toStore = _stores.firstWhere((candidate) => candidate.id != store.id);
+                }
+                _error = null;
+              });
+              await _loadSourceStock(store.id);
+            },
+          ),
+          _storeDropdown(
+            'To Store',
+            _toStore,
+            _stores.where((store) => store.id != _fromStore?.id).toList(),
+            (store) => setState(() => _toStore = store),
+          ),
+          _stepButtons(
+            backStep: null,
+            nextLabel: 'Choose Items',
+            onNext: _fromStore == null || _toStore == null
+                ? null
+                : () => setState(() => _step = 1),
+          ),
+        ] else if (_step == 1) ...[
+          Text('Select items', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 12),
+          if (_loadingStock)
+            const Center(child: CircularProgressIndicator())
+          else if (_sourceStock.isEmpty)
+            const Text('No stock is available in the selected source store.')
+          else
+            ..._sourceStock.map((item) => CheckboxListTile(
+                  value: _selectedItemIds.contains(item.itemId),
+                  title: Text(item.name),
+                  subtitle: Text('${item.availableQuantity} ${item.unit} available'),
+                  onChanged: (selected) => _selectItem(item, selected == true),
+                  contentPadding: EdgeInsets.zero,
+                )),
+          _stepButtons(
+            backStep: 0,
+            nextLabel: 'Enter Quantities',
+            onNext: _selectedItemIds.isEmpty
+                ? null
+                : () => setState(() => _step = 2),
+          ),
+        ] else if (_step == 2) ...[
+          Text('Enter quantities', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 12),
+          ...selectedItems.map((item) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('${item.name} · ${item.availableQuantity} ${item.unit} available'),
+                    TextField(
+                      controller: _quantities[item.itemId],
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(labelText: 'Quantity (${item.unit})'),
+                      onChanged: (_) => setState(() {}),
+                    ),
+                  ],
+                ),
+              )),
+          _stepButtons(
+            backStep: 1,
+            nextLabel: 'Transfer Details',
+            onNext: !_quantitiesValid ? null : () => setState(() => _step = 3),
+          ),
+        ] else if (_step == 3) ...[
+          Text('Transfer details', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _requestedDate,
+            readOnly: true,
+            decoration: const InputDecoration(labelText: 'Requested Date'),
+            onTap: () async {
+              final today = DateTime.now();
+              final selected = await showDatePicker(
+                context: context,
+                initialDate: today,
+                firstDate: today.subtract(const Duration(days: 365)),
+                lastDate: today.add(const Duration(days: 365)),
+              );
+              if (selected != null) {
+                _requestedDate.text = selected.toIso8601String().split('T').first;
+              }
+            },
+          ),
+          TextField(
+            controller: _notes,
+            maxLines: 3,
+            decoration: const InputDecoration(labelText: 'Notes'),
+          ),
+          _stepButtons(
+            backStep: 2,
+            nextLabel: 'Review Request',
+            onNext: () => setState(() => _step = 4),
+          ),
+        ] else ...[
+          Text('Review transfer request', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 12),
+          _summaryRow('From Store', _fromStore?.name ?? ''),
+          _summaryRow('To Store', _toStore?.name ?? ''),
+          _summaryRow('Requested Date', _requestedDate.text),
+          _summaryRow('Items', '${selectedItems.length}'),
+          _summaryRow(
+            'Total Quantity',
+            selectedItems.fold<double>(0, (total, item) =>
+                total + (double.tryParse(_quantities[item.itemId]?.text ?? '') ?? 0))
+                .toStringAsFixed(3),
+          ),
+          const SizedBox(height: 12),
+          _stepButtons(
+            backStep: 3,
+            nextLabel: _saving ? 'Creating…' : 'Create Transfer Request',
+            onNext: _saving ? null : _submitTransfer,
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _storeDropdown(
+    String label,
+    Store? value,
+    List<Store> options,
+    ValueChanged<Store?> onChanged,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: DropdownButtonFormField<Store>(
+        value: value != null && options.any((store) => store.id == value.id) ? value : null,
+        decoration: InputDecoration(labelText: label),
+        items: options.map((store) => DropdownMenuItem(
+          value: store,
+          child: Text('${store.name} (${store.code})'),
+        )).toList(),
+        onChanged: onChanged,
+      ),
+    );
+  }
+
+  Widget _stepButtons({
+    required int? backStep,
+    required String nextLabel,
+    required VoidCallback? onNext,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Row(
+        children: [
+          if (backStep != null) ...[
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () => setState(() => _step = backStep),
+                child: const Text('Back'),
+              ),
+            ),
+            const SizedBox(width: 12),
+          ],
+          Expanded(
+            child: FilledButton(
+              onPressed: onNext,
+              child: Text(nextLabel),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildField(String label, String value) {
