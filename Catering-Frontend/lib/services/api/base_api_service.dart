@@ -21,7 +21,7 @@ abstract class BaseApiService {
         if (response.data != null) {
           return response.data!;
         }
-        if (T == void) {
+        if (T.toString() == 'void') {
           return null as T;
         }
       }
