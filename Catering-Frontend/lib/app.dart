@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'screens/dashboard_screen.dart';
 import 'screens/stock/stock_screen.dart';
-import 'screens/suppliers/supplier_list_screen.dart';
-import 'screens/purchases/purchase_list_screen.dart';
+import 'screens/suppliers/supplier_workflow_screen.dart';
+import 'screens/purchases/purchase_workflow_screen.dart';
 import 'screens/stock_transfers/stock_transfer_list_screen.dart';
 import 'screens/kitchen_issues/kitchen_issue_list_screen.dart';
 import 'screens/recipes/recipe_list_screen.dart';

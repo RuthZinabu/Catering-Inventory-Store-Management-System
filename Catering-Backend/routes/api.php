@@ -67,11 +67,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
     
     // Suppliers
     Route::apiResource('suppliers', App\Http\Controllers\SupplierController::class);
+    Route::post('suppliers/{supplier}/logo', [App\Http\Controllers\SupplierController::class, 'uploadLogo']);
     
     // Purchase Orders
     Route::apiResource('purchase-orders', App\Http\Controllers\PurchaseOrderController::class);
     Route::post('purchase-orders/{purchaseOrder}/approve', [App\Http\Controllers\PurchaseOrderController::class, 'approve']);
     Route::post('purchase-orders/{purchaseOrder}/receive', [App\Http\Controllers\PurchaseOrderController::class, 'receive']);
+    Route::post('purchase-orders/{purchaseOrder}/returns', [App\Http\Controllers\PurchaseOrderController::class, 'storeReturn']);
+    Route::post('purchase-orders/{purchaseOrder}/returns/{purchaseReturn}/approve', [App\Http\Controllers\PurchaseOrderController::class, 'approveReturn']);
     
     // Waste Records
     Route::apiResource('waste-records', App\Http\Controllers\WasteRecordController::class);

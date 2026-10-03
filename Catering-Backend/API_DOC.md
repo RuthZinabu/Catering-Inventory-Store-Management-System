@@ -845,6 +845,28 @@ Get available categories, optionally filtered by type.
 
 ---
 
+## Suppliers and Purchasing
+
+All endpoints below require the Sanctum bearer token. Supplier profile fields use the database/API names shown here: `name`, `company`, `contact_person`, `phone`, `email`, `address`, `tax_number`, `category`, `registration_number`, `notes`, `status`, `payment_terms`, `credit_limit`, and `logo_path`. Monetary fields are decimal amounts; IDs are UUID strings.
+
+### Suppliers
+
+- `GET /suppliers?search={text}&status={Active|Pending|Inactive}&per_page={count}` returns `data.suppliers` and pagination metadata.
+- `POST /suppliers` creates a supplier. `company`, `contact_person`, `phone`, `email`, `address`, `tax_number`, and `category` are required. `name` defaults to `company`; `registration_number`, `notes`, `payment_terms`, and non-negative `credit_limit` are optional.
+- `GET /suppliers/{supplier}`, `PUT /suppliers/{supplier}`, and `DELETE /suppliers/{supplier}` show, update, and soft-delete suppliers. Suppliers with open purchase orders cannot be deleted.
+- `POST /suppliers/{supplier}/logo` accepts multipart field `logo` (image, maximum 5 MB) and stores `logo_path` on the supplier.
+
+### Purchase Orders
+
+- `GET /purchase-orders?store_id={store_uuid}&search={text}&status={status}&per_page={count}` requires access to the requested store and returns `data.purchase_orders` with `supplier` and `items` relations.
+- `POST /purchase-orders` requires `supplier_id`, `destination_store_id`, `order_date` (`YYYY-MM-DD`), and at least one `items` entry. `number` is optional and generated if omitted. `expected_delivery_date` and `notes` are optional. `status` is `Draft` or `Pending`.
+- Each item entry is `{ "item_id": "uuid", "quantity": 2.5, "unit_price": 10.00, "vat_amount": 0, "discount_amount": 0 }`. Quantity uses up to three decimal places; prices/amounts are decimal values. The server derives `unit`, line totals, and order subtotal/VAT/discount/total.
+- `GET /purchase-orders/{purchaseOrder}`, `PUT /purchase-orders/{purchaseOrder}`, and `DELETE /purchase-orders/{purchaseOrder}` read, update, or delete draft/pending orders. `POST /purchase-orders/{purchaseOrder}/approve` transitions a draft/pending order to `Approved`.
+- `POST /purchase-orders/{purchaseOrder}/receive` requires `delivery_date` and `items`; each entry has `purchase_order_item_id`, `received_quantity`, `accepted_quantity`, `rejected_quantity`, and `quality_status` (`Accepted`, `Partially Accepted`, or `Rejected`), with optional `rejection_reason`. Accepted quantities update `store_stock` and create `stock_movements`; order status becomes `Partially Received` or `Received`. Optional header fields are `driver_name`, `vehicle_number`, and `notes`. The response includes the generated `grn_number`.
+- `POST /purchase-orders/{purchaseOrder}/returns` requires `return_date`, `reason`, and `items` containing `purchase_order_item_id` plus `quantity`. It creates a `Pending Review` return. `POST /purchase-orders/{purchaseOrder}/returns/{purchaseReturn}/approve` approves it and records outbound stock movements.
+
+Purchasing persistence is in `purchase_orders`, `purchase_order_items`, `purchase_receipts`, `purchase_receipt_items`, `purchase_returns`, and `purchase_return_items`. Supplier form extensions are added to `suppliers` with a forward migration.
+
 ## Error Responses
 
 All endpoints follow a consistent error response format:
