@@ -222,6 +222,8 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::middleware('permission:waste.delete')->group(function () {
         Route::delete('waste-records/{wasteRecord}', [App\Http\Controllers\WasteRecordController::class, 'destroy']);
     });
+});
+
 // Protected routes
 Route::middleware(['auth:sanctum'])->group(function () {
     
