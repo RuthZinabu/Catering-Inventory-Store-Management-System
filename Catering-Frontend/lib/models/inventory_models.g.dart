@@ -47,7 +47,8 @@ bool? _parseBoolOptional(dynamic value) {
   return null;
 }
 
-InventoryItem _$InventoryItemFromJson(Map<String, dynamic> json) => InventoryItem(
+InventoryItem _$InventoryItemFromJson(Map<String, dynamic> json) =>
+    InventoryItem(
       id: json['id'] as String,
       code: json['code'] as String,
       name: json['name'] as String,
@@ -64,11 +65,16 @@ InventoryItem _$InventoryItemFromJson(Map<String, dynamic> json) => InventoryIte
       itemType: json['item_type'] as String?,
       shelfLifeDays: json['shelf_life_days'] as int?,
       requiresRefrigeration: json['requires_refrigeration'] as bool?,
-      createdAt: json['created_at'] == null ? null : DateTime.parse(json['created_at'] as String),
-      updatedAt: json['updated_at'] == null ? null : DateTime.parse(json['updated_at'] as String),
+      createdAt: json['created_at'] == null
+          ? null
+          : DateTime.parse(json['created_at'] as String),
+      updatedAt: json['updated_at'] == null
+          ? null
+          : DateTime.parse(json['updated_at'] as String),
     );
 
-Map<String, dynamic> _$InventoryItemToJson(InventoryItem instance) => <String, dynamic>{
+Map<String, dynamic> _$InventoryItemToJson(InventoryItem instance) =>
+    <String, dynamic>{
       'id': instance.id,
       'code': instance.code,
       'name': instance.name,
@@ -90,18 +96,24 @@ Map<String, dynamic> _$InventoryItemToJson(InventoryItem instance) => <String, d
     };
 
 Supplier _$SupplierFromJson(Map<String, dynamic> json) => Supplier(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      company: json['company'] as String,
-      contactPerson: json['contact_person'] as String,
-      phone: json['phone'] as String,
-      email: json['email'] as String,
-      address: json['address'] as String,
-      taxNumber: json['tax_number'] as String,
-      status: json['status'] as String,
+      id: json['id'].toString(),
+      name: json['name'] as String? ?? json['company'] as String? ?? '',
+      company: json['company'] as String? ?? '',
+      contactPerson: json['contact_person'] as String? ?? '',
+      phone: json['phone'] as String? ?? '',
+      email: json['email'] as String? ?? '',
+      address: json['address'] as String? ?? '',
+      taxNumber: json['tax_number'] as String? ?? '',
+      status: json['status'] as String? ?? 'Active',
       outstandingBalance: _parseDouble(json['outstanding_balance']),
-      createdAt: json['created_at'] == null ? null : DateTime.parse(json['created_at'] as String),
-      updatedAt: json['updated_at'] == null ? null : DateTime.parse(json['updated_at'] as String),
+      category: json['category'] as String? ?? '',
+      registrationNumber: json['registration_number'] as String? ?? '',
+      notes: json['notes'] as String? ?? '',
+      paymentTerms: json['payment_terms'] as String? ?? '',
+      creditLimit: json['credit_limit'] == null
+          ? null
+          : _parseDouble(json['credit_limit']),
+      logoPath: json['logo_path'] as String? ?? '',
     );
 
 Map<String, dynamic> _$SupplierToJson(Supplier instance) => <String, dynamic>{
@@ -115,11 +127,16 @@ Map<String, dynamic> _$SupplierToJson(Supplier instance) => <String, dynamic>{
       'tax_number': instance.taxNumber,
       'status': instance.status,
       'outstanding_balance': instance.outstandingBalance,
-      'created_at': instance.createdAt?.toIso8601String(),
-      'updated_at': instance.updatedAt?.toIso8601String(),
+      'category': instance.category,
+      'registration_number': instance.registrationNumber,
+      'notes': instance.notes,
+      'payment_terms': instance.paymentTerms,
+      'credit_limit': instance.creditLimit,
+      'logo_path': instance.logoPath.isEmpty ? null : instance.logoPath,
     };
 
-PurchaseRecord _$PurchaseRecordFromJson(Map<String, dynamic> json) => PurchaseRecord(
+PurchaseRecord _$PurchaseRecordFromJson(Map<String, dynamic> json) =>
+    PurchaseRecord(
       id: json['id'] as String,
       number: json['number'] as String,
       supplier: json['supplier'] as String,
@@ -131,10 +148,13 @@ PurchaseRecord _$PurchaseRecordFromJson(Map<String, dynamic> json) => PurchaseRe
       discount: _parseDouble(json['discount']),
       total: _parseDouble(json['total']),
       status: json['status'] as String?,
-      createdAt: json['created_at'] == null ? null : DateTime.parse(json['created_at'] as String),
+      createdAt: json['created_at'] == null
+          ? null
+          : DateTime.parse(json['created_at'] as String),
     );
 
-Map<String, dynamic> _$PurchaseRecordToJson(PurchaseRecord instance) => <String, dynamic>{
+Map<String, dynamic> _$PurchaseRecordToJson(PurchaseRecord instance) =>
+    <String, dynamic>{
       'id': instance.id,
       'number': instance.number,
       'supplier': instance.supplier,
@@ -149,7 +169,8 @@ Map<String, dynamic> _$PurchaseRecordToJson(PurchaseRecord instance) => <String,
       'created_at': instance.createdAt?.toIso8601String(),
     };
 
-StockMovement _$StockMovementFromJson(Map<String, dynamic> json) => StockMovement(
+StockMovement _$StockMovementFromJson(Map<String, dynamic> json) =>
+    StockMovement(
       id: json['id'] as String,
       item: json['item'] as String,
       type: json['type'] as String,
@@ -159,7 +180,8 @@ StockMovement _$StockMovementFromJson(Map<String, dynamic> json) => StockMovemen
       performedBy: json['performed_by'] as String?,
     );
 
-Map<String, dynamic> _$StockMovementToJson(StockMovement instance) => <String, dynamic>{
+Map<String, dynamic> _$StockMovementToJson(StockMovement instance) =>
+    <String, dynamic>{
       'id': instance.id,
       'item': instance.item,
       'type': instance.type,
@@ -173,7 +195,9 @@ Recipe _$RecipeFromJson(Map<String, dynamic> json) => Recipe(
       id: json['id'] as String,
       name: json['name'] as String,
       description: json['description'] as String,
-      ingredients: (json['ingredients'] as List<dynamic>).map((e) => e as String).toList(),
+      ingredients: (json['ingredients'] as List<dynamic>)
+          .map((e) => e as String)
+          .toList(),
       foodCost: _parseDouble(json['food_cost']),
     );
 
@@ -220,7 +244,8 @@ WasteRecord _$WasteRecordFromJson(Map<String, dynamic> json) => WasteRecord(
       notes: json['notes'] as String,
     );
 
-Map<String, dynamic> _$WasteRecordToJson(WasteRecord instance) => <String, dynamic>{
+Map<String, dynamic> _$WasteRecordToJson(WasteRecord instance) =>
+    <String, dynamic>{
       'id': instance.id,
       'number': instance.number,
       'item': instance.item,
@@ -247,7 +272,8 @@ ExpiryItem _$ExpiryItemFromJson(Map<String, dynamic> json) => ExpiryItem(
       status: json['status'] as String,
     );
 
-Map<String, dynamic> _$ExpiryItemToJson(ExpiryItem instance) => <String, dynamic>{
+Map<String, dynamic> _$ExpiryItemToJson(ExpiryItem instance) =>
+    <String, dynamic>{
       'id': instance.id,
       'item': instance.item,
       'category': instance.category,
@@ -269,7 +295,9 @@ AppUser _$AppUserFromJson(Map<String, dynamic> json) => AppUser(
       status: json['status'] as String,
       createdAt: DateTime.parse(json['created_at'] as String),
       lastLogin: json['last_login'] as String,
-      permissions: (json['permissions'] as List<dynamic>).map((e) => e as String).toList(),
+      permissions: (json['permissions'] as List<dynamic>)
+          .map((e) => e as String)
+          .toList(),
     );
 
 Map<String, dynamic> _$AppUserToJson(AppUser instance) => <String, dynamic>{
@@ -285,14 +313,16 @@ Map<String, dynamic> _$AppUserToJson(AppUser instance) => <String, dynamic>{
       'permissions': instance.permissions,
     };
 
-RecipeIngredient _$RecipeIngredientFromJson(Map<String, dynamic> json) => RecipeIngredient(
+RecipeIngredient _$RecipeIngredientFromJson(Map<String, dynamic> json) =>
+    RecipeIngredient(
       name: json['name'] as String,
       quantity: _parseDouble(json['quantity']),
       unit: json['unit'] as String,
       unitCost: _parseDouble(json['unit_cost']),
     );
 
-Map<String, dynamic> _$RecipeIngredientToJson(RecipeIngredient instance) => <String, dynamic>{
+Map<String, dynamic> _$RecipeIngredientToJson(RecipeIngredient instance) =>
+    <String, dynamic>{
       'name': instance.name,
       'quantity': instance.quantity,
       'unit': instance.unit,
@@ -313,7 +343,8 @@ RecipeItem _$RecipeItemFromJson(Map<String, dynamic> json) => RecipeItem(
       status: json['status'] as String,
     );
 
-Map<String, dynamic> _$RecipeItemToJson(RecipeItem instance) => <String, dynamic>{
+Map<String, dynamic> _$RecipeItemToJson(RecipeItem instance) =>
+    <String, dynamic>{
       'id': instance.id,
       'name': instance.name,
       'category': instance.category,

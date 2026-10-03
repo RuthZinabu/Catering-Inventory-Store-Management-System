@@ -129,10 +129,14 @@ class Supplier {
   @JsonKey(name: 'outstanding_balance', fromJson: _parseDouble)
   final double outstandingBalance;
   final String category;
+  @JsonKey(name: 'registration_number')
   final String registrationNumber;
   final String notes;
+  @JsonKey(name: 'payment_terms')
   final String paymentTerms;
+  @JsonKey(name: 'credit_limit')
   final double? creditLimit;
+  @JsonKey(name: 'logo_path')
   final String logoPath;
 
   const Supplier({
@@ -154,47 +158,13 @@ class Supplier {
     this.logoPath = '',
   });
 
-  factory Supplier.fromJson(Map<String, dynamic> json) {
-    return Supplier(
-      id: json['id'].toString(),
-      name: json['name'] as String? ?? json['company'] as String? ?? '',
-      company: json['company'] as String? ?? '',
-      contactPerson: json['contact_person'] as String? ?? '',
-      phone: json['phone'] as String? ?? '',
-      email: json['email'] as String? ?? '',
-      address: json['address'] as String? ?? '',
-      taxNumber: json['tax_number'] as String? ?? '',
-      status: json['status'] as String? ?? 'Active',
-      outstandingBalance: _toDouble(json['outstanding_balance']),
-      category: json['category'] as String? ?? '',
-      registrationNumber: json['registration_number'] as String? ?? '',
-      notes: json['notes'] as String? ?? '',
-      paymentTerms: json['payment_terms'] as String? ?? '',
-      creditLimit: json['credit_limit'] == null ? null : _toDouble(json['credit_limit']),
-      logoPath: json['logo_path'] as String? ?? '',
-    );
-  }
+  factory Supplier.fromJson(Map<String, dynamic> json) =>
+      _$SupplierFromJson(json);
 
-  Map<String, dynamic> toJson() => {
-        'name': name,
-        'company': company,
-        'contact_person': contactPerson,
-        'phone': phone,
-        'email': email,
-        'address': address,
-        'tax_number': taxNumber,
-        'category': category,
-        'registration_number': registrationNumber,
-        'notes': notes,
-        'status': status,
-        'payment_terms': paymentTerms,
-        'credit_limit': creditLimit,
-        'logo_path': logoPath.isEmpty ? null : logoPath,
-      };
+  Map<String, dynamic> toJson() => _$SupplierToJson(this);
 }
 
-double _toDouble(dynamic value) => value is num ? value.toDouble() : double.tryParse('$value') ?? 0;
-
+@JsonSerializable()
 class PurchaseRecord {
   final String id;
   final String number;

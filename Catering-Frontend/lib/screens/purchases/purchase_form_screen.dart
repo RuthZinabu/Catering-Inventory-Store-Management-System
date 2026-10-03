@@ -57,7 +57,8 @@ class _PurchaseFormScreenState extends State<PurchaseFormScreen> {
 
   Future<void> _loadOptions() async {
     try {
-      final supplierResponse = await ApiClient.instance.get('/suppliers?per_page=100');
+      final supplierResponse =
+          await ApiClient.instance.get('/suppliers?per_page=100');
       final itemResponse = await ApiClient.instance.get('/items?per_page=100');
       if (!mounted) return;
       setState(() {
@@ -70,15 +71,17 @@ class _PurchaseFormScreenState extends State<PurchaseFormScreen> {
               .map((entry) => Map<String, dynamic>.from(entry as Map)),
         );
         _loading = false;
-        if (_supplierId != null && !_suppliers.any((row) => row['id'] == _supplierId)) {
+        if (_supplierId != null &&
+            !_suppliers.any((row) => row['id'] == _supplierId)) {
           _supplierId = null;
         }
       });
     } on ApiException catch (error) {
-      if (mounted) setState(() {
-        _loading = false;
-        _error = error.message;
-      });
+      if (mounted)
+        setState(() {
+          _loading = false;
+          _error = error.message;
+        });
     }
   }
 
@@ -90,7 +93,8 @@ class _PurchaseFormScreenState extends State<PurchaseFormScreen> {
     }
     final storeId = ApiClient.instance.storeId;
     if (storeId == null) {
-      setState(() => _error = 'No destination store is selected for this session.');
+      setState(
+          () => _error = 'No destination store is selected for this session.');
       return;
     }
 
@@ -102,7 +106,8 @@ class _PurchaseFormScreenState extends State<PurchaseFormScreen> {
       'supplier_id': _supplierId,
       'destination_store_id': storeId,
       'order_date': _orderDate.text.trim(),
-      'expected_delivery_date': _deliveryDate.text.trim().isEmpty ? null : _deliveryDate.text.trim(),
+      'expected_delivery_date':
+          _deliveryDate.text.trim().isEmpty ? null : _deliveryDate.text.trim(),
       'status': status,
       'notes': _notes.text.trim().isEmpty ? null : _notes.text.trim(),
       'items': _lines.map((line) => line.toJson()).toList(),
@@ -111,27 +116,32 @@ class _PurchaseFormScreenState extends State<PurchaseFormScreen> {
 
     try {
       if (_editing) {
-        await ApiClient.instance.put('/purchase-orders/${widget.purchase!.id}', payload);
+        await ApiClient.instance
+            .put('/purchase-orders/${widget.purchase!.id}', payload);
       } else {
         await ApiClient.instance.post('/purchase-orders', payload);
       }
       if (mounted) Navigator.of(context).pop(true);
     } on ApiException catch (error) {
-      if (mounted) setState(() {
-        _saving = false;
-        _error = error.message;
-      });
+      if (mounted)
+        setState(() {
+          _saving = false;
+          _error = error.message;
+        });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final subtotal = _lines.fold<double>(0, (sum, line) => sum + line.quantityValue * line.unitPriceValue);
+    final subtotal = _lines.fold<double>(
+        0, (sum, line) => sum + line.quantityValue * line.unitPriceValue);
     final vat = _lines.fold<double>(0, (sum, line) => sum + line.vatAmount);
-    final discount = _lines.fold<double>(0, (sum, line) => sum + line.discountAmount);
+    final discount =
+        _lines.fold<double>(0, (sum, line) => sum + line.discountAmount);
 
     return Scaffold(
-      appBar: AppBar(title: Text(_editing ? 'Update Purchase' : 'New Purchase')),
+      appBar:
+          AppBar(title: Text(_editing ? 'Update Purchase' : 'New Purchase')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : Form(
@@ -145,26 +155,33 @@ class _PurchaseFormScreenState extends State<PurchaseFormScreen> {
                     items: _suppliers
                         .map((supplier) => DropdownMenuItem<String>(
                               value: supplier['id'] as String,
-                              child: Text(supplier['company'] as String? ?? supplier['name'] as String? ?? ''),
+                              child: Text(supplier['company'] as String? ??
+                                  supplier['name'] as String? ??
+                                  ''),
                             ))
                         .toList(),
                     onChanged: (value) => setState(() => _supplierId = value),
-                    validator: (value) => value == null ? 'Select a supplier' : null,
+                    validator: (value) =>
+                        value == null ? 'Select a supplier' : null,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _number,
-                    decoration: const InputDecoration(labelText: 'Purchase Number (optional)'),
+                    decoration: const InputDecoration(
+                        labelText: 'Purchase Number (optional)'),
                   ),
                   const SizedBox(height: 12),
                   Row(children: [
                     Expanded(child: _dateField(_orderDate, 'Purchase Date')),
                     const SizedBox(width: 12),
-                    Expanded(child: _dateField(_deliveryDate, 'Expected Delivery')),
+                    Expanded(
+                        child: _dateField(_deliveryDate, 'Expected Delivery')),
                   ]),
                   const SizedBox(height: 20),
                   Row(children: [
-                    Expanded(child: Text('Items', style: Theme.of(context).textTheme.titleLarge)),
+                    Expanded(
+                        child: Text('Items',
+                            style: Theme.of(context).textTheme.titleLarge)),
                     IconButton(
                       onPressed: _catalog.isEmpty ? null : _addLine,
                       tooltip: 'Add item',
@@ -191,7 +208,9 @@ class _PurchaseFormScreenState extends State<PurchaseFormScreen> {
                   ),
                   if (_error != null) ...[
                     const SizedBox(height: 12),
-                    Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                    Text(_error!,
+                        style: TextStyle(
+                            color: Theme.of(context).colorScheme.error)),
                   ],
                   const SizedBox(height: 20),
                   Row(children: [
@@ -206,8 +225,13 @@ class _PurchaseFormScreenState extends State<PurchaseFormScreen> {
                       child: FilledButton(
                         onPressed: _saving ? null : () => _save('Pending'),
                         child: _saving
-                            ? const SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                            : Text(_editing ? 'Update Purchase' : 'Submit Purchase'),
+                            ? const SizedBox.square(
+                                dimension: 20,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2))
+                            : Text(_editing
+                                ? 'Update Purchase'
+                                : 'Submit Purchase'),
                       ),
                     ),
                   ]),
@@ -221,8 +245,12 @@ class _PurchaseFormScreenState extends State<PurchaseFormScreen> {
     return TextFormField(
       controller: controller,
       readOnly: true,
-      decoration: InputDecoration(labelText: label, suffixIcon: const Icon(Icons.calendar_today_outlined)),
-      validator: label == 'Purchase Date' ? (value) => value == null || value.isEmpty ? 'Required' : null : null,
+      decoration: InputDecoration(
+          labelText: label,
+          suffixIcon: const Icon(Icons.calendar_today_outlined)),
+      validator: label == 'Purchase Date'
+          ? (value) => value == null || value.isEmpty ? 'Required' : null
+          : null,
       onTap: () async {
         final initial = DateTime.tryParse(controller.text) ?? DateTime.now();
         final date = await showDatePicker(
@@ -242,7 +270,9 @@ class _PurchaseFormScreenState extends State<PurchaseFormScreen> {
       padding: const EdgeInsets.only(bottom: 12),
       child: Container(
         padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(12)),
+        decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(12)),
         child: Column(children: [
           Row(children: [
             Expanded(
@@ -256,11 +286,14 @@ class _PurchaseFormScreenState extends State<PurchaseFormScreen> {
                         ))
                     .toList(),
                 onChanged: (value) {
-                  final selected = _catalog.firstWhere((item) => item['id'] == value);
+                  final selected =
+                      _catalog.firstWhere((item) => item['id'] == value);
                   setState(() {
                     line.itemId = value;
                     line.unit = selected['unit'] as String? ?? '';
-                    line.unitPrice.text = '${selected['default_purchase_price'] ?? 0}';
+                    line.unitController.text = line.unit;
+                    line.unitPrice.text =
+                        '${selected['default_purchase_price'] ?? 0}';
                   });
                 },
                 validator: (value) => value == null ? 'Select an item' : null,
@@ -276,24 +309,38 @@ class _PurchaseFormScreenState extends State<PurchaseFormScreen> {
           ]),
           const SizedBox(height: 8),
           Row(children: [
-            Expanded(child: _numericField(line.quantity, 'Quantity', decimal: true)),
+            Expanded(
+                child: _numericField(line.quantity, 'Quantity', decimal: true)),
             const SizedBox(width: 8),
-            Expanded(child: _readOnlyField(line.unit, 'Unit')),
+            Expanded(
+                child: TextFormField(
+              controller: line.unitController,
+              readOnly: true,
+              decoration:
+                  const InputDecoration(labelText: 'Unit', isDense: true),
+            )),
             const SizedBox(width: 8),
-            Expanded(child: _numericField(line.unitPrice, 'Unit Price', decimal: true)),
+            Expanded(
+                child:
+                    _numericField(line.unitPrice, 'Unit Price', decimal: true)),
           ]),
           const SizedBox(height: 8),
           Row(children: [
-            Expanded(child: _numericField(line.vat, 'VAT Amount', decimal: true, optional: true)),
+            Expanded(
+                child: _numericField(line.vat, 'VAT Amount',
+                    decimal: true, optional: true)),
             const SizedBox(width: 8),
-            Expanded(child: _numericField(line.discount, 'Discount', decimal: true, optional: true)),
+            Expanded(
+                child: _numericField(line.discount, 'Discount',
+                    decimal: true, optional: true)),
           ]),
         ]),
       ),
     );
   }
 
-  Widget _numericField(TextEditingController controller, String label, {required bool decimal, bool optional = false}) {
+  Widget _numericField(TextEditingController controller, String label,
+      {required bool decimal, bool optional = false}) {
     return TextFormField(
       controller: controller,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -302,23 +349,24 @@ class _PurchaseFormScreenState extends State<PurchaseFormScreen> {
       validator: (value) {
         if ((value == null || value.trim().isEmpty) && optional) return null;
         final number = double.tryParse(value ?? '');
-        if (number == null || number < 0 || (!optional && number == 0)) return 'Enter a valid amount';
+        if (number == null || number < 0 || (!optional && number == 0))
+          return 'Enter a valid amount';
         return null;
       },
     );
   }
 
-  Widget _readOnlyField(String value, String label) => TextFormField(
-        initialValue: value,
-        readOnly: true,
-        decoration: InputDecoration(labelText: label, isDense: true),
-      );
-
-  Widget _amountRow(String label, double value, {bool strong = false}) => Padding(
+  Widget _amountRow(String label, double value, {bool strong = false}) =>
+      Padding(
         padding: const EdgeInsets.only(bottom: 6),
         child: Row(children: [
-          Expanded(child: Text(label, style: TextStyle(fontWeight: strong ? FontWeight.w800 : FontWeight.w600))),
-          Text('ETB ${value.toStringAsFixed(2)}', style: TextStyle(fontWeight: strong ? FontWeight.w800 : FontWeight.w600)),
+          Expanded(
+              child: Text(label,
+                  style: TextStyle(
+                      fontWeight: strong ? FontWeight.w800 : FontWeight.w600))),
+          Text('ETB ${value.toStringAsFixed(2)}',
+              style: TextStyle(
+                  fontWeight: strong ? FontWeight.w800 : FontWeight.w600)),
         ]),
       );
 
@@ -333,10 +381,13 @@ class _PurchaseFormScreenState extends State<PurchaseFormScreen> {
 class _PurchaseLineForm {
   String? itemId;
   String unit = '';
+  final unitController = TextEditingController();
   final quantity = TextEditingController(text: '1');
   final unitPrice = TextEditingController(text: '0');
   final vat = TextEditingController(text: '0');
   final discount = TextEditingController(text: '0');
+
+  _PurchaseLineForm();
 
   double get quantityValue => double.tryParse(quantity.text) ?? 0;
   double get unitPriceValue => double.tryParse(unitPrice.text) ?? 0;
@@ -347,6 +398,7 @@ class _PurchaseLineForm {
     return _PurchaseLineForm()
       ..itemId = model.itemId
       ..unit = model.unit
+      ..unitController.text = model.unit
       ..quantity.text = model.quantity.toString()
       ..unitPrice.text = model.unitPrice.toString()
       ..vat.text = model.vatAmount.toString()
@@ -362,6 +414,7 @@ class _PurchaseLineForm {
       };
 
   void dispose() {
+    unitController.dispose();
     quantity.dispose();
     unitPrice.dispose();
     vat.dispose();
