@@ -102,6 +102,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::get('items/{item}', [App\Http\Controllers\ItemController::class, 'show']);
         Route::get('items/search', [App\Http\Controllers\ItemController::class, 'search']);
         Route::get('items/categories', [App\Http\Controllers\ItemController::class, 'categories']);
+        Route::get('items/types', [App\Http\Controllers\ItemController::class, 'types']);
     });
     
     Route::middleware('permission:inventory.create')->group(function () {
@@ -114,6 +115,13 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     
     Route::middleware('permission:inventory.delete')->group(function () {
         Route::delete('items/{item}', [App\Http\Controllers\ItemController::class, 'destroy']);
+    });
+    
+    // Global Stock - require inventory permissions (cross-store view)
+    Route::middleware('permission:inventory.view')->group(function () {
+        Route::get('stock', [App\Http\Controllers\StockController::class, 'index']);
+        Route::get('stock/{stock}', [App\Http\Controllers\StockController::class, 'show']);
+        Route::get('stock/search', [App\Http\Controllers\StockController::class, 'search']);
     });
     
     // Store Stock - require inventory permissions and store access

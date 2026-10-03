@@ -53,12 +53,13 @@ class StockItem {
   @JsonKey(name: 'stock_category')
   final StockCategory stockCategory;
   final String unit;
-  @JsonKey(name: 'purchase_price')
+  @JsonKey(name: 'purchase_price', fromJson: _parseDouble)
   final double purchasePrice;
+  @JsonKey(fromJson: _parseDouble)
   final double quantity; // current quantity on hand
-  @JsonKey(name: 'min_quantity')
+  @JsonKey(name: 'min_quantity', fromJson: _parseDouble)
   final double minQuantity;
-  @JsonKey(name: 'max_quantity')
+  @JsonKey(name: 'max_quantity', fromJson: _parseDouble)
   final double maxQuantity;
   final String location; // store / shelf
   final String supplier;
@@ -242,4 +243,13 @@ class ElectronicsStockItem extends StockItem {
 
   @override
   Map<String, dynamic> toJson() => _$ElectronicsStockItemToJson(this);
+}
+
+// Helper function for safe double parsing
+double _parseDouble(dynamic value) {
+  if (value == null) return 0.0;
+  if (value is double) return value;
+  if (value is int) return value.toDouble();
+  if (value is String) return double.tryParse(value) ?? 0.0;
+  return 0.0;
 }

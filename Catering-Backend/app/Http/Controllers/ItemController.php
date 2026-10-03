@@ -50,8 +50,40 @@ class ItemController extends Controller
 
         $items = $query->paginate($request->get('per_page', 15));
 
+        // Transform items to include stock information for Flutter compatibility
+        $transformedItems = $items->getCollection()->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'code' => $item->code,
+                'name' => $item->name,
+                'description' => $item->description ?? '',
+                'category' => $item->category,
+                'unit' => $item->unit,
+                'default_purchase_price' => $item->default_purchase_price ? (float) $item->default_purchase_price : 0.0,
+                'item_type' => $item->item_type?->value ?? $item->item_type ?? 'unknown',
+                'shelf_life_days' => $item->shelf_life_days,
+                'requires_refrigeration' => $item->requires_refrigeration ?? false,
+                'catering_subtype' => $item->catering_subtype,
+                'brand' => $item->brand,
+                'model' => $item->model,
+                'warranty_period_months' => $item->warranty_period_months,
+                'is_active' => $item->is_active ?? true,
+                
+                // Stock information for Flutter compatibility (defaulted for now)
+                'stock_on_hand' => 0,
+                'min_stock' => 0,
+                'max_stock' => 0,
+                'internal_cost' => $item->default_purchase_price ? (float) $item->default_purchase_price : 0.0,
+                'reorder_point' => 0,
+                
+                // Timestamps
+                'created_at' => $item->created_at,
+                'updated_at' => $item->updated_at,
+            ];
+        });
+
         return $this->success([
-            'items' => $items->items(),
+            'items' => $transformedItems,
             'pagination' => [
                 'current_page' => $items->currentPage(),
                 'last_page' => $items->lastPage(),
