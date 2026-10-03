@@ -18,15 +18,18 @@ class ApiResponse<T> {
     Map<String, dynamic> json,
     T Function(dynamic)? fromJsonT,
   ) {
+    final rawData = json['data'];
+    final rawPagination = rawData is Map ? rawData['pagination'] : null;
+
     return ApiResponse<T>(
       success: json['success'] ?? false,
       message: json['message'],
-      data: json['data'] != null && fromJsonT != null 
-          ? fromJsonT(json['data']) 
-          : json['data'],
+      data: rawData != null && fromJsonT != null
+          ? fromJsonT(rawData)
+          : rawData,
       errors: json['errors'],
-      pagination: json['data'] != null && json['data']['pagination'] != null
-          ? PaginationMeta.fromJson(json['data']['pagination'])
+      pagination: rawPagination is Map
+          ? PaginationMeta.fromJson(Map<String, dynamic>.from(rawPagination))
           : null,
     );
   }

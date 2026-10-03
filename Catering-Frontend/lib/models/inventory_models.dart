@@ -376,8 +376,15 @@ class AppUser {
     required this.permissions,
   });
 
-  factory AppUser.fromJson(Map<String, dynamic> json) =>
-      _$AppUserFromJson(json);
+  factory AppUser.fromJson(Map<String, dynamic> json) {
+    final normalized = Map<String, dynamic>.from(json);
+    normalized['phone'] ??= '';
+    normalized['department'] ??= '';
+    normalized['last_login'] ??=
+        normalized['last_login_at']?.toString() ?? 'Never';
+    normalized['permissions'] ??= <String>[];
+    return _$AppUserFromJson(normalized);
+  }
 
   Map<String, dynamic> toJson() => _$AppUserToJson(this);
 }

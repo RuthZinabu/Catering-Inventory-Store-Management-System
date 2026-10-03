@@ -16,13 +16,31 @@ class UserService extends BaseApiService
   Future<PaginatedResult<AppUser>> getAll({
     ListQueryParams? queryParams,
   }) async {
-    return await executePaginatedRequest<AppUser>(
-      () => apiClient.get<Map<String, dynamic>>(
-        '/users',
-        queryParameters: queryParams?.toMap(),
-      ),
-      itemFromJson: (json) => AppUser.fromJson(json),
-      errorContext: 'Failed to fetch users',
+    final response = await apiClient.get<Map<String, dynamic>>(
+      '/users',
+      queryParameters: queryParams?.toMap(),
+    );
+
+    if (!response.isSuccess) {
+      throw ApiException(
+        message: response.message ?? 'Failed to fetch users',
+        errors: response.errors,
+      );
+    }
+
+    final data = response.data!;
+    final rawUsers = data['users'] ?? data['items'] ?? data['data'] ?? [];
+    if (rawUsers is! List) {
+      throw const ApiException(message: 'The users response is invalid');
+    }
+    final users = rawUsers
+        .cast<Map<String, dynamic>>()
+        .map(AppUser.fromJson)
+        .toList();
+
+    return PaginatedResult<AppUser>(
+      items: users,
+      pagination: response.pagination,
     );
   }
 

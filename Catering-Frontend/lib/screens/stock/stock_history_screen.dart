@@ -241,7 +241,7 @@ class _StockHistoryScreenState extends State<StockHistoryScreen> {
                                     color: const Color(0xFF10162B),
                                     letterSpacing: -0.4)),
                         const SizedBox(height: 2),
-                        Text(item.name,
+                        Text(widget.item.name,
                             style: const TextStyle(
                                 fontSize: 13,
                                 color: Color(0xFF64748B),

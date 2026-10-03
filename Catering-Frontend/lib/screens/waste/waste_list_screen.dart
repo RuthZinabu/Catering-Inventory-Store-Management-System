@@ -115,7 +115,7 @@ class _WasteListScreenState extends State<WasteListScreen> {
             await Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const WasteCreateScreen()),
             );
-            if (mounted) setState(() {});
+            if (mounted) _loadWasteRecords();
           },
           backgroundColor: const Color(0xFFEF4444),
           icon: const Icon(Icons.add_rounded),

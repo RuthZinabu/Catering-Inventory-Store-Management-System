@@ -8,6 +8,7 @@ import 'store_service.dart';
 import 'inventory_service.dart';
 import 'supplier_service.dart';
 import 'stock_service.dart';
+import 'waste_service.dart';
 
 /// Main repository that coordinates API services for all data operations
 class ApiRepository {
@@ -25,6 +26,7 @@ class ApiRepository {
   final InventoryService _inventoryService = InventoryService.instance;
   final SupplierService _supplierService = SupplierService.instance;
   final StockService _stockService = StockService.instance;
+  final WasteService _wasteService = WasteService.instance;
 
   // User Management
   Future<List<AppUser>> getUsers({
@@ -46,6 +48,18 @@ class ApiRepository {
 
   Future<AppUser?> getUserById(String id) async {
     return await _userService.getById(id);
+  }
+
+  Future<AppUser> createUser(Map<String, dynamic> data) async {
+    return await _userService.create(data);
+  }
+
+  Future<AppUser> updateUser(String id, Map<String, dynamic> data) async {
+    return await _userService.update(id, data);
+  }
+
+  Future<void> deleteUser(String id) async {
+    await _userService.delete(id);
   }
 
   // Store Management
@@ -177,10 +191,18 @@ class ApiRepository {
     return result.items;
   }
 
-  // Waste Records - TODO: Implement API endpoints
+  // Waste Records
   Future<List<WasteRecord>> getWasteRecords() async {
-    // This will need to be implemented when waste record API is available
-    return [];
+    return await _wasteService.getAll();
+  }
+
+  Future<WasteRecord> createWasteRecord(Map<String, dynamic> data) async {
+    return await _wasteService.create(data);
+  }
+
+  Future<WasteRecord> updateWasteRecord(
+      String id, Map<String, dynamic> data) async {
+    return await _wasteService.update(id, data);
   }
 
   // Expiry Items - TODO: Implement API endpoints
