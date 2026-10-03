@@ -35,7 +35,7 @@ class ApiResponse<T> {
   }
 
   /// Check if the response indicates success
-  bool get isSuccess => success && data != null;
+  bool get isSuccess => success;
   
   /// Check if the response has errors
   bool get hasErrors => errors != null && errors!.isNotEmpty;

@@ -135,7 +135,8 @@ class ApiClient {
     }
 
     // Handle authentication errors with automatic token refresh
-    if (apiException is AuthenticationException) {
+    if (apiException is AuthenticationException &&
+      !error.requestOptions.path.endsWith('/auth/refresh')) {
       final refreshed = await _tryRefreshToken();
       if (refreshed) {
         // Retry the original request

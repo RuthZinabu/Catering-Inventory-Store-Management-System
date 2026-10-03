@@ -246,7 +246,66 @@ class ElectronicsStockItem extends StockItem {
 }
 
 // Helper function for safe double parsing
+Map<String, dynamic> normalizeStockItemJson(Map<String, dynamic> json) {
+  final item = json['item'] is Map
+    ? Map<String, dynamic>.from(json['item'] as Map)
+    : const <String, dynamic>{};
+  final store = json['store'] is Map
+    ? Map<String, dynamic>.from(json['store'] as Map)
+    : const <String, dynamic>{};
+  final itemType = json['stock_category'] ?? json['item_type'] ?? item['item_type'];
+  final category = StockCategory.values.any((value) => value.name == itemType)
+    ? itemType as String
+    : StockCategory.food.name;
+
+  return {
+  ...item,
+  ...json,
+  'id': json['id'] ?? json['item_id'] ?? '',
+  'code': json['code'] ?? item['code'] ?? '',
+  'name': json['name'] ?? item['name'] ?? '',
+  'category': json['category'] ?? item['category'] ?? '',
+  'stock_category': category,
+  'unit': json['unit'] ?? item['unit'] ?? '',
+  'purchase_price':
+    json['purchase_price'] ?? json['current_cost'] ?? item['default_purchase_price'] ?? 0,
+  'quantity': json['quantity'] ?? 0,
+  'min_quantity': json['min_quantity'] ?? 0,
+  'max_quantity': json['max_quantity'] ?? 0,
+  'location': json['location'] ?? json['location_description'] ?? store['name'] ?? '',
+  'supplier': json['supplier'] ?? 'Unknown',
+  'status': json['status'] ?? 'Unknown',
+  'description': json['description'] ?? item['description'] ?? '',
+  'last_updated': json['last_updated'] ??
+    json['updated_at'] ??
+    json['created_at'] ??
+    DateTime.now().toIso8601String(),
+  'batch_number': json['batch_number'] ?? '',
+  'requires_refrigeration':
+    json['requires_refrigeration'] ?? item['requires_refrigeration'] ?? false,
+  'subtype': json['subtype'] ?? item['catering_subtype'] ?? 'permanent',
+  'brand': json['brand'] ?? item['brand'] ?? '',
+  'model': json['model'] ?? item['model'] ?? '',
+  'serial_number': json['serial_number'] ?? '',
+  'maintenance_status': json['maintenance_status'] ?? 'Unknown',
+  'asset_tag': json['asset_tag'] ?? '',
+  };
+}
+
 double _parseDouble(dynamic value) {
+Map<String, dynamic> normalizeStockMovementJson(Map<String, dynamic> json) {
+  return {
+    ...json,
+    'stock_item_id': json['stock_item_id'] ?? json['item_id'] ?? '',
+    'quantity': _parseDouble(json['quantity']),
+    'performed_by': json['performed_by']?.toString() ?? 'System',
+    'date': json['date'] ??
+        json['created_at'] ??
+        DateTime.now().toIso8601String(),
+    'note': json['note'] ?? '',
+  };
+}
+
   if (value == null) return 0.0;
   if (value is double) return value;
   if (value is int) return value.toDouble();

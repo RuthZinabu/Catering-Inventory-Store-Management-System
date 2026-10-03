@@ -69,6 +69,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     
     Route::middleware('permission:users.update')->group(function () {
         Route::put('users/{user}', [App\Http\Controllers\UserController::class, 'update']);
+        Route::patch('users/{user}', [App\Http\Controllers\UserController::class, 'update']);
         Route::post('users/{user}/stores', [App\Http\Controllers\UserStoreAssignmentController::class, 'assign']);
         Route::delete('users/{user}/stores/{store}', [App\Http\Controllers\UserStoreAssignmentController::class, 'remove']);
     });
@@ -90,6 +91,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     
     Route::middleware('permission:stores.update')->group(function () {
         Route::put('stores/{store}', [App\Http\Controllers\StoreController::class, 'update'])->middleware('store.access');
+        Route::patch('stores/{store}', [App\Http\Controllers\StoreController::class, 'update'])->middleware('store.access');
     });
     
     Route::middleware('permission:stores.delete')->group(function () {
@@ -111,6 +113,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     
     Route::middleware('permission:inventory.update')->group(function () {
         Route::put('items/{item}', [App\Http\Controllers\ItemController::class, 'update']);
+        Route::patch('items/{item}', [App\Http\Controllers\ItemController::class, 'update']);
     });
     
     Route::middleware('permission:inventory.delete')->group(function () {
@@ -120,8 +123,8 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     // Global Stock - require inventory permissions (cross-store view)
     Route::middleware('permission:inventory.view')->group(function () {
         Route::get('stock', [App\Http\Controllers\StockController::class, 'index']);
-        Route::get('stock/{stock}', [App\Http\Controllers\StockController::class, 'show']);
         Route::get('stock/search', [App\Http\Controllers\StockController::class, 'search']);
+        Route::get('stock/{stock}', [App\Http\Controllers\StockController::class, 'show']);
     });
     
     // Store Stock - require inventory permissions and store access
@@ -158,6 +161,9 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     
     Route::middleware('permission:transfers.create')->group(function () {
         Route::post('transfers', [App\Http\Controllers\TransferController::class, 'store']);
+        Route::put('transfers/{transfer}', [App\Http\Controllers\TransferController::class, 'update']);
+        Route::patch('transfers/{transfer}', [App\Http\Controllers\TransferController::class, 'update']);
+        Route::delete('transfers/{transfer}', [App\Http\Controllers\TransferController::class, 'destroy']);
         Route::post('transfers/{transfer}/ship', [App\Http\Controllers\TransferController::class, 'ship']);
         Route::post('transfers/{transfer}/receive', [App\Http\Controllers\TransferController::class, 'receive']);
     });
@@ -178,6 +184,8 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     
     Route::middleware('permission:suppliers.update')->group(function () {
         Route::put('suppliers/{supplier}', [App\Http\Controllers\SupplierController::class, 'update']);
+        Route::patch('suppliers/{supplier}', [App\Http\Controllers\SupplierController::class, 'update']);
+        Route::post('suppliers/{supplier}/logo', [App\Http\Controllers\SupplierController::class, 'uploadLogo']);
     });
     
     Route::middleware('permission:suppliers.delete')->group(function () {
@@ -197,7 +205,9 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     
     Route::middleware('permission:purchases.update')->group(function () {
         Route::put('purchase-orders/{purchaseOrder}', [App\Http\Controllers\PurchaseOrderController::class, 'update']);
+        Route::patch('purchase-orders/{purchaseOrder}', [App\Http\Controllers\PurchaseOrderController::class, 'update']);
         Route::post('purchase-orders/{purchaseOrder}/approve', [App\Http\Controllers\PurchaseOrderController::class, 'approve']);
+        Route::post('purchase-orders/{purchaseOrder}/returns/{purchaseReturn}/approve', [App\Http\Controllers\PurchaseOrderController::class, 'approveReturn']);
     });
     
     Route::middleware('permission:purchases.delete')->group(function () {
@@ -216,6 +226,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     
     Route::middleware('permission:waste.update')->group(function () {
         Route::put('waste-records/{wasteRecord}', [App\Http\Controllers\WasteRecordController::class, 'update']);
+        Route::patch('waste-records/{wasteRecord}', [App\Http\Controllers\WasteRecordController::class, 'update']);
         Route::post('waste-records/{wasteRecord}/approve', [App\Http\Controllers\WasteRecordController::class, 'approve']);
     });
     
@@ -226,50 +237,8 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
 
 // Protected routes
 Route::middleware(['auth:sanctum'])->group(function () {
-    
-    // Users
-    Route::apiResource('users', App\Http\Controllers\UserController::class);
-    Route::post('users/{user}/stores', [App\Http\Controllers\UserStoreAssignmentController::class, 'assign']);
-    Route::delete('users/{user}/stores/{store}', [App\Http\Controllers\UserStoreAssignmentController::class, 'remove']);
-    
-    // Stores
-    Route::apiResource('stores', App\Http\Controllers\StoreController::class);
-    
-    // Canonical Items
-    Route::apiResource('items', App\Http\Controllers\ItemController::class);
-    Route::get('items/search', [App\Http\Controllers\ItemController::class, 'search']);
-    
-    // Store Stock
-    Route::get('stores/{store}/stock', [App\Http\Controllers\StoreStockController::class, 'index']);
-    Route::post('stores/{store}/stock', [App\Http\Controllers\StoreStockController::class, 'store']);
-    Route::get('stores/{store}/stock/{item}', [App\Http\Controllers\StoreStockController::class, 'show']);
-    Route::put('stores/{store}/stock/{item}', [App\Http\Controllers\StoreStockController::class, 'update']);
-    Route::delete('stores/{store}/stock/{item}', [App\Http\Controllers\StoreStockController::class, 'destroy']);
-    
-    // Stock Movements
-    Route::apiResource('stock-movements', App\Http\Controllers\StockMovementController::class);
-    Route::post('stock-movements/{movement}/correct', [App\Http\Controllers\StockMovementController::class, 'correct']);
-    
-    // Transfers
-    Route::apiResource('transfers', App\Http\Controllers\TransferController::class);
-    Route::post('transfers/{transfer}/approve', [App\Http\Controllers\TransferController::class, 'approve']);
-    Route::post('transfers/{transfer}/ship', [App\Http\Controllers\TransferController::class, 'ship']);
-    Route::post('transfers/{transfer}/receive', [App\Http\Controllers\TransferController::class, 'receive']);
-    
-    // Suppliers
-    Route::apiResource('suppliers', App\Http\Controllers\SupplierController::class);
-    Route::post('suppliers/{supplier}/logo', [App\Http\Controllers\SupplierController::class, 'uploadLogo']);
-    
-    // Purchase Orders
-    Route::apiResource('purchase-orders', App\Http\Controllers\PurchaseOrderController::class);
-    Route::post('purchase-orders/{purchaseOrder}/approve', [App\Http\Controllers\PurchaseOrderController::class, 'approve']);
-    Route::post('purchase-orders/{purchaseOrder}/receive', [App\Http\Controllers\PurchaseOrderController::class, 'receive']);
-    Route::post('purchase-orders/{purchaseOrder}/returns', [App\Http\Controllers\PurchaseOrderController::class, 'storeReturn']);
-    Route::post('purchase-orders/{purchaseOrder}/returns/{purchaseReturn}/approve', [App\Http\Controllers\PurchaseOrderController::class, 'approveReturn']);
-    
-    // Waste Records
-    Route::apiResource('waste-records', App\Http\Controllers\WasteRecordController::class);
-    Route::post('waste-records/{wasteRecord}/approve', [App\Http\Controllers\WasteRecordController::class, 'approve']);
+    Route::post('purchase-orders/{purchaseOrder}/returns', [App\Http\Controllers\PurchaseOrderController::class, 'storeReturn'])
+        ->middleware('permission:purchases.create');
     
     // Notifications
     Route::get('notifications', [App\Http\Controllers\NotificationController::class, 'index']);

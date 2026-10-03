@@ -185,7 +185,9 @@ class StockService extends BaseApiService
         '/stock-movements',
         queryParameters: params,
       ),
-      itemFromJson: (json) => StockMovementEntry.fromJson(json),
+      itemFromJson: (json) => StockMovementEntry.fromJson(
+        normalizeStockMovementJson(json),
+      ),
       errorContext: 'Failed to fetch stock movements',
     );
   }
@@ -196,7 +198,9 @@ class StockService extends BaseApiService
       () => apiClient.post<StockMovementEntry>(
         '/stock-movements',
         data: data,
-        fromJson: (json) => StockMovementEntry.fromJson(json),
+        fromJson: (json) => StockMovementEntry.fromJson(
+          normalizeStockMovementJson(Map<String, dynamic>.from(json as Map)),
+        ),
       ),
       errorContext: 'Failed to record stock movement',
     );
@@ -254,7 +258,8 @@ class StockService extends BaseApiService
 
   /// Convert API response to appropriate stock item type
   StockItem _stockItemFromJson(Map<String, dynamic> json) {
-    final categoryName = json['stock_category'] ?? json['category'];
+    final normalizedJson = normalizeStockItemJson(json);
+    final categoryName = normalizedJson['stock_category'];
     final category = StockCategory.values.firstWhere(
       (c) => c.name == categoryName,
       orElse: () => StockCategory.food,
@@ -262,13 +267,13 @@ class StockService extends BaseApiService
 
     switch (category) {
       case StockCategory.food:
-        return FoodStockItem.fromJson(json);
+        return FoodStockItem.fromJson(normalizedJson);
       case StockCategory.catering:
-        return CateringStockItem.fromJson(json);
+        return CateringStockItem.fromJson(normalizedJson);
       case StockCategory.electronics:
-        return ElectronicsStockItem.fromJson(json);
+        return ElectronicsStockItem.fromJson(normalizedJson);
       default:
-        return StockItem.fromJson(json);
+        return StockItem.fromJson(normalizedJson);
     }
   }
 }

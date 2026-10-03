@@ -17,14 +17,19 @@ abstract class BaseApiService {
     try {
       final response = await request();
       
-      if (response.isSuccess && response.data != null) {
-        return response.data!;
-      } else {
-        throw ApiException(
-          message: response.message ?? 'Request failed',
-          errors: response.errors,
-        );
+      if (response.isSuccess) {
+        if (response.data != null) {
+          return response.data!;
+        }
+        if (T == void) {
+          return null as T;
+        }
       }
+
+      throw ApiException(
+        message: response.message ?? 'Request failed',
+        errors: response.errors,
+      );
     } on ApiException {
       rethrow;
     } catch (e) {

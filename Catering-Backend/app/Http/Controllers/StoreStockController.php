@@ -7,6 +7,7 @@ use App\Models\Item;
 use App\Models\StoreStock;
 use App\Enums\StockStatus;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class StoreStockController extends Controller
 {
@@ -52,7 +53,7 @@ class StoreStockController extends Controller
         $stocks = $query->paginate($request->get('per_page', 15));
 
         return $this->success([
-            'stocks' => $stocks->items(),
+            'items' => $stocks->items(),
             'store' => [
                 'id' => $store->id,
                 'name' => $store->name,
@@ -146,26 +147,46 @@ class StoreStockController extends Controller
             'adjustment_reason' => 'required_with:quantity|string|max:255',
         ]);
 
-        $oldQuantity = $stock->quantity;
+        $stock = DB::transaction(function () use ($stock, $validated, $request) {
+            $stock = StoreStock::whereKey($stock->id)->lockForUpdate()->first();
+            if (!$stock) {
+                return null;
+            }
 
-        // If quantity is being updated, record the adjustment
-        if (isset($validated['quantity']) && $validated['quantity'] != $oldQuantity) {
-            $quantityDifference = $validated['quantity'] - $oldQuantity;
-            $stock->adjustQuantity($quantityDifference, $request->user(), $validated['adjustment_reason'] ?? null);
+            if (array_key_exists('quantity', $validated)) {
+                $targetQuantity = (float) $validated['quantity'];
+                if ($targetQuantity < (float) $stock->reserved_quantity) {
+                    return false;
+                }
+
+                $quantityDifference = $targetQuantity - (float) $stock->quantity;
+                if ($quantityDifference !== 0.0) {
+                    $stock->adjustQuantity(
+                        $quantityDifference,
+                        $request->user(),
+                        $validated['adjustment_reason'] ?? null
+                    );
+                }
+
+                $stock->update([
+                    'last_counted_at' => now(),
+                    'last_counted_by' => $request->user()->id,
+                ]);
+            }
+
+            $updateData = collect($validated)->except(['adjustment_reason', 'quantity'])->toArray();
+            if (!empty($updateData)) {
+                $stock->update($updateData);
+            }
+
+            return $stock;
+        });
+
+        if ($stock === null) {
+            return $this->notFound('Stock item not found in this store');
         }
-
-        // Update other fields
-        $updateData = collect($validated)->except(['adjustment_reason', 'quantity'])->toArray();
-        if (!empty($updateData)) {
-            $stock->update($updateData);
-        }
-
-        // Update last counted info if quantity changed
-        if (isset($validated['quantity'])) {
-            $stock->update([
-                'last_counted_at' => now(),
-                'last_counted_by' => $request->user()->id,
-            ]);
+        if ($stock === false) {
+            return $this->error('Quantity cannot be lower than reserved stock', 422);
         }
 
         $stock->load(['item:id,code,name,unit,item_type', 'store:id,name,code', 'lastCountedBy:id,name']);

@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class StockMovement extends Model
 {
@@ -196,28 +198,37 @@ class StockMovement extends Model
      */
     public function createCorrection(User $user, float $correctionQuantity, string $reason): StockMovement
     {
-        $storeStock = StoreStock::where('item_id', $this->item_id)
-                                ->where('store_id', $this->store_id)
-                                ->first();
+        return DB::transaction(function () use ($user, $correctionQuantity, $reason) {
+            $storeStock = StoreStock::where('item_id', $this->item_id)
+                ->where('store_id', $this->store_id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        $oldQuantity = $storeStock->quantity;
-        $newQuantity = $oldQuantity + $correctionQuantity;
+            $oldQuantity = (float) $storeStock->quantity;
+            $newQuantity = $oldQuantity + $correctionQuantity;
+            if ($newQuantity < (float) $storeStock->reserved_quantity) {
+                throw ValidationException::withMessages([
+                    'correction_quantity' => 'Correction cannot reduce stock below its reserved quantity.',
+                ]);
+            }
 
-        $storeStock->update(['quantity' => $newQuantity]);
+            $storeStock->update(['quantity' => $newQuantity]);
+            $storeStock->updateStatus();
 
-        return self::create([
-            'item_id' => $this->item_id,
-            'store_id' => $this->store_id,
-            'type' => MovementType::CORRECTION,
-            'quantity' => abs($correctionQuantity),
-            'unit' => $this->unit,
-            'quantity_before' => $oldQuantity,
-            'quantity_after' => $newQuantity,
-            'is_correction' => true,
-            'corrects_movement_id' => $this->id,
-            'correction_reason' => $reason,
-            'performed_by' => $user->id,
-        ]);
+            return self::create([
+                'item_id' => $this->item_id,
+                'store_id' => $this->store_id,
+                'type' => MovementType::CORRECTION,
+                'quantity' => abs($correctionQuantity),
+                'unit' => $this->unit,
+                'quantity_before' => $oldQuantity,
+                'quantity_after' => $newQuantity,
+                'is_correction' => true,
+                'corrects_movement_id' => $this->id,
+                'correction_reason' => $reason,
+                'performed_by' => $user->id,
+            ]);
+        });
     }
 
     /**

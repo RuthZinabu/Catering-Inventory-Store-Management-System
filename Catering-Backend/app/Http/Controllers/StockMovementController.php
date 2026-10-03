@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\StockMovement;
 use App\Enums\MovementType;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class StockMovementController extends Controller
 {
@@ -74,7 +75,7 @@ class StockMovementController extends Controller
             ->paginate($request->get('per_page', 15));
 
         return $this->success([
-            'movements' => $movements->items(),
+            'items' => $movements->items(),
             'pagination' => [
                 'current_page' => $movements->currentPage(),
                 'last_page' => $movements->lastPage(),
@@ -93,11 +94,18 @@ class StockMovementController extends Controller
             'item_id' => 'required|uuid|exists:items,id',
             'store_id' => 'required|uuid|exists:stores,id',
             'type' => 'required|string|in:Stock In,Stock Out,Adjustment',
-            'quantity' => 'required|numeric|min:0.001',
+            'quantity' => 'required|numeric',
             'note' => 'nullable|string|max:500',
             'reference_type' => 'nullable|string|in:manual,purchase_order,transfer,waste_record',
             'reference_id' => 'nullable|uuid',
         ]);
+
+        $quantity = (float) $validated['quantity'];
+        if (abs($quantity) < 0.001 || ($validated['type'] !== 'Adjustment' && $quantity < 0)) {
+            return $this->validationError([
+                'quantity' => 'Quantity must be non-zero, and can be negative only for an adjustment.',
+            ]);
+        }
 
         $user = $request->user();
 
@@ -106,50 +114,54 @@ class StockMovementController extends Controller
             return $this->forbidden('Access denied to this store');
         }
 
-        // Get current stock
-        $storeStock = \App\Models\StoreStock::where('item_id', $validated['item_id'])
-            ->where('store_id', $validated['store_id'])
-            ->first();
+        $movementType = MovementType::from($validated['type']);
+        $movement = DB::transaction(function () use ($validated, $movementType, $quantity, $user) {
+            $storeStock = \App\Models\StoreStock::where('item_id', $validated['item_id'])
+                ->where('store_id', $validated['store_id'])
+                ->lockForUpdate()
+                ->first();
 
-        if (!$storeStock) {
+            if (!$storeStock) {
+                return null;
+            }
+
+            $oldQuantity = (float) $storeStock->quantity;
+            $quantityChange = match ($movementType) {
+                MovementType::STOCK_IN, MovementType::RETURN => $quantity,
+                MovementType::STOCK_OUT => -$quantity,
+                MovementType::ADJUSTMENT => $quantity,
+                default => 0,
+            };
+            $newQuantity = $oldQuantity + $quantityChange;
+
+            if ($newQuantity < (float) $storeStock->reserved_quantity) {
+                return false;
+            }
+
+            $storeStock->update(['quantity' => $newQuantity]);
+            $storeStock->updateStatus();
+
+            return StockMovement::create([
+                'item_id' => $validated['item_id'],
+                'store_id' => $validated['store_id'],
+                'type' => $movementType,
+                'quantity' => abs($quantityChange),
+                'unit' => $storeStock->item->unit,
+                'quantity_before' => $oldQuantity,
+                'quantity_after' => $newQuantity,
+                'note' => $validated['note'] ?? null,
+                'reference_type' => $validated['reference_type'] ?? StockMovement::REFERENCE_MANUAL,
+                'reference_id' => $validated['reference_id'] ?? null,
+                'performed_by' => $user->id,
+            ]);
+        });
+
+        if ($movement === null) {
             return $this->error('Stock item not found in this store', 404);
         }
-
-        $oldQuantity = $storeStock->quantity;
-        
-        // Calculate new quantity based on movement type
-        $movementType = MovementType::from($validated['type']);
-        $quantityChange = match($movementType) {
-            MovementType::STOCK_IN, MovementType::RETURN => $validated['quantity'],
-            MovementType::STOCK_OUT => -$validated['quantity'],
-            MovementType::ADJUSTMENT => $validated['quantity'], // Can be positive or negative
-            default => 0,
-        };
-
-        $newQuantity = $oldQuantity + $quantityChange;
-
-        if ($newQuantity < 0) {
-            return $this->error('Insufficient stock for this operation', 422);
+        if ($movement === false) {
+            return $this->error('Insufficient unreserved stock for this operation', 422);
         }
-
-        // Update stock quantity
-        $storeStock->update(['quantity' => $newQuantity]);
-        $storeStock->updateStatus();
-
-        // Create movement record
-        $movement = StockMovement::create([
-            'item_id' => $validated['item_id'],
-            'store_id' => $validated['store_id'],
-            'type' => $movementType,
-            'quantity' => abs($quantityChange),
-            'unit' => $storeStock->item->unit,
-            'quantity_before' => $oldQuantity,
-            'quantity_after' => $newQuantity,
-            'note' => $validated['note'],
-            'reference_type' => $validated['reference_type'] ?? StockMovement::REFERENCE_MANUAL,
-            'reference_id' => $validated['reference_id'],
-            'performed_by' => $user->id,
-        ]);
 
         $movement->load([
             'item:id,code,name,unit',
@@ -196,6 +208,12 @@ class StockMovementController extends Controller
             'correction_quantity' => 'required|numeric',
             'reason' => 'required|string|max:500',
         ]);
+
+        if (abs((float) $validated['correction_quantity']) < 0.001) {
+            return $this->validationError([
+                'correction_quantity' => 'Correction quantity must be at least 0.001 in magnitude.',
+            ]);
+        }
 
         $user = $request->user();
 

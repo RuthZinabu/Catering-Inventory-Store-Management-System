@@ -27,8 +27,8 @@ class StockController extends Controller
             
             $query = StoreStock::with(['item', 'store']);
             
-            // Filter by accessible stores if user is not admin
-            if ($user->role !== 'admin' && $accessibleStoreIds->isNotEmpty()) {
+            // An empty store scope must return no stock for non-admin users.
+            if ($user->role !== 'admin') {
                 $query->whereIn('store_id', $accessibleStoreIds);
             }
             
@@ -255,12 +255,10 @@ class StockController extends Controller
             
             $stockQuery = StoreStock::with(['item', 'store']);
             
-            // Filter by accessible stores if user is not admin
+            // An empty store scope must return no stock for non-admin users.
             if ($user->role !== 'admin') {
                 $accessibleStoreIds = $user->storeAssignments()->pluck('store_id');
-                if ($accessibleStoreIds->isNotEmpty()) {
-                    $stockQuery->whereIn('store_id', $accessibleStoreIds);
-                }
+                $stockQuery->whereIn('store_id', $accessibleStoreIds);
             }
             
             $stockQuery->whereHas('item', function($q) use ($query) {
@@ -310,7 +308,7 @@ class StockController extends Controller
             
             return response()->json([
                 'success' => true,
-                'data' => $data,
+                'data' => ['items' => $data],
             ]);
             
         } catch (\Illuminate\Validation\ValidationException $e) {
