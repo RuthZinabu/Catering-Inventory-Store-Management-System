@@ -132,6 +132,9 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::get('stores/{store}/stock', [App\Http\Controllers\StoreStockController::class, 'index']);
         Route::get('stores/{store}/stock/{item}', [App\Http\Controllers\StoreStockController::class, 'show']);
     });
+
+    Route::post('stores/{store}/stock/items', [App\Http\Controllers\StoreStockController::class, 'createItem'])
+        ->middleware(['permission:inventory.create', 'permission:inventory.update', 'store.access']);
     
     Route::middleware(['permission:inventory.update', 'store.access'])->group(function () {
         Route::post('stores/{store}/stock', [App\Http\Controllers\StoreStockController::class, 'store']);
@@ -212,6 +215,24 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     
     Route::middleware('permission:purchases.delete')->group(function () {
         Route::delete('purchase-orders/{purchaseOrder}', [App\Http\Controllers\PurchaseOrderController::class, 'destroy']);
+    });
+
+    Route::middleware('permission:recipes.view')->group(function () {
+        Route::get('recipes', [App\Http\Controllers\RecipeController::class, 'index']);
+        Route::get('recipes/{recipe}', [App\Http\Controllers\RecipeController::class, 'show']);
+    });
+
+    Route::middleware('permission:recipes.create')->group(function () {
+        Route::post('recipes', [App\Http\Controllers\RecipeController::class, 'store']);
+    });
+
+    Route::middleware('permission:recipes.update')->group(function () {
+        Route::put('recipes/{recipe}', [App\Http\Controllers\RecipeController::class, 'update']);
+        Route::patch('recipes/{recipe}', [App\Http\Controllers\RecipeController::class, 'update']);
+    });
+
+    Route::middleware('permission:recipes.delete')->group(function () {
+        Route::delete('recipes/{recipe}', [App\Http\Controllers\RecipeController::class, 'destroy']);
     });
     
     // Waste Records - require waste permissions

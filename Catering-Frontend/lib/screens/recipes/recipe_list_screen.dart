@@ -357,8 +357,14 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(22),
-          onTap: () => Navigator.of(context).push(MaterialPageRoute(
-              builder: (_) => RecipeDetailScreen(recipe: recipe))),
+          onTap: () async {
+            final updated = await Navigator.of(context).push<bool>(
+              MaterialPageRoute(
+                builder: (_) => RecipeDetailScreen(recipe: recipe),
+              ),
+            );
+            if (updated == true) _loadRecipes();
+          },
           child: Padding(
             padding: const EdgeInsets.all(2),
             child: Column(

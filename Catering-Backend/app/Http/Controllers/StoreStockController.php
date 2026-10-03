@@ -5,9 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\Store;
 use App\Models\Item;
 use App\Models\StoreStock;
+use App\Models\StockMovement;
 use App\Enums\StockStatus;
+use App\Enums\MovementType;
+use App\Enums\ItemType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class StoreStockController extends Controller
 {
@@ -104,6 +108,85 @@ class StoreStockController extends Controller
         $stock->load(['item:id,code,name,unit,item_type', 'store:id,name,code', 'lastCountedBy:id,name']);
 
         return $this->success($stock, 'Stock item added successfully', 201);
+    }
+
+    public function createItem(Request $request, Store $store)
+    {
+        $validated = $request->validate([
+            'item' => 'required|array',
+            'item.code' => 'required|string|max:100|unique:items,code',
+            'item.name' => 'required|string|max:255',
+            'item.description' => 'nullable|string',
+            'item.category' => 'required|string|max:100',
+            'item.item_type' => 'required|string|in:food,catering,electronics',
+            'item.unit' => 'required|string|max:20',
+            'item.default_purchase_price' => 'nullable|numeric|min:0',
+            'item.shelf_life_days' => 'nullable|integer|min:1',
+            'item.requires_refrigeration' => 'nullable|boolean',
+            'item.catering_subtype' => ['nullable', Rule::in(['permanent', 'temporary'])],
+            'item.brand' => 'nullable|string|max:100',
+            'item.model' => 'nullable|string|max:100',
+            'item.warranty_period_months' => 'nullable|integer|min:0',
+            'quantity' => 'required|numeric|min:0',
+            'min_quantity' => 'nullable|numeric|min:0',
+            'max_quantity' => 'nullable|numeric|min:0',
+            'location_description' => 'nullable|string|max:255',
+        ]);
+
+        $itemData = $validated['item'];
+        $itemType = ItemType::from($itemData['item_type']);
+        if ($itemType === ItemType::FOOD && (isset($itemData['catering_subtype']) || isset($itemData['brand']) || isset($itemData['model']))) {
+            return $this->validationError(['item.item_type' => 'Food items cannot include catering or electronics details.']);
+        }
+        if ($itemType === ItemType::CATERING && (isset($itemData['shelf_life_days']) || isset($itemData['brand']) || isset($itemData['model']))) {
+            return $this->validationError(['item.item_type' => 'Catering items cannot include food or electronics details.']);
+        }
+        if ($itemType === ItemType::ELECTRONICS && (isset($itemData['shelf_life_days']) || isset($itemData['catering_subtype']))) {
+            return $this->validationError(['item.item_type' => 'Electronics items cannot include food or catering details.']);
+        }
+
+        $stock = DB::transaction(function () use ($request, $store, $validated, $itemData) {
+            $item = Item::create([
+                ...$itemData,
+                'created_by' => $request->user()->id,
+            ]);
+            $quantity = (float) $validated['quantity'];
+            $stock = StoreStock::create([
+                'item_id' => $item->id,
+                'store_id' => $store->id,
+                'quantity' => $quantity,
+                'reserved_quantity' => 0,
+                'min_quantity' => $validated['min_quantity'] ?? 0,
+                'max_quantity' => $validated['max_quantity'] ?? 0,
+                'location_description' => $validated['location_description'] ?? null,
+                'current_cost' => $itemData['default_purchase_price'] ?? 0,
+                'last_cost' => $itemData['default_purchase_price'] ?? 0,
+                'status' => StockStatus::HEALTHY,
+                'last_counted_at' => now(),
+                'last_counted_by' => $request->user()->id,
+            ]);
+            $stock->updateStatus();
+
+            if ($quantity > 0) {
+                StockMovement::create([
+                    'item_id' => $item->id,
+                    'store_id' => $store->id,
+                    'type' => MovementType::STOCK_IN,
+                    'quantity' => $quantity,
+                    'unit' => $item->unit,
+                    'quantity_before' => 0,
+                    'quantity_after' => $quantity,
+                    'reference_type' => StockMovement::REFERENCE_MANUAL,
+                    'note' => 'Opening stock',
+                    'performed_by' => $request->user()->id,
+                ]);
+            }
+
+            return $stock;
+        });
+
+        $stock->load(['item', 'store', 'lastCountedBy:id,name']);
+        return $this->success($stock, 'Stock item created successfully', 201);
     }
 
     /**

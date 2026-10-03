@@ -106,7 +106,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Good morning',
+                        Text('Welcome!',
                             style: Theme.of(context).textTheme.bodyMedium),
                         const SizedBox(height: 4),
                         Text(

@@ -1,7 +1,10 @@
 import 'dart:convert';
 
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../config/app_config.dart';
 
 class ApiException implements Exception {
   final String message;
@@ -30,7 +33,8 @@ class ApiClient {
 
   Future<void> restoreSession() async {
     final preferences = await SharedPreferences.getInstance();
-    _token = preferences.getString(_tokenKey);
+    _token = await const FlutterSecureStorage().read(key: AppConfig.tokenKey) ??
+        preferences.getString(_tokenKey);
     storeId = preferences.getString(_storeKey);
   }
 
@@ -136,6 +140,10 @@ class ApiClient {
     Map<String, dynamic>? body,
     bool authenticated = true,
   }) async {
+    if (authenticated && !isAuthenticated) {
+      await restoreSession();
+    }
+
     final uri = Uri.parse('$_baseUrl$path');
     final headers = <String, String>{'Accept': 'application/json'};
     if (body != null) headers['Content-Type'] = 'application/json';

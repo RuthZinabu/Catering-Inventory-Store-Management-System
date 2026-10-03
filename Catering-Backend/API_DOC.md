@@ -843,6 +843,31 @@ Get available categories, optionally filtered by type.
 }
 ```
 
+## Stock Management
+
+### Create an Item in a Store
+
+`POST /stores/{store}/stock/items` requires `inventory.create`, `inventory.update`, and access to the target store. It creates the canonical item and its store-stock row atomically. A positive opening quantity also creates a `Stock In` movement in the same transaction.
+
+```json
+{
+    "item": {
+        "code": "RICE-001",
+        "name": "Rice",
+        "category": "Dry Food",
+        "item_type": "food",
+        "unit": "kg",
+        "default_purchase_price": 2.5
+    },
+    "quantity": 8,
+    "min_quantity": 2,
+    "max_quantity": 20,
+    "location_description": "Aisle 1"
+}
+```
+
+`item.item_type` is `food`, `catering`, or `electronics`. Category-specific fields supported by the canonical item schema include `shelf_life_days`, `requires_refrigeration`, `catering_subtype`, `brand`, `model`, and `warranty_period_months`. Quantity and thresholds must be non-negative. The response returns the created stock row with its `item` and `store` relations.
+
 ---
 
 ## Suppliers and Purchasing
@@ -866,6 +891,15 @@ All endpoints below require the Sanctum bearer token. Supplier profile fields us
 - `POST /purchase-orders/{purchaseOrder}/returns` requires `return_date`, `reason`, and `items` containing `purchase_order_item_id` plus `quantity`. It creates a `Pending Review` return. `POST /purchase-orders/{purchaseOrder}/returns/{purchaseReturn}/approve` approves it and records outbound stock movements.
 
 Purchasing persistence is in `purchase_orders`, `purchase_order_items`, `purchase_receipts`, `purchase_receipt_items`, `purchase_returns`, and `purchase_return_items`. Supplier form extensions are added to `suppliers` with a forward migration.
+
+## Recipes
+
+All recipe endpoints require a Sanctum bearer token and the corresponding `recipes.view`, `recipes.create`, `recipes.update`, or `recipes.delete` permission.
+
+- `GET /recipes?search={text}&category={category}&status={Active|Inactive}&per_page={count}` returns `data.items` and pagination metadata. Each recipe includes its ingredient list.
+- `POST /recipes` requires `name`, `category`, positive integer `servings`, non-negative `selling_price`, and at least one ingredient. Each ingredient requires `name`, positive `quantity`, `unit`, and non-negative `unit_cost`; optional `item_id` must reference an active item.
+- `GET /recipes/{recipe}` returns a recipe and its ingredients. `PUT` and `PATCH /recipes/{recipe}` update recipe fields and optionally replace the ingredient list. `DELETE /recipes/{recipe}` soft-deletes the recipe.
+- Ingredient totals, `total_food_cost`, and `food_cost_percentage` are calculated and persisted by the server. Ingredient and recipe changes are transactional.
 
 ## Error Responses
 

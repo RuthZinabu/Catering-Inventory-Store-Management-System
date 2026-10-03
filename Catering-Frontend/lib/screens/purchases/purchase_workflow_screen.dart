@@ -122,10 +122,13 @@ class _PurchaseListScreenState extends State<PurchaseListScreen> {
     final pending = purchases.where((purchase) => purchase.status == 'Pending' || purchase.status == 'Approved' || purchase.status == 'Partially Received').length;
     final total = purchases.fold<double>(0, (sum, purchase) => sum + purchase.totalAmount);
     return Scaffold(
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openForm(),
-        icon: const Icon(Icons.add),
-        label: const Text('New Purchase'),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 72),
+        child: FloatingActionButton.extended(
+          onPressed: () => _openForm(),
+          icon: const Icon(Icons.add),
+          label: const Text('New Purchase'),
+        ),
       ),
       body: SafeArea(
         child: Column(children: [

@@ -15,6 +15,7 @@ class RecipeCreateScreen extends StatefulWidget {
 
 class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
   int _step = 0;
+  bool _saving = false;
 
   late String _name;
   late String _category;
@@ -532,55 +533,89 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
             const SizedBox(width: 12),
             Expanded(
                 child: FilledButton(
-                    onPressed: _save,
+                  onPressed: _saving ? null : _save,
                     style: FilledButton.styleFrom(
                         backgroundColor: const Color(0xFF16A34A)),
-                    child: Text(
-                        widget.isEditing ? 'Update Recipe' : 'Save Recipe'))),
+                  child: _saving
+                    ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(widget.isEditing
+                      ? 'Update Recipe'
+                      : 'Save Recipe'))),
           ],
         ),
       ],
     );
   }
 
-  void _save() {
-    final ingList = _ingredients
-        .map((ing) => RecipeIngredient(
-              name: ing['name'] ?? '',
-              quantity: double.tryParse(ing['qty'] ?? '') ?? 0,
-              unit: ing['unit'] ?? 'Kg',
-              unitCost: double.tryParse(ing['unitCost'] ?? '') ?? 0,
-            ))
-        .toList();
+  Future<void> _save() async {
+    final servings = int.tryParse(_servingsText);
+    final sellingPrice = double.tryParse(_sellingPriceText);
+    final ingredients = _ingredients.map<Map<String, dynamic>>((ingredient) {
+      return {
+        'name': ingredient['name']?.trim() ?? '',
+        'quantity': double.tryParse(ingredient['qty'] ?? '') ?? 0,
+        'unit': ingredient['unit'] ?? 'Kg',
+        'unit_cost': double.tryParse(ingredient['unitCost'] ?? '') ?? 0,
+      };
+    }).toList();
 
-    final newRecipe = RecipeItem(
-      id: widget.recipe?.id ?? 'ri${DateTime.now().millisecondsSinceEpoch}',
-      name: _name,
-      category: _category,
-      description: _description,
-      servings: int.tryParse(_servingsText) ?? 1,
-      prepTime: _prepTime,
-      sellingPrice: double.tryParse(_sellingPriceText) ?? 0,
-      status: _status,
-      ingredients: ingList,
-    );
-
-    // TODO: Replace with actual API calls when recipe endpoints are implemented
-    if (widget.isEditing) {
-      // Update recipe via API
-      // await ApiRepository.instance.updateRecipe(widget.recipe!.id, newRecipe.toJson());
-    } else {
-      // Create recipe via API
-      // await ApiRepository.instance.createRecipe(newRecipe.toJson());
+    final invalidIngredients = ingredients.any((ingredient) =>
+        (ingredient['name'] as String).isEmpty ||
+        (ingredient['quantity'] as double) <= 0 ||
+        (ingredient['unit_cost'] as double) < 0);
+    if (_name.trim().isEmpty ||
+        servings == null ||
+        servings < 1 ||
+        sellingPrice == null ||
+        sellingPrice < 0 ||
+        ingredients.isEmpty ||
+        invalidIngredients) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Check the recipe details and ingredients.')),
+      );
+      return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(widget.isEditing
-          ? 'Recipe updated successfully.'
-          : 'Recipe saved successfully.'),
-      backgroundColor: const Color(0xFF16A34A),
-    ));
-    Navigator.of(context).pop();
+    final data = <String, dynamic>{
+      'name': _name.trim(),
+      'category': _category,
+      'description': _description.trim(),
+      'servings': servings,
+      'prep_time': _prepTime.trim(),
+      'selling_price': sellingPrice,
+      'status': _status,
+      'ingredients': ingredients,
+    };
+
+    setState(() => _saving = true);
+    try {
+      if (widget.isEditing) {
+        await ApiRepository.instance.updateRecipe(widget.recipe!.id, data);
+      } else {
+        await ApiRepository.instance.createRecipe(data);
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(widget.isEditing
+            ? 'Recipe updated successfully.'
+            : 'Recipe saved successfully.'),
+        backgroundColor: const Color(0xFF16A34A),
+      ));
+      Navigator.of(context).pop(true);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Recipe could not be saved: $error'),
+        backgroundColor: Theme.of(context).colorScheme.error,
+      ));
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   // ── helpers ──────────────────────────────────────────────────────────────

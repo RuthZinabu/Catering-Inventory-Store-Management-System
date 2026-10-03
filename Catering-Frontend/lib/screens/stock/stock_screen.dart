@@ -16,6 +16,7 @@ class StockScreen extends StatefulWidget {
 class _StockScreenState extends State<StockScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  int _stockDataVersion = 0;
 
   @override
   void initState() {
@@ -118,10 +119,10 @@ class _StockScreenState extends State<StockScreen>
             Expanded(
               child: TabBarView(
                 controller: _tabController,
-                children: const [
-                  FoodStockTab(),
-                  CateringStockTab(),
-                  ElectronicsTab(),
+                children: [
+                  FoodStockTab(key: ValueKey('food-$_stockDataVersion')),
+                  CateringStockTab(key: ValueKey('catering-$_stockDataVersion')),
+                  ElectronicsTab(key: ValueKey('electronics-$_stockDataVersion')),
                 ],
               ),
             ),
@@ -137,6 +138,15 @@ class _StockScreenState extends State<StockScreen>
         ),
       ),
     );
+  }
+
+  Future<void> _openStockForm(Widget form) async {
+    final uploaded = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => form),
+    );
+    if (uploaded == true && mounted) {
+      setState(() => _stockDataVersion++);
+    }
   }
 
   void _showCategorySelectionDialog(BuildContext context) {
@@ -178,11 +188,7 @@ class _StockScreenState extends State<StockScreen>
                 color: const Color(0xFFEF4444),
                 onTap: () {
                   Navigator.of(context).pop();
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const FoodStockFormScreen(),
-                    ),
-                  );
+                  _openStockForm(const FoodStockFormScreen());
                 },
               ),
               const SizedBox(height: 12),
@@ -205,11 +211,7 @@ class _StockScreenState extends State<StockScreen>
                 color: const Color(0xFF0369A1),
                 onTap: () {
                   Navigator.of(context).pop();
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const ElectronicsStockFormScreen(),
-                    ),
-                  );
+                  _openStockForm(const ElectronicsStockFormScreen());
                 },
               ),
             ],
@@ -258,11 +260,8 @@ class _StockScreenState extends State<StockScreen>
                 color: const Color(0xFF7C3AED),
                 onTap: () {
                   Navigator.of(context).pop();
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          CateringStockFormScreen(subtype: 'permanent'),
-                    ),
+                  _openStockForm(
+                    const CateringStockFormScreen(subtype: 'permanent'),
                   );
                 },
               ),
@@ -276,11 +275,8 @@ class _StockScreenState extends State<StockScreen>
                 color: const Color(0xFFF59E0B),
                 onTap: () {
                   Navigator.of(context).pop();
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          CateringStockFormScreen(subtype: 'temporary'),
-                    ),
+                  _openStockForm(
+                    const CateringStockFormScreen(subtype: 'temporary'),
                   );
                 },
               ),

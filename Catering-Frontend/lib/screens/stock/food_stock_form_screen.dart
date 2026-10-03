@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/stock_models.dart';
 import '../../services/api_repository.dart';
+import 'stock_helpers.dart';
 
 class FoodStockFormScreen extends StatefulWidget {
   final FoodStockItem? item;
@@ -12,6 +13,7 @@ class FoodStockFormScreen extends StatefulWidget {
 
 class _FoodStockFormScreenState extends State<FoodStockFormScreen> {
   int _currentStep = 0;
+  bool _isSaving = false;
   bool get _isEditMode => widget.item != null;
 
   // Step 1 controllers
@@ -145,6 +147,24 @@ class _FoodStockFormScreenState extends State<FoodStockFormScreen> {
                             ),
                             child: const Text('Next',
                                 style: TextStyle(color: Colors.white)),
+                          ),
+                        ),
+                      if (_currentStep == 1)
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: _isSaving ? null : _submitForm,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF16A34A),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            child: _isSaving
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : const Text('Upload item',
+                                    style: TextStyle(color: Colors.white)),
                           ),
                         ),
                     ],
@@ -300,7 +320,7 @@ class _FoodStockFormScreenState extends State<FoodStockFormScreen> {
     );
   }
 
-  void _submitForm() {
+  Future<void> _submitForm() async {
     if (_currentStep == 0) {
       if (_formKey1.currentState!.validate()) {
         setState(() => _currentStep++);
@@ -310,6 +330,10 @@ class _FoodStockFormScreenState extends State<FoodStockFormScreen> {
         setState(() => _currentStep++);
       }
     } else {
+      if (!_formKey1.currentState!.validate() ||
+          !_formKey2.currentState!.validate()) {
+        return;
+      }
       final code = _codeCtrl.text.trim();
       final name = _nameCtrl.text.trim();
       final category = _categoryCtrl.text.trim();
@@ -321,6 +345,46 @@ class _FoodStockFormScreenState extends State<FoodStockFormScreen> {
       final quantity = double.tryParse(_quantityCtrl.text) ?? 0;
       final minQuantity = double.tryParse(_minQtyCtrl.text) ?? 0;
       final maxQuantity = double.tryParse(_maxQtyCtrl.text) ?? 0;
+
+      if (!_isEditMode) {
+        setState(() => _isSaving = true);
+        try {
+          final storeId = await chooseStockStore(context);
+          if (storeId == null) return;
+
+          await ApiRepository.instance.createNewStockItemInStore(storeId, {
+            'item': {
+              'code': code,
+              'name': name,
+              'description': description,
+              'category': category,
+              'item_type': 'food',
+              'unit': unit,
+              'default_purchase_price': purchasePrice,
+              'requires_refrigeration': false,
+            },
+            'quantity': quantity,
+            'min_quantity': minQuantity,
+            'max_quantity': maxQuantity,
+            'location_description': location,
+          });
+
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Item uploaded to stock.')),
+          );
+          Navigator.of(context).pop(true);
+        } catch (error) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Item could not be uploaded: $error')),
+            );
+          }
+        } finally {
+          if (mounted) setState(() => _isSaving = false);
+        }
+        return;
+      }
 
       final item = FoodStockItem(
         id: _isEditMode

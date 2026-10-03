@@ -1,6 +1,30 @@
 import 'package:flutter/material.dart';
 import '../../models/stock_models.dart';
+import '../../services/api_repository.dart';
 import '../../theme/app_colors.dart';
+
+Future<String?> chooseStockStore(BuildContext context) async {
+  final stores = await ApiRepository.instance.getStores(active: true);
+  if (stores.isEmpty) {
+    throw StateError('No active stores are available for stock creation.');
+  }
+  if (stores.length == 1) return stores.single.id;
+  if (!context.mounted) return null;
+
+  return showDialog<String>(
+    context: context,
+    builder: (dialogContext) => SimpleDialog(
+      title: const Text('Choose a destination store'),
+      children: [
+        for (final store in stores)
+          SimpleDialogOption(
+            onPressed: () => Navigator.of(dialogContext).pop(store.id),
+            child: Text('${store.name} (${store.code})'),
+          ),
+      ],
+    ),
+  );
+}
 
 // Status color
 Color stockStatusColor(String status) {

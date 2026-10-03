@@ -105,6 +105,22 @@ class StockService extends BaseApiService
     );
   }
 
+  Future<StockItem> createNewItemInStore(
+    String storeId,
+    Map<String, dynamic> data,
+  ) async {
+    return executeRequest<StockItem>(
+      () => apiClient.post<StockItem>(
+        '/stores/$storeId/stock/items',
+        data: data,
+        fromJson: (json) => _stockItemFromJson(
+          Map<String, dynamic>.from(json as Map),
+        ),
+      ),
+      errorContext: 'Failed to create stock item',
+    );
+  }
+
   @override
   Future<StockItem> update(String id, Map<String, dynamic> data) async {
     return await executeRequest<StockItem>(

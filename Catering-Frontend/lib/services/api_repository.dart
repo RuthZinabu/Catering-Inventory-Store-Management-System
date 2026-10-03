@@ -9,6 +9,7 @@ import 'inventory_service.dart';
 import 'supplier_service.dart';
 import 'stock_service.dart';
 import 'waste_service.dart';
+import 'recipe_service.dart';
 
 /// Main repository that coordinates API services for all data operations
 class ApiRepository {
@@ -27,6 +28,7 @@ class ApiRepository {
   final SupplierService _supplierService = SupplierService.instance;
   final StockService _stockService = StockService.instance;
   final WasteService _wasteService = WasteService.instance;
+  final RecipeService _recipeService = RecipeService();
 
   // User Management
   Future<List<AppUser>> getUsers({
@@ -160,6 +162,13 @@ class ApiRepository {
     }
   }
 
+  Future<StockItem> createNewStockItemInStore(
+    String storeId,
+    Map<String, dynamic> data,
+  ) {
+    return _stockService.createNewItemInStore(storeId, data);
+  }
+
   Future<List<FoodStockItem>> getFoodStock({String? storeId}) async {
     return await _stockService.getFoodStock(storeId: storeId);
   }
@@ -211,10 +220,18 @@ class ApiRepository {
     return [];
   }
 
-  // Recipes - TODO: Implement API endpoints
+  // Recipes
   Future<List<RecipeItem>> getRecipeItems() async {
-    // This will need to be implemented when recipe API is available
-    return [];
+    final result = await _recipeService.getAll();
+    return result.items;
+  }
+
+  Future<RecipeItem> createRecipe(Map<String, dynamic> data) async {
+    return _recipeService.create(data);
+  }
+
+  Future<RecipeItem> updateRecipe(String id, Map<String, dynamic> data) async {
+    return _recipeService.update(id, data);
   }
 
   // Alerts - TODO: Implement API endpoints

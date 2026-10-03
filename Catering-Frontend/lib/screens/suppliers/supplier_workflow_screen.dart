@@ -108,10 +108,13 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
     final outstanding = suppliers.fold<double>(
         0, (sum, supplier) => sum + supplier.outstandingBalance);
     return Scaffold(
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openForm(),
-        icon: const Icon(Icons.add),
-        label: const Text('New Supplier'),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 72),
+        child: FloatingActionButton.extended(
+          onPressed: () => _openForm(),
+          icon: const Icon(Icons.add),
+          label: const Text('New Supplier'),
+        ),
       ),
       body: SafeArea(
         child: Column(children: [

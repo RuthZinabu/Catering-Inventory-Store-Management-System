@@ -52,12 +52,15 @@ class RecipeDetailScreen extends StatelessWidget {
                           ),
                         ),
                         PopupMenuButton<String>(
-                          onSelected: (value) {
+                          onSelected: (value) async {
                             if (value == 'edit') {
-                              Navigator.of(context).push(MaterialPageRoute(
+                              final updated = await Navigator.of(context).push<bool>(MaterialPageRoute(
                                 builder: (_) => RecipeCreateScreen(
                                     isEditing: true, recipe: recipe),
                               ));
+                              if (updated == true && context.mounted) {
+                                Navigator.of(context).pop(true);
+                              }
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
