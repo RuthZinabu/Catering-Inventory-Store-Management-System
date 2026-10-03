@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/stock_models.dart';
-import '../../services/mock_repository.dart';
+import '../../services/api_repository.dart';
 
 class CateringStockFormScreen extends StatefulWidget {
   final CateringStockItem? item;
@@ -400,14 +400,13 @@ class _CateringStockFormScreenState extends State<CateringStockFormScreen> {
             : CateringSubtype.temporary,
       );
 
+      // TODO: Replace with actual API calls when catering stock endpoints are implemented
       if (_isEditMode) {
-        final index = MockRepository.cateringStock
-            .indexWhere((i) => i.id == widget.item!.id);
-        if (index != -1) {
-          MockRepository.cateringStock[index] = item;
-        }
+        // Update catering stock item via API
+        // await ApiRepository.instance.updateCateringStock(widget.item!.id, item.toJson());
       } else {
-        MockRepository.cateringStock.add(item);
+        // Create catering stock item via API
+        // await ApiRepository.instance.createCateringStock(item.toJson());
       }
 
       ScaffoldMessenger.of(context).showSnackBar(

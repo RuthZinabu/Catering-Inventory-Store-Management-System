@@ -1,7 +1,7 @@
 import 'package:catering_inventory_store_management_system/widgets/search_bar.dart';
 import 'package:flutter/material.dart';
 import '../../models/inventory_models.dart';
-import '../../services/mock_repository.dart';
+import '../../services/api_repository.dart';
 import 'expiry_detail_screen.dart';
 
 class ExpiryListScreen extends StatefulWidget {
@@ -14,6 +14,9 @@ class ExpiryListScreen extends StatefulWidget {
 class _ExpiryListScreenState extends State<ExpiryListScreen> {
   String searchQuery = '';
   String selectedFilter = 'All';
+  List<ExpiryItem> _allItems = [];
+  bool _isLoading = true;
+  String? _error;
 
   final List<String> _filters = const [
     'All',
@@ -22,9 +25,37 @@ class _ExpiryListScreenState extends State<ExpiryListScreen> {
     'OK',
   ];
 
-  List<ExpiryItem> get _items => MockRepository.expiryItems;
+  @override
+  void initState() {
+    super.initState();
+    _loadExpiryItems();
+  }
 
-  List<ExpiryItem> get _filtered => _items.where((item) {
+  Future<void> _loadExpiryItems() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final items = await ApiRepository.instance.getExpiryItems();
+      if (mounted) {
+        setState(() {
+          _allItems = items;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  List<ExpiryItem> get _filtered => _allItems.where((item) {
         final matchFilter =
             selectedFilter == 'All' || item.status == selectedFilter;
         final matchSearch = searchQuery.isEmpty ||
@@ -38,6 +69,98 @@ class _ExpiryListScreenState extends State<ExpiryListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Expiry Tracking',
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineSmall
+                            ?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.6),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.arrow_back_rounded),
+                      style: IconButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          padding: const EdgeInsets.all(10)),
+                    ),
+                  ],
+                ),
+              ),
+              const Expanded(
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_error != null) {
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Expiry Tracking',
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineSmall
+                            ?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.6),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.arrow_back_rounded),
+                      style: IconButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          padding: const EdgeInsets.all(10)),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text('Error: $_error'),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: _loadExpiryItems,
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     final filtered = _filtered;
     final expiredCount = filtered.where((i) => i.status == 'Expired').length;
     final expiringSoonCount =

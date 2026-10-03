@@ -559,7 +559,7 @@ SESSION_SAME_SITE=none
 # Database Security
 DB_CONNECTION=pgsql
 DB_HOST=secure-db-host
-DB_PORT=5432
+DB_PORT= 5433
 DB_DATABASE=catering_inventory_prod
 DB_USERNAME=cism_user
 DB_PASSWORD=secure-generated-password

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/stock_models.dart';
-import '../../services/mock_repository.dart';
+import '../../services/api_repository.dart';
 import 'stock_detail_screen.dart';
 import 'stock_helpers.dart';
 import '../../widgets/search_bar.dart';
@@ -14,14 +14,67 @@ class ElectronicsTab extends StatefulWidget {
 
 class _ElectronicsTabState extends State<ElectronicsTab> {
   String searchQuery = '';
+  List<ElectronicsStockItem> _allItems = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadElectronicsStock();
+  }
+
+  Future<void> _loadElectronicsStock() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final items = await ApiRepository.instance.getElectronicsStock();
+      if (mounted) {
+        setState(() {
+          _allItems = items;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('Error: $_error'),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadElectronicsStock,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
     // Use 600 as the breakpoint — real phones are 360–414 dp, tablets/wide
     // screens are 600+. 420 was too close to real phone widths and caused
     // the Column layout to fire on large phones while still overflowing.
     final isMobile = MediaQuery.of(context).size.width < 600;
-    final items = MockRepository.electronicsStock;
+    final items = _allItems;
 
     final filteredItems = items.where((item) {
       final matchesSearch = searchQuery.isEmpty ||

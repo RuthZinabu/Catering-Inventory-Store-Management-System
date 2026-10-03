@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/stock_models.dart';
-import '../../services/mock_repository.dart';
+import '../../services/api_repository.dart';
 
 class ElectronicsStockFormScreen extends StatefulWidget {
   final ElectronicsStockItem? item;
@@ -410,14 +410,13 @@ class _ElectronicsStockFormScreenState
         assetTag: assetTag,
       );
 
+      // TODO: Replace with actual API calls when electronics stock endpoints are implemented
       if (_isEditMode) {
-        final index = MockRepository.electronicsStock
-            .indexWhere((i) => i.id == widget.item!.id);
-        if (index != -1) {
-          MockRepository.electronicsStock[index] = item;
-        }
+        // Update electronics stock item via API
+        // await ApiRepository.instance.updateElectronicsStock(widget.item!.id, item.toJson());
       } else {
-        MockRepository.electronicsStock.add(item);
+        // Create electronics stock item via API
+        // await ApiRepository.instance.createElectronicsStock(item.toJson());
       }
 
       ScaffoldMessenger.of(context).showSnackBar(

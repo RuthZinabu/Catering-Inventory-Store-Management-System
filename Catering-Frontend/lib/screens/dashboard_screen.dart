@@ -1,332 +1,363 @@
 import 'package:flutter/material.dart';
-import '../services/mock_repository.dart';
+import '../services/api_repository.dart';
+import '../models/inventory_models.dart';
+import '../models/stock_models.dart';
+import '../widgets/loading_error_widgets.dart';
 import '../utils/responsive.dart';
 import '../theme/app_colors.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
   @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  bool _isLoading = true;
+  String? _error;
+
+  List<InventoryItem> _inventoryItems = [];
+  List<StockItem> _stockItems = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDashboardData();
+  }
+
+  Future<void> _loadDashboardData() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      // Load available dashboard data in parallel.
+      final results = await Future.wait([
+        ApiRepository.instance.getInventoryItems(),
+        ApiRepository.instance.getStockItems(),
+      ]);
+
+      if (mounted) {
+        setState(() {
+          _inventoryItems = results[0] as List<InventoryItem>;
+          _stockItems = results[1] as List<StockItem>;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  // Calculate dashboard metrics from live data
+  int get totalStock => _stockItems.length;
+  int get lowStockCount => _inventoryItems
+      .where((item) =>
+          item.stockOnHandValue <= item.minStockValue && item.minStockValue > 0)
+      .length;
+  double get totalInventoryValue => _inventoryItems.fold(
+      0, (sum, item) => sum + (item.purchasePrice * item.stockOnHandValue));
+
+  @override
   Widget build(BuildContext context) {
-    final hPad = responsiveHorizontalPadding(context);
-    return ListView(
-      padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 120),
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Good morning',
-                      style: Theme.of(context).textTheme.bodyMedium),
-                  const SizedBox(height: 4),
-                  Text('Admin',
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineSmall
-                          ?.copyWith(fontWeight: FontWeight.w700)),
-                ],
-              ),
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: LoadingWidget(message: 'Loading dashboard…')),
+      );
+    }
+
+    if (_error != null) {
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: CustomErrorWidget(
+              error: _error!,
+              title: 'Could not load dashboard',
+              onRetry: _loadDashboardData,
             ),
-            Row(
-              children: [
-                Container(
-                  margin: const EdgeInsets.only(right: 10),
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 12)
-                      ]),
-                  child: const Icon(Icons.notifications_none_rounded),
-                ),
-                CircleAvatar(
-                  radius: 22,
-                  backgroundColor: AppColors.darkGreen,
-                  child: const Text('H',
-                      style: TextStyle(
-                          color: Colors.amberAccent,
-                          fontWeight: FontWeight.w700)),
-                ),
-              ],
-            ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        Text('Today • 24 Jul 2026',
-            style: Theme.of(context).textTheme.bodyMedium),
-        const SizedBox(height: 20),
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: AppColors.darkGreen,
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(
-              color: AppColors.accentGold.withOpacity(0.35),
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.darkGreen.withOpacity(0.25),
-                blurRadius: 24,
-                offset: const Offset(0, 12),
-              ),
-            ],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        ),
+      );
+    }
+
+    final now = DateTime.now();
+    final dateLabel =
+        '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}';
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: _loadDashboardData,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
             children: [
               Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(9),
-                    decoration: BoxDecoration(
-                      color: AppColors.glassGold,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: const Icon(
-                      Icons.favorite_outline_rounded,
-                      color: AppColors.accentGold,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    'Inventory health',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppColors.accentGold,
-                          fontWeight: FontWeight.w700,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Good morning',
+                            style: Theme.of(context).textTheme.bodyMedium),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Admin',
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall
+                              ?.copyWith(fontWeight: FontWeight.w700),
                         ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              RichText(
-                text: TextSpan(
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withOpacity(0.88),
-                        height: 1.5,
-                      ),
-                  children: [
-                    const TextSpan(
-                      text: 'Everything is running smoothly. ',
+                      ],
                     ),
-                    TextSpan(
-                      text: '4 items',
-                      style: const TextStyle(
+                  ),
+                  CircleAvatar(
+                    radius: 22,
+                    backgroundColor: AppColors.darkGreen,
+                    child: const Text(
+                      'A',
+                      style: TextStyle(
                         color: AppColors.accentGold,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const TextSpan(
-                      text: ' need attention today.',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text('Today • $dateLabel',
+                  style: Theme.of(context).textTheme.bodyMedium),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppColors.darkGreen,
+                  borderRadius: BorderRadius.circular(28),
+                  border: Border.all(
+                    color: AppColors.accentGold.withOpacity(0.35),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.favorite_outline_rounded,
+                            color: AppColors.accentGold),
+                        const SizedBox(width: 10),
+                        Text(
+                          'Inventory health',
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: AppColors.accentGold,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                        ),
+                      ],
                     ),
+                    const SizedBox(height: 12),
+                    Text(
+                      lowStockCount == 0
+                          ? 'No items are currently below their minimum stock level.'
+                          : '$lowStockCount ${lowStockCount == 1 ? 'item is' : 'items are'} below the minimum stock level.',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Colors.white.withOpacity(0.9),
+                            height: 1.5,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final width = constraints.maxWidth;
+                  final columns = width < 250
+                      ? 1
+                      : isDesktopWidth(width)
+                          ? 4
+                          : isTabletWidth(width)
+                              ? 3
+                              : 2;
+                  const spacing = 12.0;
+                  final cardWidth =
+                      (width - spacing * (columns - 1)) / columns;
+
+                  return Wrap(
+                    spacing: spacing,
+                    runSpacing: spacing,
+                    children: [
+                      SizedBox(
+                        width: cardWidth,
+                        child: _healthCard(
+                          context,
+                          'Total Stock Items',
+                          '$totalStock',
+                          Icons.inventory_2_rounded,
+                          AppColors.darkGreen,
+                          'Current',
+                        ),
+                      ),
+                      SizedBox(
+                        width: cardWidth,
+                        child: _healthCard(
+                          context,
+                          'Low Stock',
+                          '$lowStockCount',
+                          Icons.warning_amber_rounded,
+                          AppColors.accentGold,
+                          'Needs attention',
+                        ),
+                      ),
+                      SizedBox(
+                        width: cardWidth,
+                        child: _healthCard(
+                          context,
+                          'Inventory Value',
+                          'ETB ${totalInventoryValue.toStringAsFixed(0)}',
+                          Icons.account_balance_wallet_outlined,
+                          AppColors.accentGold,
+                          'Current',
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: 20),
+              Text('Low stock',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w700)),
+              const SizedBox(height: 12),
+              ..._buildLowStockCards(context),
+              const SizedBox(height: 12),
+              Text('Activity & alerts',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w700)),
+              const SizedBox(height: 12),
+              _activityUnavailableCard(context),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildLowStockCards(BuildContext context) {
+    final lowStockItems = _inventoryItems
+        .where((item) =>
+            item.stockOnHandValue <= item.minStockValue &&
+            item.minStockValue > 0)
+        .take(3)
+        .toList();
+
+    if (lowStockItems.isEmpty) {
+      return [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              )
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.accentGreen.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Icon(Icons.check_circle_outline,
+                    color: AppColors.accentGreen),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('All items well stocked!',
+                        style: TextStyle(fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 4),
+                    Text('No low stock alerts at the moment.',
+                        style: Theme.of(context).textTheme.bodyMedium),
                   ],
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 20),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            // Calculate how many items can fit dynamically, using the same
-            // breakpoints as the rest of the app.
-            double maxWidth = constraints.maxWidth;
-            int crossAxisCount;
-            if (maxWidth < 250) {
-              crossAxisCount = 1; // Very small phones
-            } else if (isDesktopWidth(maxWidth)) {
-              crossAxisCount = 4; // Desktop
-            } else if (isTabletWidth(maxWidth)) {
-              crossAxisCount = 3; // Tablets
-            } else {
-              crossAxisCount = 2; // Phones
-            }
+      ];
+    }
 
-            // Exact item width calculation removing the 12px spaces
-            double spacing = 12.0;
-            double itemWidth =
-                (maxWidth - (spacing * (crossAxisCount - 1))) / crossAxisCount;
+    return lowStockItems.map((item) {
+      final progress = (item.stockOnHand != null &&
+              item.maxStock != null &&
+              item.maxStock! > 0)
+          ? (item.stockOnHand! / item.maxStock!).clamp(0.0, 1.0).toDouble()
+          : 0.0;
+      final color = progress < 0.2 ? AppColors.errorRed : AppColors.accentGold;
+      return _lowStockCard(
+        context,
+        item.name,
+        '${item.stockOnHand} / ${item.maxStock} ${item.unit} left',
+        progress,
+        color,
+      );
+    }).toList();
+  }
 
-            return Wrap(
-              spacing: spacing,
-              runSpacing: spacing,
-              children: [
-                SizedBox(
-                  width: itemWidth,
-                  child: _healthCard(
-                    context,
-                    'Total Stock',
-                    '128',
-                    Icons.inventory_2_rounded,
-                    AppColors.darkGreen,
-                    '+12%',
-                  ),
-                ),
-                SizedBox(
-                  width: itemWidth,
-                  child: _healthCard(
-                    context,
-                    'Low Alerts',
-                    '4',
-                    Icons.warning_amber_rounded,
-                    AppColors.accentGold,
-                    'Watch',
-                  ),
-                ),
-                SizedBox(
-                  width: itemWidth,
-                  child: _healthCard(
-                    context,
-                    'Expiring',
-                    '7',
-                    Icons.access_time_filled,
-                    AppColors.errorRed,
-                    '3 soon',
-                  ),
-                ),
-                SizedBox(
-                  width: itemWidth,
-                  child: _healthCard(
-                    context,
-                    "Today's Purchase",
-                    'ETB 54k',
-                    Icons.shopping_cart_outlined,
-                    AppColors.darkGreen,
-                    '+8%',
-                  ),
-                ),
-                SizedBox(
-                  width: itemWidth,
-                  child: _healthCard(
-                    context,
-                    "Today's Stock Out",
-                    '3',
-                    Icons.remove_circle_outline,
-                    AppColors.darkGreen,
-                    'Stable',
-                  ),
-                ),
-                SizedBox(
-                  width: itemWidth,
-                  child: _healthCard(
-                    context,
-                    'Inventory Value',
-                    'ETB 840k',
-                    Icons.account_balance_wallet_outlined,
-                    AppColors.accentGold,
-                    '+4%',
-                  ),
-                ),
-                SizedBox(
-                  width: itemWidth,
-                  child: _healthCard(
-                    context,
-                    'Recent Transactions',
-                    '24',
-                    Icons.receipt_long,
-                    AppColors.darkGreen,
-                    'Live',
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
-        const SizedBox(height: 20),
-        Text('Quick actions',
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(fontWeight: FontWeight.w700)),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: [
-            _actionButton(
-                context, Icons.add_rounded, 'Add Item', AppColors.primaryBlue),
-            _actionButton(context, Icons.receipt_long, 'New Purchase',
-                AppColors.darkGreen),
-            _actionButton(context, Icons.local_shipping_outlined, 'Issue Stock',
-                AppColors.secondaryGray),
-            _actionButton(context, Icons.inventory_2_outlined, 'Receive Goods',
-                AppColors.accentGold),
-          ],
-        ),
-        const SizedBox(height: 20),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Stock overview',
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w700)),
-                    Text('Last 30 days',
-                        style: Theme.of(context).textTheme.bodyMedium),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  height: 120,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Expanded(
-                          child: _buildBar(38, AppColors.primaryBlue, 'W1')),
-                      Expanded(child: _buildBar(58, AppColors.darkGreen, 'W2')),
-                      Expanded(
-                          child: _buildBar(48, AppColors.accentGreen, 'W3')),
-                      Expanded(
-                          child: _buildBar(72, AppColors.accentGold, 'W4')),
-                    ],
-                  ),
-                ),
-              ],
+  Widget _activityUnavailableCard(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          )
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.primaryBlue.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(Icons.info_outline, color: AppColors.primaryBlue),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              'Activity and expiry alerts are not available from the server yet.',
+              style: TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
-        ),
-        const SizedBox(height: 20),
-        Text('Low stock',
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(fontWeight: FontWeight.w700)),
-        const SizedBox(height: 12),
-        ...[
-          _lowStockCard(context, 'Basmati Rice', '14 / 30 kg left', 0.47,
-              AppColors.accentGold),
-          _lowStockCard(context, 'Chicken Breast', '18 / 40 kg left', 0.45,
-              AppColors.errorRed),
         ],
-        const SizedBox(height: 20),
-        Text('Recent activities',
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(fontWeight: FontWeight.w700)),
-        const SizedBox(height: 12),
-        ...[
-          _activityRow(context, Icons.add_circle_outline, 'PO-1048 received',
-              '2 min ago', AppColors.primaryBlue),
-          _activityRow(context, Icons.local_shipping_outlined,
-              'Issued to kitchen', '18 min ago', AppColors.accentGreen),
-          _activityRow(context, Icons.warning_amber_rounded, 'Low stock alert',
-              '1 hr ago', AppColors.accentGold),
-        ],
-      ],
+      ),
     );
   }
 
@@ -377,47 +408,6 @@ class DashboardScreen extends StatelessWidget {
                   ?.copyWith(fontWeight: FontWeight.w700)),
           const SizedBox(height: 4),
           Text(title, style: Theme.of(context).textTheme.bodyMedium),
-        ],
-      ),
-    );
-  }
-
-  Widget _actionButton(
-      BuildContext context, IconData icon, String label, Color color) {
-    final screenWidth = MediaQuery.sizeOf(context).width;
-    // Two buttons per row on narrow phones, fixed comfortable width otherwise.
-    final width = screenWidth < 250 ? (screenWidth - 20 * 2 - 12) / 2 : 155.0;
-    return SizedBox(
-      width: width,
-      child: ElevatedButton.icon(
-        onPressed: () {},
-        icon: Icon(icon),
-        label: Text(label),
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          backgroundColor: color,
-          foregroundColor: Colors.white,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          elevation: 0,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBar(double height, Color color, String label) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Container(
-              height: height,
-              width: 20,
-              decoration: BoxDecoration(
-                  color: color, borderRadius: BorderRadius.circular(10))),
-          const SizedBox(height: 8),
-          Text(label),
         ],
       ),
     );
@@ -490,36 +480,4 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _activityRow(BuildContext context, IconData icon, String title,
-      String time, Color color) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 16,
-                offset: const Offset(0, 8))
-          ]),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-                color: color.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(14)),
-            child: Icon(icon, color: color),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-              child: Text(title,
-                  style: const TextStyle(fontWeight: FontWeight.w600))),
-          Text(time, style: Theme.of(context).textTheme.bodyMedium),
-        ],
-      ),
-    );
-  }
 }

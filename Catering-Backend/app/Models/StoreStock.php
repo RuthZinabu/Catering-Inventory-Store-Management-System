@@ -185,6 +185,6 @@ class StoreStock extends Model
      */
     public function scopeAvailable($query)
     {
-        return $query->whereRaw('quantity - reserved_quantity > 0');
+        return $query->where('quantity', '>', \DB::raw('reserved_quantity'));
     }
 }
