@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/stock_models.dart';
-import '../../services/mock_repository.dart';
+import '../../services/api_repository.dart';
 
 class FoodStockFormScreen extends StatefulWidget {
   final FoodStockItem? item;
@@ -344,14 +344,13 @@ class _FoodStockFormScreenState extends State<FoodStockFormScreen> {
         requiresRefrigeration: false,
       );
 
+      // TODO: Replace with actual API calls when food stock endpoints are implemented
       if (_isEditMode) {
-        final index =
-            MockRepository.foodStock.indexWhere((i) => i.id == widget.item!.id);
-        if (index != -1) {
-          MockRepository.foodStock[index] = item;
-        }
+        // Update food stock item via API
+        // await ApiRepository.instance.updateFoodStock(widget.item!.id, item.toJson());
       } else {
-        MockRepository.foodStock.add(item);
+        // Create food stock item via API
+        // await ApiRepository.instance.createFoodStock(item.toJson());
       }
 
       ScaffoldMessenger.of(context).showSnackBar(

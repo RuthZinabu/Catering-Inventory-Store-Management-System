@@ -19,35 +19,43 @@ return new class extends Migration
             $table->string('location', 255)->nullable();
             $table->string('phone', 50)->nullable();
             $table->string('email', 255)->nullable();
-            
+
             // Store Hierarchy
             $table->uuid('parent_store_id')->nullable();
             $table->integer('store_level')->default(0);
-            
+
             // Management
             $table->uuid('manager_id')->nullable();
             $table->string('store_type', 50);
-            
+
             // Operations
             $table->string('timezone', 50)->default('UTC');
             $table->json('operating_hours')->nullable();
             $table->json('settings')->default('{}');
-            
+
             // Status
             $table->boolean('is_active')->default(true);
             $table->timestamps();
             $table->softDeletes();
-            
-            // Foreign keys
-            $table->foreign('parent_store_id')->references('id')->on('stores');
-            $table->foreign('manager_id')->references('id')->on('users');
-            
+
             // Indexes
             $table->index('code');
             $table->index('store_type');
             $table->index('parent_store_id');
             $table->index('store_level');
             $table->index('is_active');
+
+            // Manager relationship
+            $table->foreign('manager_id')
+                ->references('id')
+                ->on('users');
+        });
+
+        // Self-referencing foreign key added after the table exists
+        Schema::table('stores', function (Blueprint $table) {
+            $table->foreign('parent_store_id')
+                ->references('id')
+                ->on('stores');
         });
     }
 

@@ -1,0 +1,15 @@
+$kind: http-request
+url: http://localhost:8000/api/auth/login
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \    \"email\": \"admin@cateringinventory.com\",\r
+
+    \    \"password\": \"password123\",\r
+
+    \    \"device_name\": \"My Device\"\r
+
+    }"
+order: 1790772687478

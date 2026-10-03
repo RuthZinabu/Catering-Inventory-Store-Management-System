@@ -2,7 +2,7 @@ import 'package:catering_inventory_store_management_system/widgets/search_bar.da
 import 'package:flutter/material.dart';
 
 import '../../models/inventory_models.dart';
-import '../../services/mock_repository.dart';
+import '../../services/api_repository.dart';
 import 'user_detail_screen.dart';
 import 'user_create_screen.dart';
 
@@ -16,6 +16,9 @@ class UserListScreen extends StatefulWidget {
 class _UserListScreenState extends State<UserListScreen> {
   String searchQuery = '';
   String selectedFilter = 'All';
+  List<AppUser> _users = [];
+  bool _isLoading = true;
+  String? _error;
 
   final List<String> _filters = const [
     'All',
@@ -24,7 +27,34 @@ class _UserListScreenState extends State<UserListScreen> {
     'Suspended',
   ];
 
-  List<AppUser> get _users => MockRepository.appUsers;
+  @override
+  void initState() {
+    super.initState();
+    _loadUsers();
+  }
+
+  Future<void> _loadUsers() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final users = await ApiRepository.instance.getUsers();
+      if (mounted) {
+        setState(() {
+          _users = users;
+          _isLoading = false;
+        });
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _error = error.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   List<AppUser> get _filtered => _users.where((u) {
         final matchFilter =
@@ -39,6 +69,33 @@ class _UserListScreenState extends State<UserListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_error != null) {
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(_error!, textAlign: TextAlign.center),
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed: _loadUsers,
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     final filtered = _filtered;
     final activeCount = filtered.where((u) => u.status == 'Active').length;
     final inactiveCount = filtered.where((u) => u.status == 'Inactive').length;
@@ -53,7 +110,7 @@ class _UserListScreenState extends State<UserListScreen> {
             await Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const UserCreateScreen()),
             );
-            if (mounted) setState(() {});
+            if (mounted) _loadUsers();
           },
           backgroundColor: const Color(0xFF0F766E),
           icon: const Icon(Icons.person_add_rounded),
@@ -204,8 +261,11 @@ class _UserListScreenState extends State<UserListScreen> {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(22),
-          onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => UserDetailScreen(user: user))),
+          onTap: () async {
+            await Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => UserDetailScreen(user: user)));
+            if (mounted) _loadUsers();
+          },
           child: Padding(
             padding: const EdgeInsets.all(2),
             child: Column(
@@ -271,17 +331,21 @@ class _UserListScreenState extends State<UserListScreen> {
                       onSelected: (v) {
                         if (v == 'view') {
                           Navigator.of(context).push(MaterialPageRoute(
-                              builder: (_) => UserDetailScreen(user: user)));
+                            builder: (_) => UserDetailScreen(user: user),
+                          )).then((_) {
+                            if (mounted) _loadUsers();
+                          });
                         } else if (v == 'edit') {
                           Navigator.of(context)
                               .push(MaterialPageRoute(
                                 builder: (_) => UserCreateScreen(
                                     isEditing: true, user: user),
                               ))
-                              .then((_) => setState(() {}));
+                              .then((_) {
+                            if (mounted) _loadUsers();
+                          });
                         } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Status updated.')));
+                          _deactivateUser(user);
                         }
                       },
                       itemBuilder: (_) => const [
@@ -301,7 +365,7 @@ class _UserListScreenState extends State<UserListScreen> {
                   spacing: 8,
                   runSpacing: 6,
                   children: [
-                    _roleChip(user.role),
+                               _roleChip(_displayRole(user.role)),
                     _infoChip(user.department),
                     _infoChip('${user.permissions.length} permissions'),
                   ],
@@ -440,6 +504,50 @@ class _UserListScreenState extends State<UserListScreen> {
         return const Color(0xFFEF4444);
       default:
         return const Color(0xFF64748B);
+    }
+  }
+
+  String _displayRole(String role) => role
+      .split('_')
+      .map((part) => part.isEmpty
+          ? part
+          : '${part[0].toUpperCase()}${part.substring(1)}')
+      .join(' ');
+
+  Future<void> _deactivateUser(AppUser user) async {
+    final shouldDeactivate = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Deactivate user?'),
+        content: Text(
+            '${user.name} will lose access until their account is reactivated.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Deactivate'),
+          ),
+        ],
+      ),
+    );
+    if (shouldDeactivate != true || !mounted) return;
+
+    try {
+      await ApiRepository.instance.updateUser(user.id, {'status': 'Inactive'});
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('User deactivated.')),
+      );
+      await _loadUsers();
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not deactivate user: $error')),
+        );
+      }
     }
   }
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/inventory_models.dart';
-import '../../services/mock_repository.dart';
+import '../../services/api_repository.dart';
 
 class WasteCreateScreen extends StatefulWidget {
   final bool isEditing;
@@ -25,6 +25,8 @@ class _WasteCreateScreenState extends State<WasteCreateScreen> {
   late String _status;
   late String _notes;
   late String _unitCostText;
+  bool _isSaving = false;
+  String? _saveError;
 
   final _notesCtrl = TextEditingController();
   final _qtyCtrl = TextEditingController();
@@ -60,7 +62,8 @@ class _WasteCreateScreenState extends State<WasteCreateScreen> {
       _recordedBy = r.recordedBy;
       _status = r.status;
       _notes = r.notes;
-      _unitCostText = '';
+      _unitCostText =
+          r.quantity > 0 ? (r.estimatedCost / r.quantity).toString() : '';
     } else {
       _item = 'Chicken Breast';
       _category = 'Meat';
@@ -187,6 +190,15 @@ class _WasteCreateScreenState extends State<WasteCreateScreen> {
   }
 
   Widget _stepQuantity() {
+    final quantity = double.tryParse(_quantityText);
+    final unitCost = _unitCostText.isEmpty ? 0 : double.tryParse(_unitCostText);
+    final canContinue = quantity != null &&
+        quantity.isFinite &&
+        quantity > 0 &&
+        unitCost != null &&
+        unitCost.isFinite &&
+        unitCost >= 0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -195,7 +207,7 @@ class _WasteCreateScreenState extends State<WasteCreateScreen> {
           padding: const EdgeInsets.only(bottom: 10),
           child: TextFormField(
             controller: _qtyCtrl,
-            keyboardType: TextInputType.number,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: InputDecoration(
                 labelText: 'Quantity Wasted',
                 suffixText: _unit),
@@ -206,7 +218,7 @@ class _WasteCreateScreenState extends State<WasteCreateScreen> {
           padding: const EdgeInsets.only(bottom: 10),
           child: TextFormField(
             controller: _costCtrl,
-            keyboardType: TextInputType.number,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: const InputDecoration(
                 labelText: 'Unit Cost (ETB)',
                 suffixText: 'ETB'),
@@ -235,9 +247,7 @@ class _WasteCreateScreenState extends State<WasteCreateScreen> {
         const SizedBox(height: 12),
         _nav(
             onBack: () => setState(() => _step = 0),
-            onNext: _quantityText.isEmpty
-                ? null
-                : () => setState(() => _step = 2)),
+            onNext: canContinue ? () => setState(() => _step = 2) : null),
       ],
     );
   }
@@ -274,6 +284,19 @@ class _WasteCreateScreenState extends State<WasteCreateScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _stepTitle('Step 4 • Review & Confirm'),
+        if (_saveError != null) ...[
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFEF2F2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(_saveError!,
+                style: const TextStyle(color: Color(0xFFB91C1C))),
+          ),
+        ],
         _reviewBlock('Item Info', [
           _reviewRow('Item', _item),
           _reviewRow('Category', _category),
@@ -307,24 +330,44 @@ class _WasteCreateScreenState extends State<WasteCreateScreen> {
             const SizedBox(width: 12),
             Expanded(
                 child: FilledButton(
-                    onPressed: _save,
+                    onPressed: _isSaving ? null : _save,
                     style: FilledButton.styleFrom(
                         backgroundColor: const Color(0xFFEF4444)),
-                    child: Text(widget.isEditing
-                        ? 'Update Record'
-                        : 'Confirm Waste'))),
+                    child: _isSaving
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white),
+                          )
+                        : Text(widget.isEditing
+                            ? 'Update Record'
+                            : 'Confirm Waste'))),
           ],
         ),
       ],
     );
   }
 
-  void _save() {
+  Future<void> _save() async {
+    if (_isSaving) return;
+    final quantity = double.tryParse(_quantityText);
+    final unitCost = _unitCostText.isEmpty ? 0 : double.tryParse(_unitCostText);
+    if (quantity == null ||
+        !quantity.isFinite ||
+        quantity <= 0 ||
+        unitCost == null ||
+        !unitCost.isFinite ||
+        unitCost < 0) {
+      setState(() => _saveError = 'Enter a valid quantity and unit cost.');
+      return;
+    }
+
     final newRecord = WasteRecord(
       id: widget.record?.id ??
           'w${DateTime.now().millisecondsSinceEpoch}',
       number: widget.record?.number ??
-          'WS-${3000 + MockRepository.wasteRecords.length + 1}',
+          'WS-${DateTime.now().millisecondsSinceEpoch}',
       item: _item,
       category: _category,
       unit: _unit,
@@ -332,26 +375,38 @@ class _WasteCreateScreenState extends State<WasteCreateScreen> {
       estimatedCost: _estimatedCost,
       reason: _reason,
       recordedBy: _recordedBy,
-      date: DateTime.now(),
+      date: widget.record?.date ?? DateTime.now(),
       status: _status,
       notes: _notes,
     );
 
-    if (widget.isEditing) {
-      final idx = MockRepository.wasteRecords
-          .indexWhere((r) => r.id == widget.record!.id);
-      if (idx >= 0) MockRepository.wasteRecords[idx] = newRecord;
-    } else {
-      MockRepository.wasteRecords.add(newRecord);
-    }
+    setState(() {
+      _isSaving = true;
+      _saveError = null;
+    });
+    try {
+      if (widget.isEditing) {
+        await ApiRepository.instance.updateWasteRecord(
+            widget.record!.id, newRecord.toJson());
+      } else {
+        await ApiRepository.instance.createWasteRecord(newRecord.toJson());
+      }
 
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(widget.isEditing
-          ? 'Waste record updated.'
-          : 'Waste recorded successfully.'),
-      backgroundColor: const Color(0xFFEF4444),
-    ));
-    Navigator.of(context).pop();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(widget.isEditing
+            ? 'Waste record updated.'
+            : 'Waste recorded successfully.'),
+        backgroundColor: const Color(0xFFEF4444),
+      ));
+      Navigator.of(context).pop(true);
+    } catch (error) {
+      if (mounted) {
+        setState(() => _saveError = error.toString());
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   // ── helpers ──────────────────────────────────────────────────────────────

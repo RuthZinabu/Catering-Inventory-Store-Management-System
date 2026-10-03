@@ -2,7 +2,7 @@ import 'package:catering_inventory_store_management_system/widgets/search_bar.da
 import 'package:flutter/material.dart';
 
 import '../../models/inventory_models.dart';
-import '../../services/mock_repository.dart';
+import '../../services/api_repository.dart';
 import 'waste_detail_screen.dart';
 import 'waste_create_screen.dart';
 
@@ -16,6 +16,9 @@ class WasteListScreen extends StatefulWidget {
 class _WasteListScreenState extends State<WasteListScreen> {
   String searchQuery = '';
   String selectedFilter = 'All';
+  List<WasteRecord> _allRecords = [];
+  bool _isLoading = true;
+  String? _error;
 
   final List<String> _filters = const [
     'All',
@@ -23,9 +26,37 @@ class _WasteListScreenState extends State<WasteListScreen> {
     'Pending Review',
   ];
 
-  List<WasteRecord> get _records => MockRepository.wasteRecords;
+  @override
+  void initState() {
+    super.initState();
+    _loadWasteRecords();
+  }
 
-  List<WasteRecord> get _filtered => _records.where((r) {
+  Future<void> _loadWasteRecords() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final records = await ApiRepository.instance.getWasteRecords();
+      if (mounted) {
+        setState(() {
+          _allRecords = records;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  List<WasteRecord> get _filtered => _allRecords.where((r) {
         final matchFilter =
             selectedFilter == 'All' || r.status == selectedFilter;
         final matchSearch = searchQuery.isEmpty ||
@@ -37,6 +68,37 @@ class _WasteListScreenState extends State<WasteListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: AppBar(
+          title: const Text('Waste Records'),
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_error != null) {
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: AppBar(
+          title: const Text('Waste Records'),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('Error: $_error'),
+              ElevatedButton(
+                onPressed: _loadWasteRecords,
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     final filtered = _filtered;
     final confirmedCount =
         filtered.where((r) => r.status == 'Confirmed').length;
@@ -53,7 +115,7 @@ class _WasteListScreenState extends State<WasteListScreen> {
             await Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const WasteCreateScreen()),
             );
-            if (mounted) setState(() {});
+            if (mounted) _loadWasteRecords();
           },
           backgroundColor: const Color(0xFFEF4444),
           icon: const Icon(Icons.add_rounded),

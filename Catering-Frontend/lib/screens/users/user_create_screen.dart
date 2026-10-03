@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/inventory_models.dart';
-import '../../services/mock_repository.dart';
+import '../../services/api_repository.dart';
 
 class UserCreateScreen extends StatefulWidget {
   final bool isEditing;
@@ -23,10 +23,14 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
   late String _department;
   late String _status;
   late Set<String> _permissions;
+  bool _isSaving = false;
+  String? _saveError;
 
   final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
+  final _passwordCtrl = TextEditingController();
+  final _passwordConfirmationCtrl = TextEditingController();
 
   final List<String> _roles = const [
     'Admin',
@@ -35,7 +39,6 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
     'Chef',
     'Storekeeper',
     'Cashier',
-    'Viewer',
   ];
 
   final List<String> _departments = const [
@@ -67,10 +70,13 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
       _name = u.name;
       _email = u.email;
       _phone = u.phone;
-      _role = u.role;
+      _role = _roleLabel(u.role);
       _department = u.department;
       _status = u.status;
-      _permissions = Set.from(u.permissions);
+      _permissions = u.permissions
+          .map((permission) => permission.split('.').first)
+          .where(_allPermissions.containsKey)
+          .toSet();
     } else {
       _name = '';
       _email = '';
@@ -90,6 +96,8 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
     _nameCtrl.dispose();
     _emailCtrl.dispose();
     _phoneCtrl.dispose();
+    _passwordCtrl.dispose();
+    _passwordConfirmationCtrl.dispose();
     super.dispose();
   }
 
@@ -128,18 +136,13 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
               // Steps
               Row(
                 children: [
-                  Expanded(
-                      child: _stepBadge(0, 'Profile', _step >= 0)),
+                  Expanded(child: _stepBadge(0, 'Profile', _step >= 0)),
                   const SizedBox(width: 8),
-                  Expanded(
-                      child: _stepBadge(1, 'Role', _step >= 1)),
+                  Expanded(child: _stepBadge(1, 'Role', _step >= 1)),
                   const SizedBox(width: 8),
-                  Expanded(
-                      child:
-                          _stepBadge(2, 'Permissions', _step >= 2)),
+                  Expanded(child: _stepBadge(2, 'Permissions', _step >= 2)),
                   const SizedBox(width: 8),
-                  Expanded(
-                      child: _stepBadge(3, 'Review', _step >= 3)),
+                  Expanded(child: _stepBadge(3, 'Review', _step >= 3)),
                 ],
               ),
               const SizedBox(height: 16),
@@ -178,21 +181,61 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
   }
 
   Widget _stepProfile() {
+    final emailIsValid =
+        RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(_email.trim());
+    final passwordIsValid = widget.isEditing ||
+        (_passwordCtrl.text.length >= 8 &&
+            _passwordCtrl.text == _passwordConfirmationCtrl.text);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _title('Step 1 • Personal Info'),
-        _field('Full Name', _nameCtrl, onChanged: (v) => _name = v),
+        _field('Full Name', _nameCtrl,
+            onChanged: (v) => setState(() => _name = v)),
         _field('Email Address', _emailCtrl,
             keyboardType: TextInputType.emailAddress,
-            onChanged: (v) => _email = v),
+            onChanged: (v) => setState(() => _email = v)),
+        if (_email.isNotEmpty && !emailIsValid)
+          const Padding(
+            padding: EdgeInsets.only(bottom: 10),
+            child: Text('Enter a valid email address.',
+                style: TextStyle(color: Color(0xFFDC2626), fontSize: 12)),
+          ),
         _field('Phone Number', _phoneCtrl,
             keyboardType: TextInputType.phone,
-            onChanged: (v) => _phone = v),
+            onChanged: (v) => setState(() => _phone = v)),
+        if (!widget.isEditing) ...[
+          _field(
+            'Initial Password (at least 8 characters)',
+            _passwordCtrl,
+            obscureText: true,
+            onChanged: (_) => setState(() {}),
+          ),
+          _field(
+            'Confirm Password',
+            _passwordConfirmationCtrl,
+            obscureText: true,
+            onChanged: (_) => setState(() {}),
+          ),
+          if (_passwordConfirmationCtrl.text.isNotEmpty &&
+              _passwordCtrl.text != _passwordConfirmationCtrl.text)
+            const Padding(
+              padding: EdgeInsets.only(bottom: 10),
+              child: Text('Passwords do not match.',
+                  style: TextStyle(color: Color(0xFFDC2626), fontSize: 12)),
+            ),
+          if (_passwordCtrl.text.isNotEmpty && _passwordCtrl.text.length < 8)
+            const Padding(
+              padding: EdgeInsets.only(bottom: 10),
+              child: Text('Password must be at least 8 characters.',
+                  style: TextStyle(color: Color(0xFFDC2626), fontSize: 12)),
+            ),
+        ],
         _nav(
           onBack: () => Navigator.of(context).pop(),
           backLabel: 'Cancel',
-          onNext: _name.trim().isEmpty || _email.trim().isEmpty
+          onNext: _name.trim().isEmpty || !emailIsValid || !passwordIsValid
               ? null
               : () => setState(() => _step = 1),
         ),
@@ -205,13 +248,30 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _title('Step 2 • Role & Department'),
-        _dropdown('Role', _role, _roles,
-            (v) => setState(() => _role = v!)),
+        _dropdown('Role', _role, _roles, (v) => setState(() => _role = v!)),
         _dropdown('Department', _department, _departments,
             (v) => setState(() => _department = v!)),
-        _dropdown('Account Status', _status,
-            ['Active', 'Inactive', 'Suspended'],
-            (v) => setState(() => _status = v!)),
+        if (widget.isEditing)
+          _dropdown(
+              'Account Status',
+              _status,
+              ['Active', 'Inactive', 'Suspended'],
+              (v) => setState(() => _status = v!))
+        else
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0FDF4),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Text('New accounts are created with Active status.',
+                style: TextStyle(
+                    color: Color(0xFF0F766E),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600)),
+          ),
         // Role description hint
         Container(
           padding: const EdgeInsets.all(12),
@@ -247,8 +307,7 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _title('Step 3 • Module Permissions'),
-        const Text(
-            'Choose which modules this user can access.',
+        const Text('Choose which modules this user can access.',
             style: TextStyle(color: Color(0xFF64748B), fontSize: 13)),
         const SizedBox(height: 12),
         ..._allPermissions.entries.map((entry) {
@@ -263,8 +322,8 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
                     : _permissions.add(entry.key);
               }),
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? const Color(0xFFCCFBF1)
@@ -303,9 +362,7 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
         const SizedBox(height: 4),
         _nav(
           onBack: () => setState(() => _step = 1),
-          onNext: _permissions.isEmpty
-              ? null
-              : () => setState(() => _step = 3),
+          onNext: () => setState(() => _step = 3),
         ),
       ],
     );
@@ -316,6 +373,19 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _title('Step 4 • Review & Confirm'),
+        if (_saveError != null) ...[
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFEF2F2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(_saveError!,
+                style: const TextStyle(color: Color(0xFFB91C1C))),
+          ),
+        ],
         _reviewBlock('Personal Info', [
           _reviewRow('Name', _name),
           _reviewRow('Email', _email),
@@ -339,8 +409,7 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
                       decoration: BoxDecoration(
                           color: const Color(0xFFCCFBF1),
                           borderRadius: BorderRadius.circular(999)),
-                      child: Text(
-                          _allPermissions[p] ?? p,
+                      child: Text(_allPermissions[p] ?? p,
                           style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
@@ -359,48 +428,68 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
             const SizedBox(width: 12),
             Expanded(
                 child: FilledButton(
-                    onPressed: _save,
+                    onPressed: _isSaving ? null : _save,
                     style: FilledButton.styleFrom(
                         backgroundColor: const Color(0xFF0F766E)),
-                    child: Text(widget.isEditing
-                        ? 'Update User'
-                        : 'Create User'))),
+                    child: _isSaving
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white),
+                          )
+                        : Text(widget.isEditing
+                            ? 'Update User'
+                            : 'Create User'))),
           ],
         ),
       ],
     );
   }
 
-  void _save() {
-    final newUser = AppUser(
-      id: widget.user?.id ??
-          'u${DateTime.now().millisecondsSinceEpoch}',
-      name: _name,
-      email: _email,
-      phone: _phone,
-      role: _role,
-      department: _department,
-      status: _status,
-      createdAt: widget.user?.createdAt ?? DateTime.now(),
-      lastLogin: widget.user?.lastLogin ?? 'Never',
-      permissions: _permissions.toList(),
-    );
+  Future<void> _save() async {
+    if (_isSaving) return;
+    setState(() {
+      _isSaving = true;
+      _saveError = null;
+    });
 
-    if (widget.isEditing) {
-      final idx = MockRepository.appUsers
-          .indexWhere((u) => u.id == widget.user!.id);
-      if (idx >= 0) MockRepository.appUsers[idx] = newUser;
-    } else {
-      MockRepository.appUsers.add(newUser);
+    final data = <String, dynamic>{
+      'name': _name.trim(),
+      'email': _email.trim(),
+      'phone': _phone.trim(),
+      'role': _apiRole(_role),
+      'department': _department,
+      if (widget.isEditing) 'status': _status,
+      'permissions': _permissionsForSave(),
+      if (!widget.isEditing) ...{
+        'password': _passwordCtrl.text,
+        'password_confirmation': _passwordConfirmationCtrl.text,
+      },
+    };
+
+    try {
+      if (widget.isEditing) {
+        await ApiRepository.instance.updateUser(widget.user!.id, data);
+      } else {
+        await ApiRepository.instance.createUser(data);
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(widget.isEditing
+            ? 'User updated successfully.'
+            : 'User created successfully.'),
+        backgroundColor: const Color(0xFF0F766E),
+      ));
+      Navigator.of(context).pop(true);
+    } catch (error) {
+      if (mounted) {
+        setState(() => _saveError = error.toString());
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
-
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(widget.isEditing
-          ? 'User updated successfully.'
-          : 'User created successfully.'),
-      backgroundColor: const Color(0xFF0F766E),
-    ));
-    Navigator.of(context).pop();
   }
 
   // ── helpers ──────────────────────────────────────────────────────────────
@@ -416,12 +505,14 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
 
   Widget _field(String label, TextEditingController ctrl,
       {TextInputType keyboardType = TextInputType.text,
+      bool obscureText = false,
       required ValueChanged<String> onChanged}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: TextFormField(
         controller: ctrl,
         keyboardType: keyboardType,
+        obscureText: obscureText,
         decoration: InputDecoration(labelText: label),
         onChanged: onChanged,
       ),
@@ -452,8 +543,7 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
       child: Row(
         children: [
           Expanded(
-              child: OutlinedButton(
-                  onPressed: onBack, child: Text(backLabel))),
+              child: OutlinedButton(onPressed: onBack, child: Text(backLabel))),
           const SizedBox(width: 12),
           Expanded(
               child: FilledButton(
@@ -468,12 +558,9 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
 
   Widget _stepBadge(int index, String label, bool active) {
     return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       decoration: BoxDecoration(
-        color: active
-            ? const Color(0xFFCCFBF1)
-            : const Color(0xFFF8FAFC),
+        color: active ? const Color(0xFFCCFBF1) : const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
@@ -483,9 +570,8 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
             width: 20,
             height: 20,
             decoration: BoxDecoration(
-                color: active
-                    ? const Color(0xFF0F766E)
-                    : const Color(0xFFCBD5E1),
+                color:
+                    active ? const Color(0xFF0F766E) : const Color(0xFFCBD5E1),
                 borderRadius: BorderRadius.circular(999)),
             alignment: Alignment.center,
             child: Text('${index + 1}',
@@ -521,8 +607,8 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(title,
-              style: const TextStyle(
-                  fontWeight: FontWeight.w800, fontSize: 13)),
+              style:
+                  const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
           const SizedBox(height: 8),
           ...rows,
         ],
@@ -542,8 +628,8 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
                       color: Color(0xFF475569),
                       fontSize: 13))),
           Text(value,
-              style: const TextStyle(
-                  fontWeight: FontWeight.w700, fontSize: 13)),
+              style:
+                  const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
         ],
       ),
     );
@@ -566,5 +652,49 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
       default:
         return 'Read-only access to assigned modules.';
     }
+  }
+
+  String _roleLabel(String role) {
+    switch (role) {
+      case 'admin':
+        return 'Admin';
+      case 'store_manager':
+        return 'Store Manager';
+      case 'kitchen_supervisor':
+        return 'Kitchen Supervisor';
+      default:
+        return role
+            .split('_')
+            .map((part) => part.isEmpty
+                ? part
+                : '${part[0].toUpperCase()}${part.substring(1)}')
+            .join(' ');
+    }
+  }
+
+  String _apiRole(String role) {
+    switch (role) {
+      case 'Admin':
+        return 'admin';
+      case 'Store Manager':
+        return 'store_manager';
+      case 'Kitchen Supervisor':
+        return 'kitchen_supervisor';
+      default:
+        return role.toLowerCase().replaceAll(' ', '_');
+    }
+  }
+
+  List<String> _permissionsForSave() {
+    final permissions = <String>{};
+    for (final module in _permissions) {
+      final existing = widget.user?.permissions
+              .where((permission) =>
+                  permission == module || permission.startsWith('$module.'))
+              .toSet() ??
+          <String>{};
+      permissions.addAll(existing.isEmpty ? {'$module.view'} : existing);
+    }
+    return permissions.toList();
   }
 }
