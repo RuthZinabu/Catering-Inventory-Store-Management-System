@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'barcode_service.dart';
+import 'barcode_lookup_flow.dart';
+import 'barcode_lookup_flow.dart';
 import '../stock/food_stock_form_screen.dart';
 import '../stock/catering_stock_form_screen.dart';
 import '../stock/electronics_stock_form_screen.dart';
@@ -418,8 +420,8 @@ class _BarcodeScannerScreenState extends State<_BarcodeScannerScreen> {
                     decoration: BoxDecoration(
                       border: Border.all(
                         color: const Color(0xFF2563EB),
-                        width: 2,
-                      ),
+                                    Text(
+                                      'Camera scanner opens when you start a scan',
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Column(
@@ -447,6 +449,8 @@ class _BarcodeScannerScreenState extends State<_BarcodeScannerScreen> {
           // Manual input fallback
           TextFormField(
             controller: _scanController,
+            onChanged: (_) => setState(() {}),
+            onFieldSubmitted: (_) => _lookupManualBarcode(),
             decoration: InputDecoration(
               labelText: 'Or Enter Barcode Manually',
               prefixIcon: const Icon(Icons.qr_code_scanner),
@@ -473,7 +477,7 @@ class _BarcodeScannerScreenState extends State<_BarcodeScannerScreen> {
                 child: ElevatedButton.icon(
                   onPressed: _startScan,
                   icon: const Icon(Icons.qr_code_scanner),
-                  label: Text(_isScanning ? 'Stop Scanning' : 'Start Scanning'),
+                  label: Text(_isScanning ? 'Opening camera…' : 'Scan with Camera'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _isScanning
                         ? const Color(0xFFEF4444)
@@ -526,50 +530,7 @@ class _BarcodeScannerScreenState extends State<_BarcodeScannerScreen> {
                                 ?.copyWith(color: const Color(0xFF64748B)),
                           ),
                           Text(
-                            BarcodeService.parseScannedBarcode(
-                                _scanController.text)['data'] as String,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Timestamp',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(color: const Color(0xFF64748B)),
-                          ),
-                          Text(
-                            BarcodeService.parseScannedBarcode(
-                                _scanController.text)['timestamp'] as String,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Type',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(color: const Color(0xFF64748B)),
-                          ),
-                          Text(
-                            BarcodeService.parseScannedBarcode(
-                                _scanController.text)['type'] as String,
+                            _scanController.text.trim(),
                             style: const TextStyle(
                               fontWeight: FontWeight.w600,
                               fontSize: 14,
@@ -584,12 +545,16 @@ class _BarcodeScannerScreenState extends State<_BarcodeScannerScreen> {
 
                 // Quick stock update
                 ElevatedButton.icon(
-                  onPressed: _showQuickUpdateSheet,
-                  icon: const Icon(Icons.update),
-                  label: const Text('Quick Stock Update'),
+                  onPressed: _lookupManualBarcode,
+                  icon: const Icon(Icons.search),
+                  label: const Text('Find Product'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2563EB),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                        Text(
+                                          _scanController.text.trim(),
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 14,
+                                          ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -602,129 +567,17 @@ class _BarcodeScannerScreenState extends State<_BarcodeScannerScreen> {
     );
   }
 
-  void _startScan() {
-    setState(() => _isScanning = !_isScanning);
-    if (_isScanning) {
-      // Simulate scanning after delay
-      Future.delayed(const Duration(seconds: 2), () {
-        setState(() {
-          _scanController.text =
-              'QR:ITEM-001-${DateTime.now().millisecondsSinceEpoch}';
-          _isScanning = false;
-        });
-      });
+  Future<void> _startScan() async {
+    setState(() => _isScanning = true);
+    try {
+      await BarcodeLookupFlow.start(context);
+    } finally {
+      if (mounted) setState(() => _isScanning = false);
     }
   }
 
-  void _showQuickUpdateSheet() {
-    final TextEditingController quantityCtrl = TextEditingController();
-    String selectedStore =
-        StoreRepository.stores.isNotEmpty ? StoreRepository.stores[0].name : '';
-
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          left: 20,
-          right: 20,
-          top: 20,
-          bottom: MediaQuery.of(context).padding.bottom + 20,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Quick Stock Update',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 24),
-
-            // Store selection
-            DropdownButtonFormField<String>(
-              decoration: InputDecoration(
-                labelText: 'Select Store',
-                prefixIcon: const Icon(Icons.location_on_outlined),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              value: selectedStore,
-              items: StoreRepository.stores.map((store) {
-                return DropdownMenuItem(
-                  value: store.name,
-                  child: Text(store.name),
-                );
-              }).toList(),
-              onChanged: (value) => setState(() => selectedStore = value!),
-            ),
-            const SizedBox(height: 16),
-
-            // Quantity input
-            TextFormField(
-              controller: quantityCtrl,
-              decoration: InputDecoration(
-                labelText: 'New Quantity',
-                hintText: 'Enter quantity',
-                prefixIcon: const Icon(Icons.inventory_rounded),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 24),
-
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text('Cancel'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      if (quantityCtrl.text.isNotEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content:
-                                Text('Stock updated to ${quantityCtrl.text}'),
-                            backgroundColor: const Color(0xFF16A34A),
-                          ),
-                        );
-                        Navigator.pop(context);
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text('Update'),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
+  Future<void> _lookupManualBarcode() async {
+    await BarcodeLookupFlow.lookupValue(context, _scanController.text);
   }
 }
 

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/inventory_models.dart';
 import '../services/api_repository.dart';
 import '../widgets/loading_error_widgets.dart';
+import 'barcode/barcode_lookup_flow.dart';
 import 'inventory_detail_screen.dart';
 import 'inventory_create_screen.dart';
 
@@ -208,12 +209,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                                color: const Color(0xFFF8FAFC),
-                                borderRadius: BorderRadius.circular(12)),
-                            child: const Icon(Icons.tune_rounded,
+                          IconButton(
+                            tooltip: 'Scan barcode or QR code',
+                            onPressed: () => BarcodeLookupFlow.start(context),
+                            icon: const Icon(Icons.qr_code_scanner_rounded,
                                 color: Color(0xFF2563EB)),
                           ),
                         ],

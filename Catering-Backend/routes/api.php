@@ -101,10 +101,10 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     // Items - require inventory permissions
     Route::middleware('permission:inventory.view')->group(function () {
         Route::get('items', [App\Http\Controllers\ItemController::class, 'index']);
-        Route::get('items/{item}', [App\Http\Controllers\ItemController::class, 'show']);
         Route::get('items/search', [App\Http\Controllers\ItemController::class, 'search']);
         Route::get('items/categories', [App\Http\Controllers\ItemController::class, 'categories']);
         Route::get('items/types', [App\Http\Controllers\ItemController::class, 'types']);
+        Route::get('items/{item}', [App\Http\Controllers\ItemController::class, 'show']);
     });
     
     Route::middleware('permission:inventory.create')->group(function () {

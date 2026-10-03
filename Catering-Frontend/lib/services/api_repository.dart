@@ -110,6 +110,12 @@ import 'kitchen_issue_service.dart';
     return result.items;
   }
 
+  Future<List<InventoryItem>> searchInventoryItems(String barcode) {
+    return _inventoryService.search(barcode, limit: 50).then(
+      (items) => items.where((item) => item.code == barcode).toList(),
+    );
+  }
+
   Future<InventoryItem?> getInventoryItemById(String id) async {
     return await _inventoryService.getById(id);
   }

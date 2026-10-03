@@ -5,7 +5,9 @@ import '../services/api_repository.dart';
 import '../widgets/loading_error_widgets.dart';
 
 class InventoryCreateScreen extends StatefulWidget {
-  const InventoryCreateScreen({super.key});
+  final String? initialBarcode;
+
+  const InventoryCreateScreen({super.key, this.initialBarcode});
 
   @override
   State<InventoryCreateScreen> createState() => _InventoryCreateScreenState();
@@ -13,6 +15,7 @@ class InventoryCreateScreen extends StatefulWidget {
 
 class _InventoryCreateScreenState extends State<InventoryCreateScreen> {
   final _formKey = GlobalKey<FormState>();
+  String _itemType = 'food';
 
   final _codeController = TextEditingController();
   final _nameController = TextEditingController();
@@ -27,6 +30,12 @@ class _InventoryCreateScreenState extends State<InventoryCreateScreen> {
   final _descriptionController = TextEditingController();
 
   bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _codeController.text = widget.initialBarcode ?? '';
+  }
 
   @override
   void dispose() {
@@ -112,6 +121,18 @@ class _InventoryCreateScreenState extends State<InventoryCreateScreen> {
                       _buildField('Category', _categoryController,
                           Icons.category_outlined,
                           validator: _required),
+                      DropdownButtonFormField<String>(
+                        value: _itemType,
+                        decoration: const InputDecoration(labelText: 'Item Type'),
+                        items: const [
+                          DropdownMenuItem(value: 'food', child: Text('Food')),
+                          DropdownMenuItem(value: 'catering', child: Text('Catering')),
+                          DropdownMenuItem(value: 'electronics', child: Text('Electronics')),
+                        ],
+                        onChanged: (value) {
+                          if (value != null) setState(() => _itemType = value);
+                        },
+                      ),
                       _buildField('Unit (e.g. Kg, Bag, Litre)', _unitController,
                           Icons.straighten_outlined,
                           validator: _required),
@@ -272,6 +293,7 @@ class _InventoryCreateScreenState extends State<InventoryCreateScreen> {
         stockOnHand: stockOnHand,
         reorderPoint: reorderPoint,
         isActive: true, // Set new items as active by default
+        itemType: _itemType,
       );
 
       // Call the API to create the item
@@ -290,8 +312,10 @@ class _InventoryCreateScreenState extends State<InventoryCreateScreen> {
                 '${createdItem.name} was added to inventory successfully.'),
             actions: [
               FilledButton(
-                onPressed: () =>
-                    Navigator.of(context).popUntil((route) => route.isFirst),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).pop(true);
+                },
                 child: const Text('Continue'),
               ),
             ],

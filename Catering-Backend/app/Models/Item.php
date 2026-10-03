@@ -124,10 +124,13 @@ class Item extends Model
      */
     public function scopeSearch($query, $search)
     {
+                $pattern = '%' . mb_strtolower($search) . '%';
+
         return $query->where(function ($q) use ($search) {
-            $q->where('name', 'ILIKE', "%{$search}%")
-              ->orWhere('code', 'ILIKE', "%{$search}%")
-              ->orWhere('description', 'ILIKE', "%{$search}%");
+                        $pattern = '%' . mb_strtolower($search) . '%';
+                        $q->whereRaw('LOWER(name) LIKE ?', [$pattern])
+                            ->orWhereRaw('LOWER(code) LIKE ?', [$pattern])
+                            ->orWhereRaw('LOWER(description) LIKE ?', [$pattern]);
         });
     }
 

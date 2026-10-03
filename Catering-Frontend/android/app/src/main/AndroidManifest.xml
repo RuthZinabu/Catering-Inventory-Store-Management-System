@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.CAMERA" />
+
     <application
         android:label="catering_inventory_store_management_system"
         android:name="${applicationName}"

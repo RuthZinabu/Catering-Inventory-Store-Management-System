@@ -270,7 +270,40 @@ class ItemController extends Controller
             $query->ofCategory($request->category);
         }
 
-        $items = $query->limit($request->get('limit', 20))->get(['id', 'code', 'name', 'unit', 'item_type']);
+        $items = $query
+            ->orderByRaw('CASE WHEN code = ? THEN 0 ELSE 1 END', [$request->q])
+            ->limit($request->get('limit', 20))
+            ->get([
+                'id',
+                'code',
+                'name',
+                'category',
+                'unit',
+                'item_type',
+                'default_purchase_price',
+                'description',
+                'is_active',
+                'shelf_life_days',
+                'requires_refrigeration',
+                'created_at',
+                'updated_at',
+            ])
+            ->map(fn (Item $item) => [
+                'id' => $item->id,
+                'code' => $item->code,
+                'name' => $item->name,
+                'category' => $item->category,
+                'unit' => $item->unit,
+                'item_type' => $item->item_type?->value ?? $item->item_type,
+                'default_purchase_price' => (float) ($item->default_purchase_price ?? 0),
+                'description' => $item->description ?? '',
+                'is_active' => (bool) $item->is_active,
+                'shelf_life_days' => $item->shelf_life_days,
+                'requires_refrigeration' => (bool) $item->requires_refrigeration,
+                'created_at' => $item->created_at,
+                'updated_at' => $item->updated_at,
+            ])
+            ->values();
 
         return $this->success($items);
     }
