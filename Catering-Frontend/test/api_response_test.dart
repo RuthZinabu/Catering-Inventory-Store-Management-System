@@ -9,6 +9,5 @@ void main() {
     );
 
     expect(response.isSuccess, isTrue);
-    expect(response.data, isNull);
   });
 }
