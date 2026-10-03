@@ -2,7 +2,7 @@ import 'package:catering_inventory_store_management_system/widgets/search_bar.da
 import 'package:flutter/material.dart';
 
 import '../../models/inventory_models.dart';
-import '../../services/mock_repository.dart';
+import '../../services/api_repository.dart';
 import 'recipe_detail_screen.dart';
 import 'recipe_create_screen.dart';
 
@@ -16,6 +16,9 @@ class RecipeListScreen extends StatefulWidget {
 class _RecipeListScreenState extends State<RecipeListScreen> {
   String searchQuery = '';
   String selectedCategory = 'All';
+  List<RecipeItem> _allRecipes = [];
+  bool _isLoading = true;
+  String? _error;
 
   final List<String> categories = const [
     'All',
@@ -27,9 +30,37 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
     'Soup',
   ];
 
-  List<RecipeItem> get _recipes => MockRepository.recipeItems;
+  @override
+  void initState() {
+    super.initState();
+    _loadRecipes();
+  }
 
-  List<RecipeItem> get _filtered => _recipes.where((r) {
+  Future<void> _loadRecipes() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final recipes = await ApiRepository.instance.getRecipeItems();
+      if (mounted) {
+        setState(() {
+          _allRecipes = recipes;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  List<RecipeItem> get _filtered => _allRecipes.where((r) {
         final matchCat =
             selectedCategory == 'All' || r.category == selectedCategory;
         final matchSearch = searchQuery.isEmpty ||
@@ -40,6 +71,124 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        floatingActionButton: Padding(
+          padding: const EdgeInsets.only(bottom: 70),
+          child: FloatingActionButton.extended(
+            onPressed: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const RecipeCreateScreen()),
+              );
+              _loadRecipes(); // Reload after creating
+            },
+            icon: const Icon(Icons.add_rounded),
+            label: const Text('New Recipe'),
+          ),
+        ),
+        body: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Recipe Management',
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineSmall
+                            ?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.6),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.arrow_back_rounded),
+                      style: IconButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          padding: const EdgeInsets.all(10)),
+                    ),
+                  ],
+                ),
+              ),
+              const Expanded(
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_error != null) {
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        floatingActionButton: Padding(
+          padding: const EdgeInsets.only(bottom: 70),
+          child: FloatingActionButton.extended(
+            onPressed: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const RecipeCreateScreen()),
+              );
+              _loadRecipes(); // Reload after creating
+            },
+            icon: const Icon(Icons.add_rounded),
+            label: const Text('New Recipe'),
+          ),
+        ),
+        body: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Recipe Management',
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineSmall
+                            ?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.6),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.arrow_back_rounded),
+                      style: IconButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          padding: const EdgeInsets.all(10)),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text('Error: $_error'),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: _loadRecipes,
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     final filtered = _filtered;
     final activeCount = filtered.where((r) => r.status == 'Active').length;
     final totalServings = filtered.fold<int>(0, (s, r) => s + r.servings);
@@ -57,7 +206,7 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
             await Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const RecipeCreateScreen()),
             );
-            if (mounted) setState(() {});
+            _loadRecipes(); // Reload after creating
           },
           icon: const Icon(Icons.add_rounded),
           label: const Text('New Recipe'),

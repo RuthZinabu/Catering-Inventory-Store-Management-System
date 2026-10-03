@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/inventory_models.dart';
-import '../../services/mock_repository.dart';
+import '../../services/api_repository.dart';
 
 class SupplierFormScreen extends StatefulWidget {
   final Supplier? supplier;
@@ -31,7 +31,8 @@ class _SupplierFormScreenState extends State<SupplierFormScreen> {
     super.initState();
     final supplier = widget.supplier;
     _companyController = TextEditingController(text: supplier?.company ?? '');
-    _contactController = TextEditingController(text: supplier?.contactPerson ?? '');
+    _contactController =
+        TextEditingController(text: supplier?.contactPerson ?? '');
     _phoneController = TextEditingController(text: supplier?.phone ?? '');
     _emailController = TextEditingController(text: supplier?.email ?? '');
     _addressController = TextEditingController(text: supplier?.address ?? '');
@@ -71,45 +72,96 @@ class _SupplierFormScreenState extends State<SupplierFormScreen> {
               children: [
                 Row(
                   children: [
-                    IconButton(onPressed: () => Navigator.of(context).pop(), icon: const Icon(Icons.arrow_back_rounded), style: IconButton.styleFrom(backgroundColor: Colors.white, padding: const EdgeInsets.all(10))),
+                    IconButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(Icons.arrow_back_rounded),
+                        style: IconButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            padding: const EdgeInsets.all(10))),
                     const Spacer(),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(999)),
-                      child: Text(isEditing ? 'Update Supplier' : 'Add Supplier', style: const TextStyle(fontWeight: FontWeight.w700)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(999)),
+                      child: Text(
+                          isEditing ? 'Update Supplier' : 'Add Supplier',
+                          style: const TextStyle(fontWeight: FontWeight.w700)),
                     ),
                   ],
                 ),
                 const SizedBox(height: 18),
                 Container(
                   padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(28), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 16, offset: const Offset(0, 8))]),
+                  decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(28),
+                      boxShadow: [
+                        BoxShadow(
+                            color: Colors.black.withOpacity(0.04),
+                            blurRadius: 16,
+                            offset: const Offset(0, 8))
+                      ]),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(isEditing ? 'Update supplier details' : 'Create a supplier profile', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+                      Text(
+                          isEditing
+                              ? 'Update supplier details'
+                              : 'Create a supplier profile',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w800)),
                       const SizedBox(height: 10),
-                      Text('Keep supplier information up to date with a refined, mobile-first form.', style: Theme.of(context).textTheme.bodyMedium),
+                      Text(
+                          'Keep supplier information up to date with a refined, mobile-first form.',
+                          style: Theme.of(context).textTheme.bodyMedium),
                       const SizedBox(height: 18),
-                      _buildField('Company Name', _companyController, Icons.business_outlined, validator: _required),
-                      _buildField('Contact Person', _contactController, Icons.person_outline_rounded, validator: _required),
-                      _buildField('Phone Number', _phoneController, Icons.phone_outlined, validator: _required),
-                      _buildField('Email', _emailController, Icons.email_outlined, validator: _email),
-                      _buildField('Address', _addressController, Icons.location_on_outlined, validator: _required),
-                      _buildField('Tax Number', _taxController, Icons.receipt_long_outlined, validator: _required),
-                      _buildField('Supplier Category', _categoryController, Icons.category_outlined, validator: _required),
-                      _buildField('Business Registration Number', _registrationController, Icons.badge_outlined),
-                      _buildField('Notes', _notesController, Icons.notes_outlined, maxLines: 3),
+                      _buildField('Company Name', _companyController,
+                          Icons.business_outlined,
+                          validator: _required),
+                      _buildField('Contact Person', _contactController,
+                          Icons.person_outline_rounded,
+                          validator: _required),
+                      _buildField('Phone Number', _phoneController,
+                          Icons.phone_outlined,
+                          validator: _required),
+                      _buildField(
+                          'Email', _emailController, Icons.email_outlined,
+                          validator: _email),
+                      _buildField('Address', _addressController,
+                          Icons.location_on_outlined,
+                          validator: _required),
+                      _buildField('Tax Number', _taxController,
+                          Icons.receipt_long_outlined,
+                          validator: _required),
+                      _buildField('Supplier Category', _categoryController,
+                          Icons.category_outlined,
+                          validator: _required),
+                      _buildField('Business Registration Number',
+                          _registrationController, Icons.badge_outlined),
+                      _buildField(
+                          'Notes', _notesController, Icons.notes_outlined,
+                          maxLines: 3),
                       const SizedBox(height: 10),
                       Container(
                         padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(20)),
+                        decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(20)),
                         child: Row(
                           children: [
-                            const Icon(Icons.upload_file_rounded, color: Color(0xFF2563EB)),
+                            const Icon(Icons.upload_file_rounded,
+                                color: Color(0xFF2563EB)),
                             const SizedBox(width: 10),
-                            Expanded(child: Text('Company Logo Upload', style: const TextStyle(fontWeight: FontWeight.w700))),
-                            TextButton(onPressed: () {}, child: const Text('Upload')),
+                            Expanded(
+                                child: Text('Company Logo Upload',
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w700))),
+                            TextButton(
+                                onPressed: () {}, child: const Text('Upload')),
                           ],
                         ),
                       ),
@@ -119,9 +171,17 @@ class _SupplierFormScreenState extends State<SupplierFormScreen> {
                 const SizedBox(height: 18),
                 Row(
                   children: [
-                    Expanded(child: OutlinedButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel'))),
+                    Expanded(
+                        child: OutlinedButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: const Text('Cancel'))),
                     const SizedBox(width: 12),
-                    Expanded(child: FilledButton(onPressed: _submit, child: Text(isEditing ? 'Update Supplier' : 'Save Supplier'))),
+                    Expanded(
+                        child: FilledButton(
+                            onPressed: _submit,
+                            child: Text(isEditing
+                                ? 'Update Supplier'
+                                : 'Save Supplier'))),
                   ],
                 ),
               ],
@@ -132,7 +192,9 @@ class _SupplierFormScreenState extends State<SupplierFormScreen> {
     );
   }
 
-  Widget _buildField(String label, TextEditingController controller, IconData icon, {String? Function(String?)? validator, int maxLines = 1}) {
+  Widget _buildField(
+      String label, TextEditingController controller, IconData icon,
+      {String? Function(String?)? validator, int maxLines = 1}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: TextFormField(
@@ -164,32 +226,35 @@ class _SupplierFormScreenState extends State<SupplierFormScreen> {
     return null;
   }
 
-  void _submit() {
+  void _submit() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _saved = true);
 
       final isEditing = widget.supplier != null;
-      if (isEditing) {
-        final existing = widget.supplier!;
-        final index = MockRepository.suppliers.indexWhere((s) => s.id == existing.id);
-        final updated = Supplier(
-          id: existing.id,
-          name: _contactController.text.trim(),
-          company: _companyController.text.trim(),
-          contactPerson: _contactController.text.trim(),
-          phone: _phoneController.text.trim(),
-          email: _emailController.text.trim(),
-          address: _addressController.text.trim(),
-          taxNumber: _taxController.text.trim(),
-          status: _categoryController.text.trim().isEmpty ? existing.status : _categoryController.text.trim(),
-          outstandingBalance: existing.outstandingBalance,
-        );
-        if (index != -1) {
-          MockRepository.suppliers[index] = updated;
-        }
-      } else {
-        MockRepository.suppliers.add(
-          Supplier(
+
+      try {
+        if (isEditing) {
+          // TODO: Replace with actual API call when supplier update endpoint is implemented
+          // await ApiRepository.instance.updateSupplier(supplierId, supplierData);
+          final existing = widget.supplier!;
+          final updated = Supplier(
+            id: existing.id,
+            name: _contactController.text.trim(),
+            company: _companyController.text.trim(),
+            contactPerson: _contactController.text.trim(),
+            phone: _phoneController.text.trim(),
+            email: _emailController.text.trim(),
+            address: _addressController.text.trim(),
+            taxNumber: _taxController.text.trim(),
+            status: _categoryController.text.trim().isEmpty
+                ? existing.status
+                : _categoryController.text.trim(),
+            outstandingBalance: existing.outstandingBalance,
+          );
+        } else {
+          // TODO: Replace with actual API call when supplier creation endpoint is implemented
+          // await ApiRepository.instance.createSupplier(supplierData);
+          final newSupplier = Supplier(
             id: DateTime.now().millisecondsSinceEpoch.toString(),
             name: _contactController.text.trim(),
             company: _companyController.text.trim(),
@@ -200,24 +265,48 @@ class _SupplierFormScreenState extends State<SupplierFormScreen> {
             taxNumber: _taxController.text.trim(),
             status: 'Active',
             outstandingBalance: 0,
-          ),
-        );
-      }
+          );
+        }
 
-      showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          title: const Text('Supplier saved'),
-          content: const Text('The supplier details were saved successfully.'),
-          actions: [
-            FilledButton(
-              onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
-              child: const Text('Continue'),
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24)),
+              title: const Text('Supplier saved'),
+              content:
+                  const Text('The supplier details were saved successfully.'),
+              actions: [
+                FilledButton(
+                  onPressed: () =>
+                      Navigator.of(context).popUntil((route) => route.isFirst),
+                  child: const Text('Continue'),
+                ),
+              ],
             ),
-          ],
-        ),
-      );
+          );
+        }
+      } catch (e) {
+        setState(() => _saved = false);
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24)),
+              title: const Text('Error'),
+              content: Text('Failed to save supplier: $e'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+          );
+        }
+      }
     }
   }
 }

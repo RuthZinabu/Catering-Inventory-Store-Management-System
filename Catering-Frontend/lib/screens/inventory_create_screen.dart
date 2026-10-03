@@ -271,7 +271,7 @@ class _InventoryCreateScreenState extends State<InventoryCreateScreen> {
         description: _descriptionController.text.trim(),
         stockOnHand: stockOnHand,
         reorderPoint: reorderPoint,
-        status: stockOnHand <= reorderPoint ? 'Low Stock' : 'Healthy',
+        isActive: true, // Set new items as active by default
       );
 
       // Call the API to create the item

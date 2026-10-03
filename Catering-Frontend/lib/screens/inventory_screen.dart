@@ -304,8 +304,12 @@ class _InventoryScreenState extends State<InventoryScreen> {
                         final item = filteredItems[index];
                         final accent = _accentForCategory(item.category);
                         final statusColor = _statusColor(item.status);
-                        final stockFraction =
-                            (item.stockOnHand / item.maxStock).clamp(0.0, 1.0);
+                        final stockFraction = (item.stockOnHand != null &&
+                                item.maxStock != null &&
+                                item.maxStock! > 0)
+                            ? (item.stockOnHand! / item.maxStock!)
+                                .clamp(0.0, 1.0)
+                            : 0.0;
 
                         return Container(
                           margin: const EdgeInsets.only(bottom: 14),

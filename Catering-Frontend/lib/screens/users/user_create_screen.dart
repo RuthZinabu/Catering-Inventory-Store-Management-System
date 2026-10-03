@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/inventory_models.dart';
-import '../../services/mock_repository.dart';
+import '../../services/api_repository.dart';
 
 class UserCreateScreen extends StatefulWidget {
   final bool isEditing;
@@ -128,18 +128,13 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
               // Steps
               Row(
                 children: [
-                  Expanded(
-                      child: _stepBadge(0, 'Profile', _step >= 0)),
+                  Expanded(child: _stepBadge(0, 'Profile', _step >= 0)),
                   const SizedBox(width: 8),
-                  Expanded(
-                      child: _stepBadge(1, 'Role', _step >= 1)),
+                  Expanded(child: _stepBadge(1, 'Role', _step >= 1)),
                   const SizedBox(width: 8),
-                  Expanded(
-                      child:
-                          _stepBadge(2, 'Permissions', _step >= 2)),
+                  Expanded(child: _stepBadge(2, 'Permissions', _step >= 2)),
                   const SizedBox(width: 8),
-                  Expanded(
-                      child: _stepBadge(3, 'Review', _step >= 3)),
+                  Expanded(child: _stepBadge(3, 'Review', _step >= 3)),
                 ],
               ),
               const SizedBox(height: 16),
@@ -187,8 +182,7 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
             keyboardType: TextInputType.emailAddress,
             onChanged: (v) => _email = v),
         _field('Phone Number', _phoneCtrl,
-            keyboardType: TextInputType.phone,
-            onChanged: (v) => _phone = v),
+            keyboardType: TextInputType.phone, onChanged: (v) => _phone = v),
         _nav(
           onBack: () => Navigator.of(context).pop(),
           backLabel: 'Cancel',
@@ -205,11 +199,12 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _title('Step 2 • Role & Department'),
-        _dropdown('Role', _role, _roles,
-            (v) => setState(() => _role = v!)),
+        _dropdown('Role', _role, _roles, (v) => setState(() => _role = v!)),
         _dropdown('Department', _department, _departments,
             (v) => setState(() => _department = v!)),
-        _dropdown('Account Status', _status,
+        _dropdown(
+            'Account Status',
+            _status,
             ['Active', 'Inactive', 'Suspended'],
             (v) => setState(() => _status = v!)),
         // Role description hint
@@ -247,8 +242,7 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _title('Step 3 • Module Permissions'),
-        const Text(
-            'Choose which modules this user can access.',
+        const Text('Choose which modules this user can access.',
             style: TextStyle(color: Color(0xFF64748B), fontSize: 13)),
         const SizedBox(height: 12),
         ..._allPermissions.entries.map((entry) {
@@ -263,8 +257,8 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
                     : _permissions.add(entry.key);
               }),
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? const Color(0xFFCCFBF1)
@@ -303,9 +297,7 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
         const SizedBox(height: 4),
         _nav(
           onBack: () => setState(() => _step = 1),
-          onNext: _permissions.isEmpty
-              ? null
-              : () => setState(() => _step = 3),
+          onNext: _permissions.isEmpty ? null : () => setState(() => _step = 3),
         ),
       ],
     );
@@ -339,8 +331,7 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
                       decoration: BoxDecoration(
                           color: const Color(0xFFCCFBF1),
                           borderRadius: BorderRadius.circular(999)),
-                      child: Text(
-                          _allPermissions[p] ?? p,
+                      child: Text(_allPermissions[p] ?? p,
                           style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
@@ -362,9 +353,8 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
                     onPressed: _save,
                     style: FilledButton.styleFrom(
                         backgroundColor: const Color(0xFF0F766E)),
-                    child: Text(widget.isEditing
-                        ? 'Update User'
-                        : 'Create User'))),
+                    child: Text(
+                        widget.isEditing ? 'Update User' : 'Create User'))),
           ],
         ),
       ],
@@ -373,8 +363,7 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
 
   void _save() {
     final newUser = AppUser(
-      id: widget.user?.id ??
-          'u${DateTime.now().millisecondsSinceEpoch}',
+      id: widget.user?.id ?? 'u${DateTime.now().millisecondsSinceEpoch}',
       name: _name,
       email: _email,
       phone: _phone,
@@ -387,8 +376,8 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
     );
 
     if (widget.isEditing) {
-      final idx = MockRepository.appUsers
-          .indexWhere((u) => u.id == widget.user!.id);
+      final idx =
+          ApiRepository.appUsers.indexWhere((u) => u.id == widget.user!.id);
       if (idx >= 0) MockRepository.appUsers[idx] = newUser;
     } else {
       MockRepository.appUsers.add(newUser);
@@ -452,8 +441,7 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
       child: Row(
         children: [
           Expanded(
-              child: OutlinedButton(
-                  onPressed: onBack, child: Text(backLabel))),
+              child: OutlinedButton(onPressed: onBack, child: Text(backLabel))),
           const SizedBox(width: 12),
           Expanded(
               child: FilledButton(
@@ -468,12 +456,9 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
 
   Widget _stepBadge(int index, String label, bool active) {
     return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       decoration: BoxDecoration(
-        color: active
-            ? const Color(0xFFCCFBF1)
-            : const Color(0xFFF8FAFC),
+        color: active ? const Color(0xFFCCFBF1) : const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
@@ -483,9 +468,8 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
             width: 20,
             height: 20,
             decoration: BoxDecoration(
-                color: active
-                    ? const Color(0xFF0F766E)
-                    : const Color(0xFFCBD5E1),
+                color:
+                    active ? const Color(0xFF0F766E) : const Color(0xFFCBD5E1),
                 borderRadius: BorderRadius.circular(999)),
             alignment: Alignment.center,
             child: Text('${index + 1}',
@@ -521,8 +505,8 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(title,
-              style: const TextStyle(
-                  fontWeight: FontWeight.w800, fontSize: 13)),
+              style:
+                  const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
           const SizedBox(height: 8),
           ...rows,
         ],
@@ -542,8 +526,8 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
                       color: Color(0xFF475569),
                       fontSize: 13))),
           Text(value,
-              style: const TextStyle(
-                  fontWeight: FontWeight.w700, fontSize: 13)),
+              style:
+                  const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
         ],
       ),
     );

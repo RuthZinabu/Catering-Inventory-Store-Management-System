@@ -1,7 +1,7 @@
 import 'package:catering_inventory_store_management_system/widgets/search_bar.dart';
 import 'package:flutter/material.dart';
 import '../../models/stock_models.dart';
-import '../../services/mock_repository.dart';
+import '../../services/api_repository.dart';
 import 'stock_detail_screen.dart';
 import 'stock_helpers.dart';
 
@@ -15,13 +15,40 @@ class CateringStockTab extends StatefulWidget {
 class _CateringStockTabState extends State<CateringStockTab>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-
   String searchQuery = '';
+  List<CateringStockItem> _allItems = [];
+  bool _isLoading = true;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _loadCateringStock();
+  }
+
+  Future<void> _loadCateringStock() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final items = await ApiRepository.instance.getCateringStock();
+      if (mounted) {
+        setState(() {
+          _allItems = items;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -32,10 +59,30 @@ class _CateringStockTabState extends State<CateringStockTab>
 
   @override
   Widget build(BuildContext context) {
-    final permanentItems = MockRepository.cateringStock
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('Error: $_error'),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadCateringStock,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final permanentItems = _allItems
         .where((item) => item.subtype == CateringSubtype.permanent)
         .toList();
-    final temporaryItems = MockRepository.cateringStock
+    final temporaryItems = _allItems
         .where((item) => item.subtype == CateringSubtype.temporary)
         .toList();
 

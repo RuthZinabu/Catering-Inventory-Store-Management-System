@@ -35,8 +35,8 @@ class _AppWrapperState extends State<AppWrapper> {
 
   Future<void> _initializeApp() async {
     try {
-      // Initialize API repository and enable all API services
-      ApiRepository.instance.enableAllApis();
+      // Initialize API repository
+      // All data operations now use API services directly
 
       // Check if user is already authenticated
       await _authProvider.checkAuthStatus();

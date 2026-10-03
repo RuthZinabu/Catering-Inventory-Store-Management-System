@@ -116,7 +116,11 @@ class _InventoryDetailScreenState extends State<InventoryDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final accent = _accentForCategory(_item.category);
-    final stockFraction = (_item.stockOnHand / _item.maxStock).clamp(0.0, 1.0);
+    final stockFraction = (_item.stockOnHand != null &&
+            _item.maxStock != null &&
+            _item.maxStock! > 0)
+        ? (_item.stockOnHand! / _item.maxStock!).clamp(0.0, 1.0)
+        : 0.0;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -276,7 +280,7 @@ class _InventoryDetailScreenState extends State<InventoryDetailScreen> {
                                   _detailRow('Purchase price',
                                       'ETB ${_item.purchasePrice.toStringAsFixed(0)}'),
                                   _detailRow('Internal cost',
-                                      'ETB ${_item.internalCost.toStringAsFixed(0)}'),
+                                      'ETB ${_item.internalCost?.toStringAsFixed(0)}'),
                                   _detailRow('Status', _item.status),
                                 ],
                               ),

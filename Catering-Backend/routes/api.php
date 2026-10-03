@@ -25,6 +25,21 @@ Route::get('health', function () {
     ]);
 });
 
+// CORS test endpoint
+Route::get('cors-test', function () {
+    return response()->json([
+        'message' => 'CORS is working!',
+        'origin' => request()->header('Origin'),
+        'method' => request()->method(),
+        'timestamp' => now(),
+    ]);
+});
+
+// OPTIONS route for preflight requests
+Route::options('{any}', function() {
+    return response('', 200);
+})->where('any', '.*');
+
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });

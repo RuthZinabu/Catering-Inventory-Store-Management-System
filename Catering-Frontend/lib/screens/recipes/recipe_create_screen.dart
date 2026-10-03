@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/inventory_models.dart';
-import '../../services/mock_repository.dart';
+import '../../services/api_repository.dart';
 
 class RecipeCreateScreen extends StatefulWidget {
   final bool isEditing;
@@ -136,9 +136,12 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
                     fontWeight: FontWeight.w800, letterSpacing: -0.6),
               ),
               const SizedBox(height: 6),
-              Text('Define dish details, ingredients and food cost calculation.',
-                  style:
-                      Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 14.5)),
+              Text(
+                  'Define dish details, ingredients and food cost calculation.',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(fontSize: 14.5)),
               const SizedBox(height: 16),
               // Step indicators
               Row(
@@ -197,12 +200,14 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
                 .titleLarge
                 ?.copyWith(fontWeight: FontWeight.w800)),
         const SizedBox(height: 12),
-        _field('Recipe Name', controller: _nameCtrl,
-            onChanged: (v) => _name = v),
+        _field('Recipe Name',
+            controller: _nameCtrl, onChanged: (v) => _name = v),
         _dropdown('Category', _category, _categories,
             (v) => setState(() => _category = v!)),
-        _field('Description', controller: _descCtrl,
-            maxLines: 3, onChanged: (v) => _description = v),
+        _field('Description',
+            controller: _descCtrl,
+            maxLines: 3,
+            onChanged: (v) => _description = v),
         _field('Preparation Time (e.g. 30 min)',
             controller: _prepCtrl, onChanged: (v) => _prepTime = v),
         _field('Number of Servings',
@@ -258,7 +263,8 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(ing['name'] ?? '',
-                            style: const TextStyle(fontWeight: FontWeight.w700)),
+                            style:
+                                const TextStyle(fontWeight: FontWeight.w700)),
                         Text(
                             '${ing['qty']} ${ing['unit']} • ETB ${ing['unitCost']}/unit',
                             style: const TextStyle(
@@ -269,8 +275,7 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
                   IconButton(
                     icon: const Icon(Icons.delete_outline_rounded,
                         color: Color(0xFFEF4444)),
-                    onPressed: () =>
-                        setState(() => _ingredients.removeAt(i)),
+                    onPressed: () => setState(() => _ingredients.removeAt(i)),
                   ),
                 ],
               ),
@@ -369,8 +374,8 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
           TextFormField(
             controller: _ingCostCtrl,
             keyboardType: TextInputType.number,
-            decoration:
-                const InputDecoration(labelText: 'Unit Cost (ETB)', suffixText: 'ETB'),
+            decoration: const InputDecoration(
+                labelText: 'Unit Cost (ETB)', suffixText: 'ETB'),
           ),
           const SizedBox(height: 10),
           SizedBox(
@@ -431,10 +436,9 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
         const SizedBox(height: 12),
         _field('Selling Price (ETB)',
             controller: _priceCtrl,
-            keyboardType: TextInputType.number,
-            onChanged: (v) {
-              setState(() => _sellingPriceText = v);
-            }),
+            keyboardType: TextInputType.number, onChanged: (v) {
+          setState(() => _sellingPriceText = v);
+        }),
         if (_sellingPriceText.isNotEmpty) ...[
           const SizedBox(height: 8),
           Builder(builder: (_) {
@@ -458,8 +462,8 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
                   const SizedBox(width: 10),
                   Text(
                       'Food cost ratio: ${pct.toStringAsFixed(1)}% ${pct <= 30 ? '✓ Good' : pct <= 40 ? '⚠ High' : '✗ Too High'}',
-                      style: TextStyle(
-                          fontWeight: FontWeight.w700, color: color)),
+                      style:
+                          TextStyle(fontWeight: FontWeight.w700, color: color)),
                 ],
               ),
             );
@@ -504,24 +508,19 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
         ]),
         const SizedBox(height: 12),
         _reviewBlock('Ingredients (${_ingredients.length})', [
-          ..._ingredients.map((ing) => _reviewRow(
-              ing['name'] ?? '',
+          ..._ingredients.map((ing) => _reviewRow(ing['name'] ?? '',
               '${ing['qty']} ${ing['unit']} @ ETB ${ing['unitCost']}'))
         ]),
         const SizedBox(height: 12),
         _reviewBlock('Pricing', [
-          _reviewRow('Food Cost',
-              'ETB ${_computedFoodCost.toStringAsFixed(2)}'),
-          _reviewRow('Selling Price', 'ETB $_sellingPriceText'),
           _reviewRow(
-              'Food Cost %',
-              () {
-                final sell = double.tryParse(_sellingPriceText) ?? 0;
-                final pct = sell > 0
-                    ? (_computedFoodCost / sell) * 100
-                    : 0.0;
-                return '${pct.toStringAsFixed(1)}%';
-              }()),
+              'Food Cost', 'ETB ${_computedFoodCost.toStringAsFixed(2)}'),
+          _reviewRow('Selling Price', 'ETB $_sellingPriceText'),
+          _reviewRow('Food Cost %', () {
+            final sell = double.tryParse(_sellingPriceText) ?? 0;
+            final pct = sell > 0 ? (_computedFoodCost / sell) * 100 : 0.0;
+            return '${pct.toStringAsFixed(1)}%';
+          }()),
         ]),
         const SizedBox(height: 12),
         Row(
@@ -566,12 +565,13 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
       ingredients: ingList,
     );
 
+    // TODO: Replace with actual API calls when recipe endpoints are implemented
     if (widget.isEditing) {
-      final idx = MockRepository.recipeItems
-          .indexWhere((r) => r.id == widget.recipe!.id);
-      if (idx >= 0) MockRepository.recipeItems[idx] = newRecipe;
+      // Update recipe via API
+      // await ApiRepository.instance.updateRecipe(widget.recipe!.id, newRecipe.toJson());
     } else {
-      MockRepository.recipeItems.add(newRecipe);
+      // Create recipe via API
+      // await ApiRepository.instance.createRecipe(newRecipe.toJson());
     }
 
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -631,8 +631,7 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
             width: 20,
             height: 20,
             decoration: BoxDecoration(
-              color:
-                  active ? const Color(0xFF16A34A) : const Color(0xFFCBD5E1),
+              color: active ? const Color(0xFF16A34A) : const Color(0xFFCBD5E1),
               borderRadius: BorderRadius.circular(999),
             ),
             alignment: Alignment.center,
@@ -669,7 +668,8 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(title,
-              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+              style:
+                  const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
           const SizedBox(height: 8),
           ...rows,
         ],
@@ -689,8 +689,8 @@ class _RecipeCreateScreenState extends State<RecipeCreateScreen> {
                       color: Color(0xFF475569),
                       fontSize: 13))),
           Text(value,
-              style: const TextStyle(
-                  fontWeight: FontWeight.w700, fontSize: 13)),
+              style:
+                  const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
         ],
       ),
     );

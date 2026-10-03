@@ -1,7 +1,7 @@
 import 'package:catering_inventory_store_management_system/widgets/search_bar.dart';
 import 'package:flutter/material.dart';
 import '../../models/stock_models.dart';
-import '../../services/mock_repository.dart';
+import '../../services/api_repository.dart';
 import 'stock_detail_screen.dart';
 import 'stock_helpers.dart';
 
@@ -15,6 +15,9 @@ class FoodStockTab extends StatefulWidget {
 class _FoodStockTabState extends State<FoodStockTab> {
   String selectedCategory = 'All';
   String searchQuery = '';
+  List<FoodStockItem> _allItems = [];
+  bool _isLoading = true;
+  String? _error;
 
   final List<String> categories = const [
     'All',
@@ -26,8 +29,58 @@ class _FoodStockTabState extends State<FoodStockTab> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _loadFoodStock();
+  }
+
+  Future<void> _loadFoodStock() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final items = await ApiRepository.instance.getFoodStock();
+      if (mounted) {
+        setState(() {
+          _allItems = items;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final filteredItems = MockRepository.foodStock.where((item) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('Error: $_error'),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadFoodStock,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final filteredItems = _allItems.where((item) {
       final matchesCategory = selectedCategory == 'All' ||
           item.category == selectedCategory ||
           (selectedCategory == 'Dry Food' && item.category == 'Dry Food');

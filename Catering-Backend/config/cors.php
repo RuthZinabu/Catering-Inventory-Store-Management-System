@@ -19,18 +19,13 @@ return [
 
     'allowed_methods' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 
-    'allowed_origins' => explode(',', env('CORS_ALLOWED_ORIGINS', '*')),
+    'allowed_origins' => env('APP_ENV') === 'local' 
+        ? ['*'] // Allow all origins in local development
+        : explode(',', env('CORS_ALLOWED_ORIGINS', '')),
 
     'allowed_origins_patterns' => [],
 
-    'allowed_headers' => [
-        'Content-Type',
-        'Authorization', 
-        'Accept',
-        'X-Requested-With',
-        'X-CSRF-TOKEN',
-        'X-XSRF-TOKEN',
-    ],
+    'allowed_headers' => ['*'], // Allow all headers in development
 
     'exposed_headers' => [],
 

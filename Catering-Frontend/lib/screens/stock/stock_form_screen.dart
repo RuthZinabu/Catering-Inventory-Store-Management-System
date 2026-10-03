@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/stock_models.dart';
-import '../../services/mock_repository.dart';
+import '../../services/api_repository.dart';
 
 class StockFormScreen extends StatefulWidget {
   final StockItem? item;
@@ -464,14 +464,13 @@ class _StockFormScreenState extends State<StockFormScreen> {
           assetTag: _assetTagCtrl.text.trim(),
         );
 
+        // TODO: Replace with actual API calls when electronics stock endpoints are implemented
         if (_isEditMode) {
-          final index = MockRepository.electronicsStock
-              .indexWhere((i) => i.id == widget.item!.id);
-          if (index != -1) {
-            MockRepository.electronicsStock[index] = item;
-          }
+          // Update electronics stock item via API
+          // await ApiRepository.instance.updateElectronicsStock(widget.item!.id, item.toJson());
         } else {
-          MockRepository.electronicsStock.add(item);
+          // Create electronics stock item via API
+          // await ApiRepository.instance.createElectronicsStock(item.toJson());
         }
       } else if (_isItemCategory('catering')) {
         final subtype = widget.subtype ?? 'permanent';
@@ -497,14 +496,13 @@ class _StockFormScreenState extends State<StockFormScreen> {
               : CateringSubtype.temporary,
         );
 
+        // TODO: Replace with actual API calls when catering stock endpoints are implemented
         if (_isEditMode) {
-          final index = MockRepository.cateringStock
-              .indexWhere((i) => i.id == widget.item!.id);
-          if (index != -1) {
-            MockRepository.cateringStock[index] = item;
-          }
+          // Update catering stock item via API
+          // await ApiRepository.instance.updateCateringStock(widget.item!.id, item.toJson());
         } else {
-          MockRepository.cateringStock.add(item);
+          // Create catering stock item via API
+          // await ApiRepository.instance.createCateringStock(item.toJson());
         }
       } else {
         // Food item
@@ -529,14 +527,13 @@ class _StockFormScreenState extends State<StockFormScreen> {
           batchNumber: '',
         );
 
+        // TODO: Replace with actual API calls when food stock endpoints are implemented
         if (_isEditMode) {
-          final index = MockRepository.foodStock
-              .indexWhere((i) => i.id == widget.item!.id);
-          if (index != -1) {
-            MockRepository.foodStock[index] = item;
-          }
+          // Update food stock item via API
+          // await ApiRepository.instance.updateFoodStock(widget.item!.id, item.toJson());
         } else {
-          MockRepository.foodStock.add(item);
+          // Create food stock item via API
+          // await ApiRepository.instance.createFoodStock(item.toJson());
         }
       }
 

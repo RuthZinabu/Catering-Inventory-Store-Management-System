@@ -9,25 +9,26 @@ class InventoryItem {
   final String name;
   final String category;
   final String unit;
-  @JsonKey(name: 'default_purchase_price')
+  @JsonKey(name: 'default_purchase_price', fromJson: _parseDouble)
   final double purchasePrice;
-  @JsonKey(name: 'internal_cost')
-  final double internalCost;
-  @JsonKey(name: 'min_stock')
-  final int minStock;
-  @JsonKey(name: 'max_stock')
-  final int maxStock;
+  @JsonKey(name: 'internal_cost', fromJson: _parseDoubleOptional)
+  final double? internalCost;
+  @JsonKey(name: 'min_stock', fromJson: _parseIntOptional)
+  final int? minStock;
+  @JsonKey(name: 'max_stock', fromJson: _parseIntOptional)
+  final int? maxStock;
   final String description;
-  @JsonKey(name: 'stock_on_hand')
-  final int stockOnHand;
-  @JsonKey(name: 'reorder_point')
-  final int reorderPoint;
-  final String status;
+  @JsonKey(name: 'stock_on_hand', fromJson: _parseIntOptional)
+  final int? stockOnHand;
+  @JsonKey(name: 'reorder_point', fromJson: _parseIntOptional)
+  final int? reorderPoint;
+  @JsonKey(name: 'is_active', fromJson: _parseBoolOptional)
+  final bool? isActive;
   @JsonKey(name: 'item_type')
   final String? itemType;
-  @JsonKey(name: 'shelf_life_days')
+  @JsonKey(name: 'shelf_life_days', fromJson: _parseIntOptional)
   final int? shelfLifeDays;
-  @JsonKey(name: 'requires_refrigeration')
+  @JsonKey(name: 'requires_refrigeration', fromJson: _parseBoolOptional)
   final bool? requiresRefrigeration;
   @JsonKey(name: 'created_at')
   final DateTime? createdAt;
@@ -41,13 +42,13 @@ class InventoryItem {
     required this.category,
     required this.unit,
     required this.purchasePrice,
-    required this.internalCost,
-    required this.minStock,
-    required this.maxStock,
     required this.description,
-    required this.stockOnHand,
-    required this.reorderPoint,
-    required this.status,
+    this.internalCost,
+    this.minStock,
+    this.maxStock,
+    this.stockOnHand,
+    this.reorderPoint,
+    this.isActive,
     this.itemType,
     this.shelfLifeDays,
     this.requiresRefrigeration,
@@ -73,7 +74,7 @@ class InventoryItem {
     String? description,
     int? stockOnHand,
     int? reorderPoint,
-    String? status,
+    bool? isActive,
     String? itemType,
     int? shelfLifeDays,
     bool? requiresRefrigeration,
@@ -93,7 +94,7 @@ class InventoryItem {
       description: description ?? this.description,
       stockOnHand: stockOnHand ?? this.stockOnHand,
       reorderPoint: reorderPoint ?? this.reorderPoint,
-      status: status ?? this.status,
+      isActive: isActive ?? this.isActive,
       itemType: itemType ?? this.itemType,
       shelfLifeDays: shelfLifeDays ?? this.shelfLifeDays,
       requiresRefrigeration:
@@ -102,6 +103,14 @@ class InventoryItem {
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
+
+  // Computed properties with defaults for missing fields
+  String get status => isActive == true ? 'Active' : 'Inactive';
+  int get minStockValue => minStock ?? 0;
+  int get maxStockValue => maxStock ?? 0;
+  int get stockOnHandValue => stockOnHand ?? 0;
+  int get reorderPointValue => reorderPoint ?? 0;
+  double get internalCostValue => internalCost ?? purchasePrice;
 }
 
 @JsonSerializable()
@@ -117,7 +126,7 @@ class Supplier {
   @JsonKey(name: 'tax_number')
   final String taxNumber;
   final String status;
-  @JsonKey(name: 'outstanding_balance')
+  @JsonKey(name: 'outstanding_balance', fromJson: _parseDouble)
   final double outstandingBalance;
   @JsonKey(name: 'created_at')
   final DateTime? createdAt;
@@ -153,11 +162,15 @@ class PurchaseRecord {
   @JsonKey(name: 'order_date')
   final DateTime date;
   final String item;
+  @JsonKey(fromJson: _parseInt)
   final int quantity;
-  @JsonKey(name: 'unit_price')
+  @JsonKey(name: 'unit_price', fromJson: _parseDouble)
   final double unitPrice;
+  @JsonKey(fromJson: _parseDouble)
   final double vat;
+  @JsonKey(fromJson: _parseDouble)
   final double discount;
+  @JsonKey(fromJson: _parseDouble)
   final double total;
   final String? status;
   @JsonKey(name: 'created_at')
@@ -189,6 +202,7 @@ class StockMovement {
   final String id;
   final String item;
   final String type;
+  @JsonKey(fromJson: _parseInt)
   final int quantity;
   final DateTime date;
   final String note;
@@ -217,7 +231,7 @@ class Recipe {
   final String name;
   final String description;
   final List<String> ingredients;
-  @JsonKey(name: 'food_cost')
+  @JsonKey(name: 'food_cost', fromJson: _parseDouble)
   final double foodCost;
 
   const Recipe({
@@ -269,8 +283,9 @@ class WasteRecord {
   final String item;
   final String category;
   final String unit;
+  @JsonKey(fromJson: _parseDouble)
   final double quantity;
-  @JsonKey(name: 'estimated_cost')
+  @JsonKey(name: 'estimated_cost', fromJson: _parseDouble)
   final double estimatedCost;
   final String reason;
   @JsonKey(name: 'recorded_by')
@@ -306,6 +321,7 @@ class ExpiryItem {
   final String item;
   final String category;
   final String unit;
+  @JsonKey(fromJson: _parseDouble)
   final double quantity;
   @JsonKey(name: 'expiry_date')
   final DateTime expiryDate;
@@ -369,9 +385,10 @@ class AppUser {
 @JsonSerializable()
 class RecipeIngredient {
   final String name;
+  @JsonKey(fromJson: _parseDouble)
   final double quantity;
   final String unit;
-  @JsonKey(name: 'unit_cost')
+  @JsonKey(name: 'unit_cost', fromJson: _parseDouble)
   final double unitCost;
 
   const RecipeIngredient({
@@ -395,9 +412,10 @@ class RecipeItem {
   final String name;
   final String category;
   final String description;
+  @JsonKey(fromJson: _parseInt)
   final int servings;
   final List<RecipeIngredient> ingredients;
-  @JsonKey(name: 'selling_price')
+  @JsonKey(name: 'selling_price', fromJson: _parseDouble)
   final double sellingPrice;
   @JsonKey(name: 'prep_time')
   final String prepTime;

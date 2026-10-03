@@ -2,7 +2,7 @@ import 'package:catering_inventory_store_management_system/widgets/search_bar.da
 import 'package:flutter/material.dart';
 
 import '../../models/inventory_models.dart';
-import '../../services/mock_repository.dart';
+import '../../services/api_repository.dart';
 import 'supplier_detail_screen.dart';
 import 'supplier_form_screen.dart';
 
@@ -15,10 +15,71 @@ class SupplierListScreen extends StatefulWidget {
 
 class _SupplierListScreenState extends State<SupplierListScreen> {
   String searchQuery = '';
+  List<Supplier> _suppliers = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSuppliers();
+  }
+
+  Future<void> _loadSuppliers() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+
+      // TODO: Replace with actual API call when supplier endpoint is implemented
+      final suppliers = await ApiRepository.instance.getSuppliers();
+
+      if (mounted) {
+        setState(() {
+          _suppliers = suppliers;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final suppliers = MockRepository.suppliers.where((supplier) {
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_error != null) {
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('Error: $_error'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadSuppliers,
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final suppliers = _suppliers.where((supplier) {
       final query = searchQuery.toLowerCase();
       return query.isEmpty ||
           supplier.company.toLowerCase().contains(query) ||
@@ -39,7 +100,9 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
         child: FloatingActionButton.extended(
           onPressed: () async {
             await _navigateToForm(context, null);
-            if (mounted) setState(() {});
+            if (mounted) {
+              _loadSuppliers(); // Refresh the list
+            }
           },
           icon: const Icon(Icons.add_rounded),
           label: const Text('New'),
@@ -224,8 +287,12 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
                             const SizedBox(width: 8),
                             Expanded(
                               child: OutlinedButton.icon(
-                                onPressed: () =>
-                                    _navigateToForm(context, supplier),
+                                onPressed: () async {
+                                  await _navigateToForm(context, supplier);
+                                  if (mounted) {
+                                    _loadSuppliers(); // Refresh the list
+                                  }
+                                },
                                 icon: const Icon(Icons.edit_rounded),
                                 label: const Text('Update'),
                               ),
@@ -306,8 +373,8 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
     );
   }
 
-  Future<void> _navigateToForm(BuildContext context, Supplier? supplier) {
-    return Navigator.of(context).push(MaterialPageRoute(
+  Future<void> _navigateToForm(BuildContext context, Supplier? supplier) async {
+    await Navigator.of(context).push(MaterialPageRoute(
         builder: (_) => SupplierFormScreen(supplier: supplier)));
   }
 
@@ -341,7 +408,14 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
             SizedBox(
                 width: double.infinity,
                 child: FilledButton(
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () async {
+                      // TODO: Replace with actual API call when supplier delete endpoint is implemented
+                      // await ApiRepository.instance.deleteSupplier(supplier.id);
+                      Navigator.of(context).pop();
+                      if (mounted) {
+                        _loadSuppliers(); // Refresh the list
+                      }
+                    },
                     child: const Text('Delete Supplier'))),
             const SizedBox(height: 10),
             SizedBox(

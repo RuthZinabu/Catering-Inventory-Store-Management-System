@@ -1,4 +1,3 @@
-import 'package:catering_inventory_store_management_system/services/api_repository.dart';
 import 'package:flutter/material.dart';
 import '../services/api_repository.dart';
 import '../models/inventory_models.dart';
@@ -39,7 +38,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final results = await Future.wait([
         ApiRepository.instance.getInventoryItems(),
         ApiRepository.instance.getStockItems(),
-        Future.value(ApiRepository.instance.getAlerts()), // This is still sync
+        ApiRepository.instance.getAlerts(),
       ]);
 
       if (mounted) {
@@ -62,37 +61,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   // Calculate dashboard metrics from live data
   int get totalStock => _inventoryItems.length;
-  int get lowStockCount =>
-      _inventoryItems.where((item) => item.status == 'Low Stock').length;
+  int get lowStockCount => _inventoryItems
+      .where((item) =>
+          item.stockOnHandValue <= item.minStockValue && item.minStockValue > 0)
+      .length;
   int get expiringCount =>
       _alerts.where((alert) => alert.type == 'expiry').length;
   double get totalInventoryValue => _inventoryItems.fold(
-      0, (sum, item) => sum + (item.purchasePrice * item.stockOnHand));
+      0, (sum, item) => sum + (item.purchasePrice * item.stockOnHandValue));
   int get todaysTransactions => _alerts
       .where((alert) => alert.createdAt.day == DateTime.now().day)
       .length;
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Center(child: LoadingWidget());
-    }
-
-    if (_error != null) {
-      return CustomErrorWidget(
-        error: _error!,
-        onRetry: _loadDashboardData,
-      );
-    }
-
-    final hPad = responsiveHorizontalPadding(context);
-    return RefreshIndicator(
-      onRefresh: _loadDashboardData,
-      child: ListView(
-        padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 120),
-        children: [
-          Row(
-            children: [
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -401,7 +383,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   List<Widget> _buildLowStockCards(BuildContext context) {
     final lowStockItems = _inventoryItems
-        .where((item) => item.status == 'Low Stock')
+        .where((item) =>
+            item.stockOnHandValue <= item.minStockValue &&
+            item.minStockValue > 0)
         .take(3)
         .toList();
 
@@ -451,7 +435,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
 
     return lowStockItems.map((item) {
-      final progress = (item.stockOnHand / item.maxStock).clamp(0.0, 1.0);
+      final progress = (item.stockOnHand != null && item.maxStock != null && item.maxStock! > 0) 
+          ? (item.stockOnHand! / item.maxStock!).clamp(0.0, 1.0) 
+          : 0.0;
       final color = progress < 0.2 ? AppColors.errorRed : AppColors.accentGold;
       return _lowStockCard(
         context,
