@@ -78,12 +78,17 @@ class StoreManagementTest extends TestCase
             'is_active' => false,
         ]);
 
-        $this->getJson('/api/stores?search=dry&type=dry_food&active=1&per_page=1')
+        $this->getJson('/api/stores?search=dry&type=dry_food&active=true&per_page=1')
             ->assertOk()
             ->assertJsonPath('data.items.0.name', 'Dry Goods Store')
             ->assertJsonPath('data.stores.0.code', 'DG-001')
             ->assertJsonPath('data.pagination.total', 1)
             ->assertJsonPath('data.pagination.current_page', 1);
+
+        $this->getJson('/api/stores?active=false')
+            ->assertOk()
+            ->assertJsonCount(1, 'data.items')
+            ->assertJsonPath('data.items.0.name', 'Cold Room');
 
         $this->getJson('/api/stores/types')
             ->assertOk()

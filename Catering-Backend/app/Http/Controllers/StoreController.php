@@ -14,6 +14,14 @@ class StoreController extends Controller
      */
     public function index(Request $request)
     {
+        $activeQuery = $request->query('active');
+        if (is_string($activeQuery) && in_array(strtolower($activeQuery), ['true', 'false'], true)) {
+            $request->query->set(
+                'active',
+                filter_var($activeQuery, FILTER_VALIDATE_BOOLEAN) ? '1' : '0'
+            );
+        }
+
         $filters = $request->validate([
             'search' => 'nullable|string|max:255',
             'type' => ['nullable', 'string', Rule::in($this->storeTypeValues())],
