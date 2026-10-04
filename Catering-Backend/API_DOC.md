@@ -1054,4 +1054,47 @@ After running `php artisan migrate --seed`:
 5. All endpoints require HTTPS in production
 6. API versioning may be added in future (v1, v2, etc.)
 
-This API documentation covers the core functionality implemented in the Laravel backend. Additional endpoints for stock movements, transfers, purchase orders, and other features will be added as development continues.
+This API documentation covers the core functionality implemented in the Laravel backend.
+
+## Inventory Reports
+
+All report endpoints require authentication and the `reports.view` permission. Non-admin users only see records belonging to their assigned stores. Pass `store_id` to narrow a report to one accessible store; administrators may omit it to report across all stores.
+
+### Report overview
+
+`GET /reports/overview` returns the KPI values and report-card data for current stock, valuation, stock movements, purchases, suppliers, expiry, waste, and consumption.
+
+Query parameters:
+- `period`: `daily`, `weekly` (default), or `monthly`
+- `from`, `to`: optional inclusive date range in `YYYY-MM-DD` format; if `from` is supplied without `to`, the range ends today
+- `store_id`: optional accessible store UUID
+
+### Dashboard KPIs
+
+`GET /reports/dashboard/kpis` returns the same live KPI calculations without the report-card details. It accepts the `period`, `from`, `to`, and `store_id` parameters above.
+
+### Stock reports
+
+- `GET /reports/stock/current` returns aggregated stock by item, the stock summary, and pagination.
+- `GET /reports/stock/low-stock` returns items whose aggregate quantity is above zero and at or below the configured minimum, with the same summary and pagination.
+- Both accept `store_id` and `per_page` (default 50, maximum 100).
+
+### Consumption report
+
+`GET /reports/consumption` returns issued kitchen quantities, requested quantities, confirmed waste, item variance, and available cost values.
+
+Query parameters:
+- `period`, `from`, `to`, `store_id`: same as the overview
+- `search`: case-insensitive item-name match
+- `filter`: `all`, `high_variance`, `moderate`, `normal`, `wastage`, or `high_usage`
+- `sort`: `consumption` (default), `variance`, `wastage`, or `name`
+- `page`, `per_page`: pagination controls; `per_page` defaults to 50 and is capped at 100
+
+### Metric notes
+
+- Valuation uses quantity multiplied by current cost, then last cost, then default purchase price. Monetary values are ETB.
+- Overall movement and purchase quantities are `null` when the selected scope contains multiple units; use the accompanying per-unit values instead.
+- Consumption uses kitchen issues marked `Issued`. It reports the requested quantity as a planning reference; recipe-based theoretical consumption is `null` because meal production and recipe usage are not recorded.
+- Cost totals are `null` if any included issued quantity has no available item cost.
+- Expiry counts use the current stock status. Exact 0–3, 4–7, and 8–30 day buckets are `null` because inventory lots do not store expiration dates.
+- Waste totals include confirmed records only. Waste as a percentage of sales is `null` because sales data is not recorded.

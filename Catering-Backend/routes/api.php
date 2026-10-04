@@ -293,6 +293,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::middleware('permission:reports.view')->group(function () {
         Route::prefix('reports')->group(function () {
             Route::get('dashboard/kpis', [App\Http\Controllers\ReportController::class, 'dashboardKpis']);
+            Route::get('overview', [App\Http\Controllers\ReportController::class, 'overview']);
+            Route::get('consumption', [App\Http\Controllers\ReportController::class, 'consumption']);
             Route::get('stock/current', [App\Http\Controllers\ReportController::class, 'currentStock']);
             Route::get('stock/low-stock', [App\Http\Controllers\ReportController::class, 'lowStock']);
         });
