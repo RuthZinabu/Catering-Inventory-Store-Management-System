@@ -195,10 +195,11 @@ void main() {
 }
 
 Finder _textField(String label) {
-  return find.byWidgetPredicate(
-    (widget) =>
-        widget is TextFormField && widget.decoration.labelText == label,
-    description: 'TextFormField labeled "$label"',
+  // TextFormField does not expose a public `decoration` getter.
+  // Instead, find a TextFormField that is an ancestor of the label Text widget.
+  return find.ancestor(
+    of: find.text(label),
+    matching: find.byType(TextFormField),
   );
 }
 
@@ -272,8 +273,7 @@ class _StockFormApiAdapter implements HttpClientAdapter {
     final path = options.uri.path;
 
     if (path.endsWith('/suppliers')) {
-      final page =
-          int.tryParse('${options.queryParameters['page'] ?? 1}') ?? 1;
+      final page = int.tryParse('${options.queryParameters['page'] ?? 1}') ?? 1;
       return _jsonResponse({
         'suppliers': [
           {
@@ -296,8 +296,7 @@ class _StockFormApiAdapter implements HttpClientAdapter {
     }
 
     if (path.endsWith('/stores')) {
-      final page =
-          int.tryParse('${options.queryParameters['page'] ?? 1}') ?? 1;
+      final page = int.tryParse('${options.queryParameters['page'] ?? 1}') ?? 1;
       final store = page == 1
           ? {
               ..._store,
