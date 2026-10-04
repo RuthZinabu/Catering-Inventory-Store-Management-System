@@ -18,6 +18,7 @@ class Store extends Model
         'location',
         'phone',
         'email',
+        'manager_name',
         'parent_store_id',
         'store_level',
         'manager_id',
@@ -79,8 +80,8 @@ class Store extends Model
     public function users()
     {
         return $this->belongsToMany(User::class, 'user_store_assignments')
-                    ->withPivot(['role_in_store', 'can_transfer_to', 'can_transfer_from'])
-                    ->withTimestamps();
+            ->withPivot(['role_in_store', 'can_transfer_to', 'can_transfer_from'])
+            ->withTimestamps();
     }
 
     /**
@@ -161,12 +162,12 @@ class Store extends Model
     public function descendants()
     {
         $descendants = collect();
-        
+
         foreach ($this->childStores as $child) {
             $descendants->push($child);
             $descendants = $descendants->merge($child->descendants());
         }
-        
+
         return $descendants;
     }
 }

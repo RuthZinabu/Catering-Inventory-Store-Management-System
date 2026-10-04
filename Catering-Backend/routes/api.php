@@ -81,8 +81,8 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     // Stores - require store management permissions
     Route::middleware('permission:stores.view')->group(function () {
         Route::get('stores', [App\Http\Controllers\StoreController::class, 'index']);
-        Route::get('stores/{store}', [App\Http\Controllers\StoreController::class, 'show'])->middleware('store.access');
         Route::get('stores/types', [App\Http\Controllers\StoreController::class, 'types']);
+        Route::get('stores/{store}', [App\Http\Controllers\StoreController::class, 'show'])->middleware('store.access');
     });
     
     Route::middleware('permission:stores.create')->group(function () {
@@ -95,7 +95,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     });
     
     Route::middleware('permission:stores.delete')->group(function () {
-        Route::delete('stores/{store}', [App\Http\Controllers\StoreController::class, 'destroy']);
+        Route::delete('stores/{store}', [App\Http\Controllers\StoreController::class, 'destroy'])->middleware('store.access');
     });
     
     // Items - require inventory permissions
