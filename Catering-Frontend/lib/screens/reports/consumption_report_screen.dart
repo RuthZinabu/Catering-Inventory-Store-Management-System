@@ -17,7 +17,8 @@ class ConsumptionReportScreen extends StatefulWidget {
   const ConsumptionReportScreen({super.key});
 
   @override
-  State<ConsumptionReportScreen> createState() => _ConsumptionReportScreenState();
+  State<ConsumptionReportScreen> createState() =>
+      _ConsumptionReportScreenState();
 }
 
 class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
@@ -74,12 +75,15 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
           _ => 'weekly',
         };
       }
-      final path = Uri(path: '/reports/consumption', queryParameters: query).toString();
+      final path =
+          Uri(path: '/reports/consumption', queryParameters: query).toString();
       final response = await ApiClient.instance.get(path);
       final data = Map<String, dynamic>.from(response['data'] as Map);
-      final summary = Map<String, dynamic>.from(data['summary'] as Map? ?? const {});
+      final summary =
+          Map<String, dynamic>.from(data['summary'] as Map? ?? const {});
       final items = (data['items'] as List? ?? const [])
-          .map((item) => _ConsumptionItem.fromJson(Map<String, dynamic>.from(item as Map)))
+          .map((item) =>
+              _ConsumptionItem.fromJson(Map<String, dynamic>.from(item as Map)))
           .toList();
       if (!mounted) return;
       setState(() {
@@ -92,15 +96,17 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
         _loading = false;
       });
     } on ApiException catch (error) {
-      if (mounted) setState(() {
-        _error = error.message;
-        _loading = false;
-      });
+      if (mounted)
+        setState(() {
+          _error = error.message;
+          _loading = false;
+        });
     } catch (error) {
-      if (mounted) setState(() {
-        _error = error.toString();
-        _loading = false;
-      });
+      if (mounted)
+        setState(() {
+          _error = error.toString();
+          _loading = false;
+        });
     }
   }
 
@@ -180,17 +186,18 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
             SliverToBoxAdapter(child: _buildListHeader()),
             if (!_loading && _error == null && _visibleItems.isNotEmpty)
               SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final item = _visibleItems[index];
-                  return Padding(
-                    padding: EdgeInsets.fromLTRB(20, index == 0 ? 0 : 8, 20, index == _visibleItems.length - 1 ? 18 : 0),
-                    child: _buildItemCard(context, item),
-                  );
-                },
-                childCount: _visibleItems.length,
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final item = _visibleItems[index];
+                    return Padding(
+                      padding: EdgeInsets.fromLTRB(20, index == 0 ? 0 : 8, 20,
+                          index == _visibleItems.length - 1 ? 18 : 0),
+                      child: _buildItemCard(context, item),
+                    );
+                  },
+                  childCount: _visibleItems.length,
+                ),
               ),
-            ),
             if (!_loading && _error == null && _visibleItems.isEmpty)
               const SliverToBoxAdapter(child: _EmptyState()),
             const SliverToBoxAdapter(child: SizedBox(height: 86)),
@@ -210,7 +217,8 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
             children: [
               IconButton(
                 onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.arrow_back_rounded, color: _consumptionInk),
+                icon: const Icon(Icons.arrow_back_rounded,
+                    color: _consumptionInk),
                 tooltip: 'Back to reports',
                 visualDensity: VisualDensity.compact,
               ),
@@ -218,27 +226,35 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
               const Expanded(
                 child: Row(
                   children: [
-                    Icon(Icons.restaurant_rounded, color: _consumptionBlue, size: 21),
+                    Icon(Icons.restaurant_rounded,
+                        color: _consumptionBlue, size: 21),
                     SizedBox(width: 9),
-                    Text('Consumption', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: _consumptionInk)),
+                    Text('Consumption',
+                        style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            color: _consumptionInk)),
                   ],
                 ),
               ),
               IconButton(
                 onPressed: _openProductionForm,
-                icon: const Icon(Icons.add_chart_rounded, color: _consumptionBlue),
+                icon: const Icon(Icons.add_chart_rounded,
+                    color: _consumptionBlue),
                 tooltip: 'Record kitchen production',
                 visualDensity: VisualDensity.compact,
               ),
               IconButton(
                 onPressed: _exportReport,
-                icon: const Icon(Icons.file_upload_outlined, color: _consumptionMuted),
+                icon: const Icon(Icons.file_upload_outlined,
+                    color: _consumptionMuted),
                 tooltip: 'Export',
                 visualDensity: VisualDensity.compact,
               ),
               IconButton(
                 onPressed: _loadReport,
-                icon: const Icon(Icons.refresh_rounded, color: _consumptionMuted),
+                icon:
+                    const Icon(Icons.refresh_rounded, color: _consumptionMuted),
                 tooltip: 'Refresh',
                 visualDensity: VisualDensity.compact,
               ),
@@ -249,7 +265,8 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
             height: 30,
             child: ListView(
               scrollDirection: Axis.horizontal,
-              children: ['Today', 'This Week', 'This Month', 'Custom'].map((range) {
+              children:
+                  ['Today', 'This Week', 'This Month', 'Custom'].map((range) {
                 final active = _range == range;
                 return Padding(
                   padding: const EdgeInsets.only(right: 6),
@@ -268,12 +285,21 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
                         _loadReport();
                       }
                     },
-                    avatar: range == 'Custom' ? const Icon(Icons.calendar_today_outlined, size: 13) : null,
-                    labelStyle: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: active ? Colors.white : _consumptionMuted),
+                    avatar: range == 'Custom'
+                        ? const Icon(Icons.calendar_today_outlined, size: 13)
+                        : null,
+                    labelStyle: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: active ? Colors.white : _consumptionMuted),
                     backgroundColor: Colors.white,
                     selectedColor: _consumptionBlue,
-                    side: BorderSide(color: active ? _consumptionBlue : const Color(0xFFE2E8F0)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    side: BorderSide(
+                        color: active
+                            ? _consumptionBlue
+                            : const Color(0xFFE2E8F0)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20)),
                     padding: const EdgeInsets.symmetric(horizontal: 5),
                     visualDensity: VisualDensity.compact,
                   ),
@@ -302,27 +328,50 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
                   },
                   decoration: InputDecoration(
                     hintText: 'Search items...',
-                    hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                    prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Color(0xFF94A3B8)),
+                    hintStyle:
+                        const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                    prefixIcon: const Icon(Icons.search_rounded,
+                        size: 18, color: Color(0xFF94A3B8)),
                     contentPadding: const EdgeInsets.symmetric(vertical: 9),
                     filled: true,
                     fillColor: const Color(0xFFF8FAFC),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: _consumptionBlue)),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                    enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                    focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: _consumptionBlue)),
                   ),
                 ),
               ),
               const SizedBox(width: 9),
               OutlinedButton.icon(
-                onPressed: () => setState(() => _filtersVisible = !_filtersVisible),
-                icon: Icon(Icons.tune_rounded, size: 16, color: _filtersVisible ? Colors.white : _consumptionMuted),
-                label: Text(_filter == 'All' ? 'Filter' : '1', style: TextStyle(fontSize: 12, color: _filtersVisible ? Colors.white : _consumptionMuted)),
+                onPressed: () =>
+                    setState(() => _filtersVisible = !_filtersVisible),
+                icon: Icon(Icons.tune_rounded,
+                    size: 16,
+                    color: _filtersVisible ? Colors.white : _consumptionMuted),
+                label: Text(_filter == 'All' ? 'Filter' : '1',
+                    style: TextStyle(
+                        fontSize: 12,
+                        color: _filtersVisible
+                            ? Colors.white
+                            : _consumptionMuted)),
                 style: OutlinedButton.styleFrom(
-                  backgroundColor: _filtersVisible ? _consumptionBlue : const Color(0xFFF8FAFC),
-                  side: BorderSide(color: _filtersVisible ? _consumptionBlue : const Color(0xFFE2E8F0)),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  backgroundColor: _filtersVisible
+                      ? _consumptionBlue
+                      : const Color(0xFFF8FAFC),
+                  side: BorderSide(
+                      color: _filtersVisible
+                          ? _consumptionBlue
+                          : const Color(0xFFE2E8F0)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
                 ),
               ),
             ],
@@ -334,7 +383,14 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
               child: Wrap(
                 spacing: 6,
                 runSpacing: 6,
-                children: ['All', 'High Variance', 'Moderate', 'Normal', 'Wastage', 'High Usage'].map((filter) {
+                children: [
+                  'All',
+                  'High Variance',
+                  'Moderate',
+                  'Normal',
+                  'Wastage',
+                  'High Usage'
+                ].map((filter) {
                   final active = _filter == filter;
                   return FilterChip(
                     label: Text(filter),
@@ -343,7 +399,10 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
                       setState(() => _filter = filter);
                       _loadReport();
                     },
-                    labelStyle: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: active ? Colors.white : _consumptionMuted),
+                    labelStyle: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: active ? Colors.white : _consumptionMuted),
                     selectedColor: _consumptionBlue,
                     backgroundColor: const Color(0xFFF1F5F9),
                     checkmarkColor: Colors.white,
@@ -384,11 +443,14 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
             if (key == 'variance_quantity' && (value as num) > 0) {
               return '+$formatted';
             }
-            return units.length == 1 ? '$formatted ${units.keys.first}' : formatted;
+            return units.length == 1
+                ? '$formatted ${units.keys.first}'
+                : formatted;
           }
 
           final theoretical = _summary['theoretical_quantity'];
-          final variancePercent = theoretical is num && theoretical > 0 &&
+          final variancePercent = theoretical is num &&
+                  theoretical > 0 &&
                   _summary['variance_quantity'] is num
               ? '${(_summary['variance_quantity'] as num) * 100 ~/ theoretical}% vs recipe'
               : (_summary['theoretical_data_available'] == true
@@ -397,8 +459,18 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
           final productionRuns = _summary['production_run_count'];
           final producedServings = _summary['produced_servings'];
           final summaryCards = [
-            ('Issued to Kitchen', quantity('total_consumption_quantity'), unitCaption, _consumptionBlue),
-            ('Theoretical', quantity('theoretical_quantity', theory: true), 'Recipe-based requirement', _consumptionInk),
+            (
+              'Issued to Kitchen',
+              quantity('total_consumption_quantity'),
+              unitCaption,
+              _consumptionBlue
+            ),
+            (
+              'Theoretical',
+              quantity('theoretical_quantity', theory: true),
+              'Recipe-based requirement',
+              _consumptionInk
+            ),
             (
               'Produced Servings',
               producedServings is num
@@ -409,10 +481,30 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
                   : 'Production not loaded',
               _consumptionBlue,
             ),
-            ('Confirmed Wastage', quantity('wastage_quantity'), unitCaption, _consumptionAmber),
-            ('Variance', quantity('variance_quantity'), variancePercent, _consumptionRed),
-            ('Issue Cost', _formatMoney(_summary['consumption_cost']), 'this period', _consumptionInk),
-            ('Variance Cost', _formatMoney(_summary['variance_cost']), 'potential excess cost', _consumptionRed),
+            (
+              'Confirmed Wastage',
+              quantity('wastage_quantity'),
+              unitCaption,
+              _consumptionAmber
+            ),
+            (
+              'Variance',
+              quantity('variance_quantity'),
+              variancePercent,
+              _consumptionRed
+            ),
+            (
+              'Issue Cost',
+              _formatMoney(_summary['consumption_cost']),
+              'this period',
+              _consumptionInk
+            ),
+            (
+              'Variance Cost',
+              _formatMoney(_summary['variance_cost']),
+              'potential excess cost',
+              _consumptionRed
+            ),
           ];
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -434,21 +526,48 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
                     decoration: BoxDecoration(
                       color: index == 0 ? _consumptionBlue : Colors.white,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: index == 0 ? _consumptionBlue : _consumptionBorder),
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(.035), blurRadius: 8, offset: const Offset(0, 3))],
+                      border: Border.all(
+                          color: index == 0
+                              ? _consumptionBlue
+                              : _consumptionBorder),
+                      boxShadow: [
+                        BoxShadow(
+                            color: Colors.black.withOpacity(.035),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3))
+                      ],
                     ),
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(card.$1.toUpperCase(), maxLines: 1, overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: .4,
-                              color: index == 0 ? Colors.white.withOpacity(.72) : const Color(0xFF94A3B8))),
-                      const SizedBox(height: 4),
-                      Text(card.$2, maxLines: 1, overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800,
-                              color: index == 0 ? Colors.white : card.$4)),
-                      const SizedBox(height: 2),
-                      Text(card.$3, maxLines: 1, overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: 9, color: index == 0 ? Colors.white.withOpacity(.72) : const Color(0xFF94A3B8))),
-                    ]),
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(card.$1.toUpperCase(),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: .4,
+                                  color: index == 0
+                                      ? Colors.white.withOpacity(.72)
+                                      : const Color(0xFF94A3B8))),
+                          const SizedBox(height: 4),
+                          Text(card.$2,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w800,
+                                  color: index == 0 ? Colors.white : card.$4)),
+                          const SizedBox(height: 2),
+                          Text(card.$3,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                  fontSize: 9,
+                                  color: index == 0
+                                      ? Colors.white.withOpacity(.72)
+                                      : const Color(0xFF94A3B8))),
+                        ]),
                   );
                 },
               ),
@@ -456,7 +575,8 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
                 const SizedBox(height: 8),
                 Text(
                   _summary['actual_quantity_basis'] as String,
-                  style: const TextStyle(fontSize: 10, color: _consumptionMuted),
+                  style:
+                      const TextStyle(fontSize: 10, color: _consumptionMuted),
                 ),
               ],
             ],
@@ -471,18 +591,29 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
       padding: const EdgeInsets.fromLTRB(24, 0, 20, 11),
       child: Row(
         children: [
-          const Text('Items', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: _consumptionInk)),
+          const Text('Items',
+              style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: _consumptionInk)),
           const SizedBox(width: 5),
-          Text('(${_visibleItems.length})', style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+          Text('(${_visibleItems.length})',
+              style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
           const Spacer(),
           DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: _sort,
               isDense: true,
-              icon: const Icon(Icons.expand_more_rounded, size: 16, color: _consumptionMuted),
-              style: const TextStyle(fontSize: 11, color: _consumptionInk, fontWeight: FontWeight.w600),
-              items: ['Consumption', 'Variance', 'Wastage', 'Name'].map((value) =>
-                  DropdownMenuItem(value: value, child: Text('Sort: $value'))).toList(),
+              icon: const Icon(Icons.expand_more_rounded,
+                  size: 16, color: _consumptionMuted),
+              style: const TextStyle(
+                  fontSize: 11,
+                  color: _consumptionInk,
+                  fontWeight: FontWeight.w600),
+              items: ['Consumption', 'Variance', 'Wastage', 'Name']
+                  .map((value) => DropdownMenuItem(
+                      value: value, child: Text('Sort: $value')))
+                  .toList(),
               onChanged: (value) {
                 setState(() => _sort = value ?? _sort);
                 _loadReport();
@@ -514,35 +645,60 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
           child: Row(
             children: [
               Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Row(children: [
-                    Flexible(child: Text(item.name, maxLines: 1, overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: _consumptionInk))),
-                    const SizedBox(width: 7),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                      decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(10)),
-                      child: Text(item.category, style: const TextStyle(fontSize: 8, fontWeight: FontWeight.w700, color: _consumptionMuted)),
-                    ),
-                  ]),
-                  const SizedBox(height: 5),
-                   Text(
-                       'Issued: ${item.actual.toStringAsFixed(1)} ${item.unit}   •   Recipe: ${item.theoretical?.toStringAsFixed(1) ?? '—'} ${item.unit}',
-                      style: const TextStyle(fontSize: 10, color: _consumptionMuted)),
-                ]),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(children: [
+                        Flexible(
+                            child: Text(item.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: _consumptionInk))),
+                        const SizedBox(width: 7),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 7, vertical: 2),
+                          decoration: BoxDecoration(
+                              color: const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(10)),
+                          child: Text(item.category,
+                              style: const TextStyle(
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.w700,
+                                  color: _consumptionMuted)),
+                        ),
+                      ]),
+                      const SizedBox(height: 5),
+                      Text(
+                          'Issued: ${item.actual.toStringAsFixed(1)} ${item.unit}   •   Recipe: ${item.theoretical?.toStringAsFixed(1) ?? '—'} ${item.unit}',
+                          style: const TextStyle(
+                              fontSize: 10, color: _consumptionMuted)),
+                    ]),
               ),
               const SizedBox(width: 10),
               Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(color: status.$2, borderRadius: BorderRadius.circular(12)),
-                   child: Text('${status.$1} $variance', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: status.$3)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                      color: status.$2,
+                      borderRadius: BorderRadius.circular(12)),
+                  child: Text('${status.$1} $variance',
+                      style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: status.$3)),
                 ),
                 const SizedBox(height: 3),
-                 Text(item.variancePercent == null
-                         ? 'No comparison'
-                         : '${item.variancePercent!.toStringAsFixed(1)}% variance',
-                    style: const TextStyle(fontSize: 9, color: Color(0xFF94A3B8))),
+                Text(
+                    item.variancePercent == null
+                        ? 'No comparison'
+                        : '${item.variancePercent!.toStringAsFixed(1)}% variance',
+                    style:
+                        const TextStyle(fontSize: 9, color: Color(0xFF94A3B8))),
               ]),
             ],
           ),
@@ -581,18 +737,42 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(child: Container(width: 42, height: 4, decoration: BoxDecoration(color: const Color(0xFFCBD5E1), borderRadius: BorderRadius.circular(4)))),
+              Center(
+                  child: Container(
+                      width: 42,
+                      height: 4,
+                      decoration: BoxDecoration(
+                          color: const Color(0xFFCBD5E1),
+                          borderRadius: BorderRadius.circular(4)))),
               const SizedBox(height: 15),
               Row(children: [
-                Expanded(child: Text(item.name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: _consumptionInk))),
-                IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded, color: _consumptionMuted)),
+                Expanded(
+                    child: Text(item.name,
+                        style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            color: _consumptionInk))),
+                IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close_rounded,
+                        color: _consumptionMuted)),
               ]),
-              Text(item.category, style: const TextStyle(fontSize: 11, color: _consumptionMuted, fontWeight: FontWeight.w600)),
+              Text(item.category,
+                  style: const TextStyle(
+                      fontSize: 11,
+                      color: _consumptionMuted,
+                      fontWeight: FontWeight.w600)),
               const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(color: status.$2, borderRadius: BorderRadius.circular(14)),
-                child: Text('${status.$1} ${item.status.label}', style: TextStyle(color: status.$3, fontSize: 12, fontWeight: FontWeight.w800)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                    color: status.$2, borderRadius: BorderRadius.circular(14)),
+                child: Text('${status.$1} ${item.status.label}',
+                    style: TextStyle(
+                        color: status.$3,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800)),
               ),
               const SizedBox(height: 16),
               GridView.count(
@@ -603,25 +783,37 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
                 mainAxisSpacing: 9,
                 childAspectRatio: 2.3,
                 children: [
-                   _detailTile('Requested', '${item.planned.toStringAsFixed(1)} ${item.unit}'),
-                   _detailTile('Recipe Requirement', '${item.theoretical?.toStringAsFixed(1) ?? '—'} ${item.unit}'),
-                   _detailTile('Issued to Kitchen', '${item.actual.toStringAsFixed(1)} ${item.unit}'),
-                   _detailTile('Confirmed Waste', '${item.wastage.toStringAsFixed(1)} ${item.unit}', color: _consumptionAmber),
-                   _detailTile('Variance', '${item.variance?.toStringAsFixed(1) ?? '—'} ${item.unit}', color: _consumptionRed),
-                   _detailTile('Issue Cost', _formatMoney(item.consumptionCost)),
-                   _detailTile('Variance Cost', _formatMoney(item.varianceCost), color: _consumptionRed),
-                   _detailTile('Unit Cost', _formatMoney(item.unitCost)),
+                  _detailTile('Requested',
+                      '${item.planned.toStringAsFixed(1)} ${item.unit}'),
+                  _detailTile('Recipe Requirement',
+                      '${item.theoretical?.toStringAsFixed(1) ?? '—'} ${item.unit}'),
+                  _detailTile('Issued to Kitchen',
+                      '${item.actual.toStringAsFixed(1)} ${item.unit}'),
+                  _detailTile('Confirmed Waste',
+                      '${item.wastage.toStringAsFixed(1)} ${item.unit}',
+                      color: _consumptionAmber),
+                  _detailTile('Variance',
+                      '${item.variance?.toStringAsFixed(1) ?? '—'} ${item.unit}',
+                      color: _consumptionRed),
+                  _detailTile('Issue Cost', _formatMoney(item.consumptionCost)),
+                  _detailTile('Variance Cost', _formatMoney(item.varianceCost),
+                      color: _consumptionRed),
+                  _detailTile('Unit Cost', _formatMoney(item.unitCost)),
                 ],
               ),
               const SizedBox(height: 18),
-               const Text('Confirmed Waste', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: _consumptionInk)),
+              const Text('Confirmed Waste',
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: _consumptionInk)),
               const SizedBox(height: 7),
-               _wastageRow('Recorded quantity', item.wastage, item.unit),
+              _wastageRow('Recorded quantity', item.wastage, item.unit),
               const SizedBox(height: 14),
-               const Text(
-                 'Issued quantities are a kitchen-usage proxy. The app does not record the quantity actually consumed during preparation.',
-                 style: TextStyle(fontSize: 11, color: _consumptionMuted),
-               ),
+              const Text(
+                'Issued quantities are a kitchen-usage proxy. The app does not record the quantity actually consumed during preparation.',
+                style: TextStyle(fontSize: 11, color: _consumptionMuted),
+              ),
             ],
           ),
         ),
@@ -629,15 +821,29 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
     );
   }
 
-  Widget _detailTile(String label, String value, {Color color = _consumptionInk}) {
+  Widget _detailTile(String label, String value,
+      {Color color = _consumptionInk}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
-      decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(10)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
-        Text(label.toUpperCase(), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 8, color: Color(0xFF94A3B8), fontWeight: FontWeight.w700)),
-        const SizedBox(height: 2),
-        Text(value, style: TextStyle(fontSize: 14, color: color, fontWeight: FontWeight.w800)),
-      ]),
+      decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(10)),
+      child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(label.toUpperCase(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                    fontSize: 8,
+                    color: Color(0xFF94A3B8),
+                    fontWeight: FontWeight.w700)),
+            const SizedBox(height: 2),
+            Text(value,
+                style: TextStyle(
+                    fontSize: 14, color: color, fontWeight: FontWeight.w800)),
+          ]),
     );
   }
 
@@ -645,18 +851,32 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(children: [
-        Expanded(child: Text(reason, style: const TextStyle(fontSize: 12, color: _consumptionMuted))),
-        Text('${amount.toStringAsFixed(1)} $unit', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _consumptionInk)),
+        Expanded(
+            child: Text(reason,
+                style:
+                    const TextStyle(fontSize: 12, color: _consumptionMuted))),
+        Text('${amount.toStringAsFixed(1)} $unit',
+            style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: _consumptionInk)),
       ]),
     );
   }
+
+  String _dateString(DateTime date) =>
+      '${date.year.toString().padLeft(4, '0')}-'
+      '${date.month.toString().padLeft(2, '0')}-'
+      '${date.day.toString().padLeft(2, '0')}';
 
   String _formatMoney(dynamic value) =>
       value is num ? 'ETB ${value.toStringAsFixed(2)}' : 'Not available';
 
   void _exportReport() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Consumption report export started'), duration: Duration(seconds: 1)),
+      const SnackBar(
+          content: Text('Consumption report export started'),
+          duration: Duration(seconds: 1)),
     );
   }
 }
@@ -730,8 +950,9 @@ class _ConsumptionItem {
   }
 }
 
-double _asDouble(dynamic value) =>
-    value is num ? value.toDouble() : double.tryParse(value?.toString() ?? '') ?? 0;
+double _asDouble(dynamic value) => value is num
+    ? value.toDouble()
+    : double.tryParse(value?.toString() ?? '') ?? 0;
 
 double? _asNullableDouble(dynamic value) => value == null
     ? null
@@ -740,7 +961,8 @@ double? _asNullableDouble(dynamic value) => value == null
         : double.tryParse(value.toString());
 
 String _formatNumber(dynamic value) {
-  final number = value is num ? value.toDouble() : double.tryParse('$value') ?? 0;
+  final number =
+      value is num ? value.toDouble() : double.tryParse('$value') ?? 0;
   return number.toStringAsFixed(1);
 }
 
@@ -754,9 +976,14 @@ class _EmptyState extends StatelessWidget {
       child: Column(children: const [
         Icon(Icons.search_off_rounded, size: 42, color: Color(0xFFCBD5E1)),
         SizedBox(height: 10),
-        Text('No items found', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: _consumptionMuted)),
+        Text('No items found',
+            style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: _consumptionMuted)),
         SizedBox(height: 4),
-        Text('Try another search or filter.', style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+        Text('Try another search or filter.',
+            style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
       ]),
     );
   }
