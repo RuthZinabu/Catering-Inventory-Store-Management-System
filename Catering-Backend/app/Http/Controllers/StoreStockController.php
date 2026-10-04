@@ -121,6 +121,11 @@ class StoreStockController extends Controller
             'item.item_type' => 'required|string|in:food,catering,electronics',
             'item.unit' => 'required|string|max:20',
             'item.default_purchase_price' => 'nullable|numeric|min:0',
+            'item.supplier_id' => [
+                'nullable',
+                'uuid',
+                Rule::exists('suppliers', 'id')->where('status', 'Active'),
+            ],
             'item.shelf_life_days' => 'nullable|integer|min:1',
             'item.requires_refrigeration' => 'nullable|boolean',
             'item.catering_subtype' => ['nullable', Rule::in(['permanent', 'temporary'])],
@@ -185,7 +190,7 @@ class StoreStockController extends Controller
             return $stock;
         });
 
-        $stock->load(['item', 'store', 'lastCountedBy:id,name']);
+        $stock->load(['item.supplier', 'store', 'lastCountedBy:id,name']);
         return $this->success($stock, 'Stock item created successfully', 201);
     }
 

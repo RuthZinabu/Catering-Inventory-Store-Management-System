@@ -25,7 +25,7 @@ class StockController extends Controller
                 $accessibleStoreIds = Store::pluck('id');
             }
             
-            $query = StoreStock::with(['item', 'store']);
+            $query = StoreStock::with(['item.supplier', 'store']);
             
             // An empty store scope must return no stock for non-admin users.
             if ($user->role !== 'admin') {
@@ -85,7 +85,8 @@ class StockController extends Controller
                     'min_quantity' => $stock->min_quantity ? (float) $stock->min_quantity : 0.0,
                     'max_quantity' => $stock->max_quantity ? (float) $stock->max_quantity : 0.0,
                     'location' => $stock->location_description ?? $stock->store->name ?? '',
-                    'supplier' => 'Unknown', // TODO: Add supplier relationship
+                    'supplier' => $stock->item->supplier?->company
+                        ?: ($stock->item->supplier?->name ?? 'Unknown'),
                     'status' => $stock->status?->value ?? 'Unknown',
                     'description' => $stock->item->description ?? '',
                     'last_updated' => $stock->updated_at,
@@ -147,7 +148,7 @@ class StockController extends Controller
         try {
             $user = $request->user();
             
-            $stockItem = StoreStock::with(['item', 'store'])->findOrFail($id);
+            $stockItem = StoreStock::with(['item.supplier', 'store'])->findOrFail($id);
             
             // Check if user can access this store
             if ($user->role !== 'admin') {
@@ -174,7 +175,8 @@ class StockController extends Controller
                     'min_quantity' => $stockItem->min_quantity ? (float) $stockItem->min_quantity : 0.0,
                     'max_quantity' => $stockItem->max_quantity ? (float) $stockItem->max_quantity : 0.0,
                     'location' => $stockItem->location_description ?? $stockItem->store->name ?? '',
-                    'supplier' => 'Unknown', // TODO: Add supplier relationship
+                    'supplier' => $stockItem->item->supplier?->company
+                        ?: ($stockItem->item->supplier?->name ?? 'Unknown'),
                     'status' => $stockItem->status?->value ?? 'Unknown',
                     'description' => $stockItem->item->description ?? '',
                     'last_updated' => $stockItem->updated_at,
@@ -253,7 +255,7 @@ class StockController extends Controller
             $query = $request->q;
             $limit = $request->get('limit', 20);
             
-            $stockQuery = StoreStock::with(['item', 'store']);
+            $stockQuery = StoreStock::with(['item.supplier', 'store']);
             
             // An empty store scope must return no stock for non-admin users.
             if ($user->role !== 'admin') {
@@ -293,7 +295,8 @@ class StockController extends Controller
                     'min_quantity' => $stock->min_quantity ? (float) $stock->min_quantity : 0.0,
                     'max_quantity' => $stock->max_quantity ? (float) $stock->max_quantity : 0.0,
                     'location' => $stock->location_description ?? $stock->store->name ?? '',
-                    'supplier' => 'Unknown',
+                    'supplier' => $stock->item->supplier?->company
+                        ?: ($stock->item->supplier?->name ?? 'Unknown'),
                     'status' => $stock->status?->value ?? 'Unknown',
                     'description' => $stock->item->description ?? '',
                     'last_updated' => $stock->updated_at,

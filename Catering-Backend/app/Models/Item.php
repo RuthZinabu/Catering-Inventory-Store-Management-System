@@ -26,6 +26,7 @@ class Item extends Model
         'brand',
         'model',
         'warranty_period_months',
+        'supplier_id',
         'is_active',
         'created_by',
     ];
@@ -53,6 +54,11 @@ class Item extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class);
     }
 
     /**

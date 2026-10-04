@@ -89,6 +89,18 @@ class ApiRepository {
     return result.items;
   }
 
+  Future<List<Store>> getAllActiveStores() async {
+    return _getAllPages<Store>(
+      (page) => _storeService.getAll(
+        queryParams: ListQueryParams(
+          page: page,
+          perPage: 100,
+          filters: const {'active': true},
+        ),
+      ),
+    );
+  }
+
   Future<Store?> getStoreById(String id) async {
     return await _storeService.getById(id);
   }
@@ -143,6 +155,35 @@ class ApiRepository {
       ),
     );
     return result.items;
+  }
+
+  Future<List<Supplier>> getAllActiveSuppliers() async {
+    return _getAllPages<Supplier>(
+      (page) => _supplierService.getAll(
+        queryParams: ListQueryParams(
+          page: page,
+          perPage: 100,
+          filters: const {'status': 'Active'},
+        ),
+      ),
+    );
+  }
+
+  Future<List<T>> _getAllPages<T>(
+    Future<PaginatedResult<T>> Function(int page) fetchPage,
+  ) async {
+    final items = <T>[];
+    var page = 1;
+    var lastPage = 1;
+
+    do {
+      final result = await fetchPage(page);
+      items.addAll(result.items);
+      lastPage = result.lastPage;
+      page++;
+    } while (page <= lastPage);
+
+    return items;
   }
 
   // Stock Management

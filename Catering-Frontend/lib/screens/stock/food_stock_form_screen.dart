@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../models/inventory_models.dart';
 import '../../models/stock_models.dart';
+import '../../models/store_model.dart';
 import '../../services/api_repository.dart';
-import 'stock_helpers.dart';
+import 'stock_reference_fields.dart';
 
 class FoodStockFormScreen extends StatefulWidget {
   final FoodStockItem? item;
@@ -15,6 +17,8 @@ class _FoodStockFormScreenState extends State<FoodStockFormScreen> {
   int _currentStep = 0;
   bool _isSaving = false;
   bool get _isEditMode => widget.item != null;
+  Supplier? _selectedSupplier;
+  Store? _selectedStore;
 
   // Step 1 controllers
   final _codeCtrl = TextEditingController();
@@ -259,10 +263,20 @@ class _FoodStockFormScreenState extends State<FoodStockFormScreen> {
           _buildTextField(_categoryCtrl, 'Category', 'e.g., Grains',
               Icons.category_rounded),
           _buildTextField(_unitCtrl, 'Unit', 'e.g., Kg, Pcs', Icons.speed),
-          _buildTextField(_supplierCtrl, 'Supplier', 'e.g., Local Vendor',
-              Icons.person_rounded),
-          _buildTextField(_locationCtrl, 'Location', 'e.g., Warehouse A',
-              Icons.location_on_rounded),
+          if (_isEditMode) ...[
+            _buildTextField(_supplierCtrl, 'Supplier', 'e.g., Local Vendor',
+                Icons.person_rounded),
+            _buildTextField(_locationCtrl, 'Location', 'e.g., Warehouse A',
+                Icons.location_on_rounded),
+          ] else
+            StockReferenceFields(
+              supplierId: _selectedSupplier?.id,
+              storeId: _selectedStore?.id,
+              onSupplierChanged: (supplier) =>
+                  setState(() => _selectedSupplier = supplier),
+              onStoreChanged: (store) =>
+                  setState(() => _selectedStore = store),
+            ),
           _buildTextField(_descriptionCtrl, 'Description',
               'Item description...', Icons.description_rounded),
         ],
@@ -325,10 +339,6 @@ class _FoodStockFormScreenState extends State<FoodStockFormScreen> {
       if (_formKey1.currentState!.validate()) {
         setState(() => _currentStep++);
       }
-    } else if (_currentStep == 1) {
-      if (_formKey2.currentState!.validate()) {
-        setState(() => _currentStep++);
-      }
     } else {
       if (!_formKey1.currentState!.validate() ||
           !_formKey2.currentState!.validate()) {
@@ -349,10 +359,16 @@ class _FoodStockFormScreenState extends State<FoodStockFormScreen> {
       if (!_isEditMode) {
         setState(() => _isSaving = true);
         try {
-          final storeId = await chooseStockStore(context);
-          if (storeId == null) return;
+          final store = _selectedStore;
+          if (store == null) {
+            setState(() => _currentStep = 0);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Select a registered store.')),
+            );
+            return;
+          }
 
-          await ApiRepository.instance.createNewStockItemInStore(storeId, {
+          await ApiRepository.instance.createNewStockItemInStore(store.id, {
             'item': {
               'code': code,
               'name': name,
@@ -361,12 +377,13 @@ class _FoodStockFormScreenState extends State<FoodStockFormScreen> {
               'item_type': 'food',
               'unit': unit,
               'default_purchase_price': purchasePrice,
+              'supplier_id': _selectedSupplier?.id,
               'requires_refrigeration': false,
             },
             'quantity': quantity,
             'min_quantity': minQuantity,
             'max_quantity': maxQuantity,
-            'location_description': location,
+            'location_description': store.name,
           });
 
           if (!mounted) return;
@@ -399,7 +416,9 @@ class _FoodStockFormScreenState extends State<FoodStockFormScreen> {
         minQuantity: minQuantity,
         maxQuantity: maxQuantity,
         location: location,
-        supplier: supplier,
+        supplier: _selectedSupplier?.company.isNotEmpty == true
+            ? _selectedSupplier!.company
+            : _selectedSupplier?.name ?? supplier,
         status: 'Healthy',
         description: description,
         lastUpdated: DateTime.now(),

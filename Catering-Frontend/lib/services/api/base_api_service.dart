@@ -51,7 +51,7 @@ abstract class BaseApiService {
       
       if (response.isSuccess && response.data != null) {
         final data = response.data!;
-        final itemsData = data['items'] ?? data['data'] ?? [];
+        final itemsData = data['items'] ?? data['data'] ?? data['suppliers'] ?? [];
         
         final items = (itemsData as List)
             .cast<Map<String, dynamic>>()

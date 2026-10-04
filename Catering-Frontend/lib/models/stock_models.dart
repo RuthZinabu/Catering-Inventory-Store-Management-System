@@ -253,6 +253,9 @@ Map<String, dynamic> normalizeStockItemJson(Map<String, dynamic> json) {
   final store = json['store'] is Map
     ? Map<String, dynamic>.from(json['store'] as Map)
     : const <String, dynamic>{};
+  final supplier = item['supplier'] is Map
+    ? Map<String, dynamic>.from(item['supplier'] as Map)
+    : const <String, dynamic>{};
   final itemType = json['stock_category'] ?? json['item_type'] ?? item['item_type'];
   final category = StockCategory.values.any((value) => value.name == itemType)
     ? itemType as String
@@ -273,7 +276,10 @@ Map<String, dynamic> normalizeStockItemJson(Map<String, dynamic> json) {
   'min_quantity': json['min_quantity'] ?? 0,
   'max_quantity': json['max_quantity'] ?? 0,
   'location': json['location'] ?? json['location_description'] ?? store['name'] ?? '',
-  'supplier': json['supplier'] ?? 'Unknown',
+  'supplier': json['supplier'] ??
+      supplier['company'] ??
+      supplier['name'] ??
+      'Unknown',
   'status': json['status'] ?? 'Unknown',
   'description': json['description'] ?? item['description'] ?? '',
   'last_updated': json['last_updated'] ??

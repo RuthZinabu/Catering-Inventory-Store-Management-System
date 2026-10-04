@@ -15,6 +15,8 @@ class StockFormScreen extends StatefulWidget {
 class _StockFormScreenState extends State<StockFormScreen> {
   int _currentStep = 0;
   bool get _isEditMode => widget.item != null;
+  int get _lastStepIndex =>
+      _isItemCategory('electronics') || _isItemCategory('catering') ? 2 : 1;
 
   // Step 1 controllers
   final _codeCtrl = TextEditingController();
@@ -163,7 +165,7 @@ class _StockFormScreenState extends State<StockFormScreen> {
                       if (_currentStep > 0)
                         Expanded(
                           child: ElevatedButton(
-                            onPressed: details.onStepContinue,
+                            onPressed: details.onStepCancel,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF64748B),
                               padding: const EdgeInsets.symmetric(vertical: 12),
@@ -175,7 +177,7 @@ class _StockFormScreenState extends State<StockFormScreen> {
                                 style: TextStyle(color: Colors.white)),
                           ),
                         ),
-                      if (_currentStep < 2)
+                      if (_currentStep < _lastStepIndex)
                         Expanded(
                           child: ElevatedButton(
                             onPressed: details.onStepContinue,
@@ -189,12 +191,24 @@ class _StockFormScreenState extends State<StockFormScreen> {
                             child: const Text('Next',
                                 style: TextStyle(color: Colors.white)),
                           ),
+                        )
+                      else
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: _submitForm,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF16A34A),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            child: const Text('Upload item',
+                                style: TextStyle(color: Colors.white)),
+                          ),
                         ),
                     ],
                   );
                 },
                 onStepContinue: () {
-                  if (_currentStep < 2) {
+                  if (_currentStep < _lastStepIndex) {
                     setState(() => _currentStep++);
                   } else {
                     _submitForm();
@@ -421,11 +435,16 @@ class _StockFormScreenState extends State<StockFormScreen> {
       if (_formKey1.currentState!.validate()) {
         setState(() => _currentStep++);
       }
-    } else if (_currentStep == 1) {
+    } else if (_currentStep == 1 && _lastStepIndex > 1) {
       if (_formKey2.currentState!.validate()) {
         setState(() => _currentStep++);
       }
     } else {
+      if (!_formKey1.currentState!.validate() ||
+          !_formKey2.currentState!.validate()) {
+        return;
+      }
+
       // Create or update the item
       final code = _codeCtrl.text.trim();
       final name = _nameCtrl.text.trim();
