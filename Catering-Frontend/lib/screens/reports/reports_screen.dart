@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../services/api_service.dart';
+import '../../theme/app_colors.dart';
 import '../inventory_screen.dart';
 import '../purchases/purchase_list_screen.dart';
 import '../stock_transfers/stock_transfer_list_screen.dart';
@@ -9,13 +10,13 @@ import '../waste/waste_list_screen.dart';
 import 'consumption_report_screen.dart';
 import '../expiry/expiry_list_screen.dart';
 
-const _blue = Color(0xFF2563EB);
-const _ink = Color(0xFF10162B);
-const _muted = Color(0xFF64748B);
-const _border = Color(0xFFE7ECF3);
-const _green = Color(0xFF0B8A5E);
-const _amber = Color(0xFFD97706);
-const _red = Color(0xFFD1453B);
+const _blue = AppColors.primaryBlue;
+const _ink = AppColors.darkGreen;
+const _muted = AppColors.secondaryGray;
+const _border = AppColors.border;
+const _green = AppColors.darkGreen;
+const _amber = AppColors.accentGoldText;
+const _red = AppColors.errorRed;
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -156,7 +157,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FB),
+      backgroundColor: AppColors.creamBackground,
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
@@ -170,7 +171,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
                   child: Material(
-                    color: const Color(0xFFFFF1F0),
+                    color: AppColors.errorRed.withOpacity(.09),
                     borderRadius: BorderRadius.circular(12),
                     child: Padding(
                       padding: const EdgeInsets.all(12),
@@ -184,6 +185,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
                           ),
                           TextButton(
                             onPressed: _loadReport,
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.darkGreen,
+                            ),
                             child: const Text('Retry'),
                           ),
                         ],
@@ -210,8 +214,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
   Widget _buildHeader(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+      decoration: const BoxDecoration(
+        color: AppColors.darkGreen,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -226,17 +234,17 @@ class _ReportsScreenState extends State<ReportsScreen> {
                             .textTheme
                             .headlineSmall
                             ?.copyWith(
-                                color: _ink,
+                                color: Colors.white,
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: -0.7)),
                     const SizedBox(height: 4),
                     Row(
                       children: const [
-                        Icon(Icons.circle, size: 7, color: _green),
+                        Icon(Icons.circle, size: 7, color: AppColors.accentGold),
                         SizedBox(width: 6),
                         Text('Daily · Weekly · Monthly',
                             style: TextStyle(
-                                color: _muted,
+                                color: Colors.white70,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500)),
                       ],
@@ -256,9 +264,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.softSurface,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: _border),
+                border: Border.all(color: AppColors.accentGold.withOpacity(.28)),
                 boxShadow: [
                   BoxShadow(
                       color: Colors.black.withOpacity(.035),
@@ -269,7 +277,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               child: Row(
                 children: [
                   const Icon(Icons.calendar_today_outlined,
-                      size: 15, color: _blue),
+                      size: 15, color: AppColors.darkGreen),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -279,17 +287,16 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF334155),
+                        color: AppColors.darkGreen,
                       ),
                     ),
                   ),
                   const Icon(Icons.expand_more_rounded,
-                      size: 18, color: Color(0xFF94A3B8)),
+                      size: 18, color: AppColors.secondaryGray),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 18),
         ],
       ),
     );
@@ -311,10 +318,10 @@ class _ReportsScreenState extends State<ReportsScreen> {
         child: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: _blue.withOpacity(.09),
+            color: AppColors.accentGold.withOpacity(.14),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, size: 17, color: _blue),
+          child: Icon(icon, size: 17, color: AppColors.accentGold),
         ),
       ),
     );
@@ -336,14 +343,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
         _formatMoney(kpis['inventory_value']),
         'Current stock valuation',
         Icons.account_balance_wallet_outlined,
-        const Color(0xFF0F766E),
+        AppColors.accentGreen,
       ),
       (
         'Stock Movements',
         _formatNumber(kpis['stock_movements']),
         'During selected period',
         Icons.swap_vert_rounded,
-        const Color(0xFF7C3AED),
+        AppColors.accentGold,
       ),
       (
         'Expiring Soon',
@@ -379,7 +386,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
             width: 166,
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.cardSurface,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: _border),
               boxShadow: [
@@ -430,7 +437,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       child: Container(
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.cardSurface,
           borderRadius: BorderRadius.circular(30),
           border: Border.all(color: _border),
         ),
@@ -468,7 +475,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: active ? Colors.white : _muted)),
+                        color: active ? AppColors.darkGreen : _muted)),
               ),
             );
           }).toList(),
@@ -731,7 +738,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               crossAxisCount: columns,
               crossAxisSpacing: 14,
               mainAxisSpacing: 14,
-              mainAxisExtent: 264,
+              mainAxisExtent: 300,
             ),
             itemBuilder: (context, index) {
               final card = cards[index];
@@ -772,7 +779,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.cardSurface,
           border: Border.all(color: _border),
           borderRadius: BorderRadius.circular(16),
         ),
@@ -813,7 +820,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFFEAF3FF),
+          color: AppColors.primaryBlue.withOpacity(.18),
           borderRadius: BorderRadius.circular(16),
           border: const Border(left: BorderSide(color: _blue, width: 4)),
         ),
@@ -861,7 +868,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
         child: Text(
           status,
           textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+          style: const TextStyle(fontSize: 10, color: AppColors.textGray),
         ),
       ),
     );
@@ -917,7 +924,8 @@ class _ReportCard extends StatelessWidget {
         child: Ink(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
           decoration: BoxDecoration(
-            color: data.highlighted ? const Color(0xFFFBFDFF) : Colors.white,
+            color:
+                data.highlighted ? AppColors.softSurface : AppColors.cardSurface,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
                 color: data.highlighted ? _blue.withOpacity(.28) : _border),
@@ -948,7 +956,7 @@ class _ReportCard extends StatelessWidget {
                   decoration: BoxDecoration(
                       color: data.highlighted
                           ? _blue.withOpacity(.1)
-                          : const Color(0xFFF1F4F8),
+                          : AppColors.creamBackground,
                       borderRadius: BorderRadius.circular(20)),
                   child: Text(data.badge,
                       style: const TextStyle(
@@ -966,7 +974,7 @@ class _ReportCard extends StatelessWidget {
                             decoration: const BoxDecoration(
                                 border: Border(
                                     bottom:
-                                        BorderSide(color: Color(0xFFF1F4F8)))),
+                                        BorderSide(color: AppColors.border))),
                             child: Row(children: [
                               Expanded(
                                   child: Text(row.$1,
@@ -993,11 +1001,11 @@ class _ReportCard extends StatelessWidget {
                   Text(data.action,
                       style: const TextStyle(
                           fontSize: 11,
-                          color: _blue,
+                          color: AppColors.darkGreen,
                           fontWeight: FontWeight.w800)),
                   const SizedBox(width: 4),
                   const Icon(Icons.chevron_right_rounded,
-                      color: _blue, size: 16),
+                      color: AppColors.darkGreen, size: 16),
                 ],
               ),
             ],

@@ -3,15 +3,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../services/api_service.dart';
+import '../../theme/app_colors.dart';
 import 'production_run_screen.dart';
 
-const _consumptionBlue = Color(0xFF2A7DE1);
-const _consumptionInk = Color(0xFF1A2639);
-const _consumptionMuted = Color(0xFF64748B);
-const _consumptionBorder = Color(0xFFEEF2F6);
-const _consumptionGreen = Color(0xFF0B8A5E);
-const _consumptionAmber = Color(0xFFD97706);
-const _consumptionRed = Color(0xFFD1453B);
+const _consumptionBlue = AppColors.primaryBlue;
+const _consumptionInk = AppColors.darkGreen;
+const _consumptionMuted = AppColors.secondaryGray;
+const _consumptionBorder = AppColors.border;
+const _consumptionGreen = AppColors.darkGreen;
+const _consumptionAmber = AppColors.accentGoldText;
+const _consumptionRed = AppColors.errorRed;
 
 class ConsumptionReportScreen extends StatefulWidget {
   const ConsumptionReportScreen({super.key});
@@ -78,13 +79,28 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
       final path =
           Uri(path: '/reports/consumption', queryParameters: query).toString();
       final response = await ApiClient.instance.get(path);
-      final data = Map<String, dynamic>.from(response['data'] as Map);
-      final summary =
-          Map<String, dynamic>.from(data['summary'] as Map? ?? const {});
-      final items = (data['items'] as List? ?? const [])
-          .map((item) =>
-              _ConsumptionItem.fromJson(Map<String, dynamic>.from(item as Map)))
-          .toList();
+      final dataValue = response['data'];
+      if (dataValue is! Map) {
+        throw const ApiException('The consumption report response is invalid.');
+      }
+      final data = Map<String, dynamic>.from(dataValue);
+      final summaryValue = data['summary'];
+      if (summaryValue != null && summaryValue is! Map) {
+        throw const ApiException('The consumption summary is invalid.');
+      }
+      final summary = summaryValue is Map
+          ? Map<String, dynamic>.from(summaryValue)
+          : <String, dynamic>{};
+      final itemValues = data['items'];
+      if (itemValues != null && itemValues is! List) {
+        throw const ApiException('The consumption item list is invalid.');
+      }
+      final items = (itemValues as List? ?? const []).map((item) {
+        if (item is! Map) {
+          throw const ApiException('A consumption report item is invalid.');
+        }
+        return _ConsumptionItem.fromJson(Map<String, dynamic>.from(item));
+      }).toList();
       if (!mounted) return;
       setState(() {
         _summary
@@ -155,7 +171,7 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: AppColors.creamBackground,
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
@@ -209,7 +225,7 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
 
   Widget _buildHeader(BuildContext context) {
     return Container(
-      color: Colors.white,
+      color: AppColors.darkGreen,
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
       child: Column(
         children: [
@@ -218,7 +234,7 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
               IconButton(
                 onPressed: () => Navigator.pop(context),
                 icon: const Icon(Icons.arrow_back_rounded,
-                    color: _consumptionInk),
+                    color: Colors.white),
                 tooltip: 'Back to reports',
                 visualDensity: VisualDensity.compact,
               ),
@@ -227,34 +243,33 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
                 child: Row(
                   children: [
                     Icon(Icons.restaurant_rounded,
-                        color: _consumptionBlue, size: 21),
+                        color: AppColors.accentGold, size: 21),
                     SizedBox(width: 9),
                     Text('Consumption',
                         style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w800,
-                            color: _consumptionInk)),
+                            color: Colors.white)),
                   ],
                 ),
               ),
               IconButton(
                 onPressed: _openProductionForm,
                 icon: const Icon(Icons.add_chart_rounded,
-                    color: _consumptionBlue),
+                    color: AppColors.accentGold),
                 tooltip: 'Record kitchen production',
                 visualDensity: VisualDensity.compact,
               ),
               IconButton(
                 onPressed: _exportReport,
                 icon: const Icon(Icons.file_upload_outlined,
-                    color: _consumptionMuted),
+                    color: Colors.white70),
                 tooltip: 'Export',
                 visualDensity: VisualDensity.compact,
               ),
               IconButton(
                 onPressed: _loadReport,
-                icon:
-                    const Icon(Icons.refresh_rounded, color: _consumptionMuted),
+                icon: const Icon(Icons.refresh_rounded, color: Colors.white70),
                 tooltip: 'Refresh',
                 visualDensity: VisualDensity.compact,
               ),
@@ -262,7 +277,7 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
           ),
           const SizedBox(height: 8),
           SizedBox(
-            height: 30,
+            height: 38,
             child: ListView(
               scrollDirection: Axis.horizontal,
               children:
@@ -286,18 +301,20 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
                       }
                     },
                     avatar: range == 'Custom'
-                        ? const Icon(Icons.calendar_today_outlined, size: 13)
+                        ? const Icon(Icons.calendar_today_outlined,
+                            size: 13, color: AppColors.accentGold)
                         : null,
                     labelStyle: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: active ? Colors.white : _consumptionMuted),
-                    backgroundColor: Colors.white,
+                        color:
+                            active ? AppColors.darkGreen : Colors.white70),
+                    backgroundColor: AppColors.darkGreen,
                     selectedColor: _consumptionBlue,
                     side: BorderSide(
                         color: active
-                            ? _consumptionBlue
-                            : const Color(0xFFE2E8F0)),
+                            ? AppColors.primaryBlue
+                            : AppColors.accentGold.withOpacity(.36)),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20)),
                     padding: const EdgeInsets.symmetric(horizontal: 5),
@@ -314,7 +331,7 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
 
   Widget _buildSearchAndFilters() {
     return Container(
-      color: Colors.white,
+      color: AppColors.cardSurface,
       padding: const EdgeInsets.fromLTRB(20, 11, 20, 12),
       child: Column(
         children: [
@@ -329,20 +346,23 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
                   decoration: InputDecoration(
                     hintText: 'Search items...',
                     hintStyle:
-                        const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                        const TextStyle(
+                            fontSize: 13, color: AppColors.textGray),
                     prefixIcon: const Icon(Icons.search_rounded,
-                        size: 18, color: Color(0xFF94A3B8)),
+                        size: 18, color: AppColors.secondaryGray),
                     contentPadding: const EdgeInsets.symmetric(vertical: 9),
                     filled: true,
-                    fillColor: const Color(0xFFF8FAFC),
+                    fillColor: AppColors.softSurface,
                     border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                        borderRadius: BorderRadius.circular(18),
+                        borderSide:
+                            const BorderSide(color: AppColors.border)),
                     enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                        borderRadius: BorderRadius.circular(18),
+                        borderSide:
+                            const BorderSide(color: AppColors.border)),
                     focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(18),
                         borderSide: const BorderSide(color: _consumptionBlue)),
                   ),
                 ),
@@ -353,21 +373,23 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
                     setState(() => _filtersVisible = !_filtersVisible),
                 icon: Icon(Icons.tune_rounded,
                     size: 16,
-                    color: _filtersVisible ? Colors.white : _consumptionMuted),
+                    color: _filtersVisible
+                        ? AppColors.darkGreen
+                        : _consumptionMuted),
                 label: Text(_filter == 'All' ? 'Filter' : '1',
                     style: TextStyle(
                         fontSize: 12,
                         color: _filtersVisible
-                            ? Colors.white
+                            ? AppColors.darkGreen
                             : _consumptionMuted)),
                 style: OutlinedButton.styleFrom(
                   backgroundColor: _filtersVisible
                       ? _consumptionBlue
-                      : const Color(0xFFF8FAFC),
+                      : AppColors.softSurface,
                   side: BorderSide(
                       color: _filtersVisible
                           ? _consumptionBlue
-                          : const Color(0xFFE2E8F0)),
+                          : AppColors.border),
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                   shape: RoundedRectangleBorder(
@@ -402,11 +424,17 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
                     labelStyle: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
-                        color: active ? Colors.white : _consumptionMuted),
+                        color: active
+                            ? AppColors.darkGreen
+                            : _consumptionMuted),
                     selectedColor: _consumptionBlue,
-                    backgroundColor: const Color(0xFFF1F5F9),
-                    checkmarkColor: Colors.white,
-                    side: BorderSide.none,
+                    backgroundColor: AppColors.softSurface,
+                    checkmarkColor: AppColors.darkGreen,
+                    side: BorderSide(
+                      color: active
+                          ? AppColors.primaryBlue
+                          : AppColors.border,
+                    ),
                     visualDensity: VisualDensity.compact,
                   );
                 }).toList(),
@@ -424,9 +452,11 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final columns = constraints.maxWidth < 360 ? 2 : 3;
-          final units = Map<String, dynamic>.from(
-            _summary['actual_quantity_by_unit'] as Map? ?? const {},
-          );
+          final unitValue = _summary['actual_quantity_by_unit'];
+          // Empty PHP arrays are JSON lists; populated unit totals are objects.
+          final units = unitValue is Map
+              ? Map<String, dynamic>.from(unitValue)
+              : <String, dynamic>{};
           final unitCaption = units.isEmpty
               ? 'No issue data'
               : units.length == 1
@@ -517,14 +547,16 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
                   crossAxisCount: columns,
                   crossAxisSpacing: 9,
                   mainAxisSpacing: 9,
-                  mainAxisExtent: 86,
+                  mainAxisExtent: 104,
                 ),
                 itemBuilder: (_, index) {
                   final card = summaryCards[index];
                   return Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: index == 0 ? _consumptionBlue : Colors.white,
+                      color: index == 0
+                          ? AppColors.primaryBlue
+                          : AppColors.cardSurface,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                           color: index == 0
@@ -547,9 +579,9 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
                                   fontSize: 9,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: .4,
-                                  color: index == 0
-                                      ? Colors.white.withOpacity(.72)
-                                      : const Color(0xFF94A3B8))),
+                                   color: index == 0
+                                       ? AppColors.darkGreen.withOpacity(.78)
+                                       : AppColors.textGray)),
                           const SizedBox(height: 4),
                           Text(card.$2,
                               maxLines: 1,
@@ -557,16 +589,18 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
                               style: TextStyle(
                                   fontSize: 17,
                                   fontWeight: FontWeight.w800,
-                                  color: index == 0 ? Colors.white : card.$4)),
+                                   color: index == 0
+                                       ? AppColors.darkGreen
+                                       : card.$4)),
                           const SizedBox(height: 2),
                           Text(card.$3,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                   fontSize: 9,
-                                  color: index == 0
-                                      ? Colors.white.withOpacity(.72)
-                                      : const Color(0xFF94A3B8))),
+                                   color: index == 0
+                                       ? AppColors.darkGreen
+                                       : AppColors.textGray)),
                         ]),
                   );
                 },
@@ -598,7 +632,8 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
                   color: _consumptionInk)),
           const SizedBox(width: 5),
           Text('(${_visibleItems.length})',
-              style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+              style: const TextStyle(
+                  fontSize: 12, color: AppColors.textGray)),
           const Spacer(),
           DropdownButtonHideUnderline(
             child: DropdownButton<String>(
@@ -638,7 +673,7 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
         child: Ink(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.cardSurface,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: _consumptionBorder),
           ),
@@ -662,7 +697,7 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 7, vertical: 2),
                           decoration: BoxDecoration(
-                              color: const Color(0xFFF1F5F9),
+                              color: AppColors.creamBackground,
                               borderRadius: BorderRadius.circular(10)),
                           child: Text(item.category,
                               style: const TextStyle(
@@ -697,8 +732,8 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
                     item.variancePercent == null
                         ? 'No comparison'
                         : '${item.variancePercent!.toStringAsFixed(1)}% variance',
-                    style:
-                        const TextStyle(fontSize: 9, color: Color(0xFF94A3B8))),
+                    style: const TextStyle(
+                        fontSize: 9, color: AppColors.textGray)),
               ]),
             ],
           ),
@@ -710,13 +745,25 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
   (String, Color, Color) _statusDetails(_ConsumptionStatus status) {
     switch (status) {
       case _ConsumptionStatus.high:
-        return ('⚠', const Color(0xFFFEE2E2), _consumptionRed);
+        return (
+          '⚠',
+          AppColors.errorRed.withOpacity(.12),
+          _consumptionRed,
+        );
       case _ConsumptionStatus.moderate:
-        return ('●', const Color(0xFFFEF3C7), _consumptionAmber);
+        return (
+          '●',
+          AppColors.accentGold.withOpacity(.28),
+          _consumptionAmber,
+        );
       case _ConsumptionStatus.normal:
-        return ('✓', const Color(0xFFDCFCE7), _consumptionGreen);
+        return (
+          '✓',
+          AppColors.accentGreen.withOpacity(.22),
+          _consumptionGreen,
+        );
       case _ConsumptionStatus.unavailable:
-        return ('—', const Color(0xFFF1F5F9), _consumptionMuted);
+        return ('—', AppColors.softSurface, _consumptionMuted);
     }
   }
 
@@ -730,7 +777,7 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
         constraints: const BoxConstraints(maxHeight: 610),
         padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
         decoration: const BoxDecoration(
-          color: Colors.white,
+          color: AppColors.cardSurface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
         ),
         child: SingleChildScrollView(
@@ -742,7 +789,7 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
                       width: 42,
                       height: 4,
                       decoration: BoxDecoration(
-                          color: const Color(0xFFCBD5E1),
+                          color: AppColors.border,
                           borderRadius: BorderRadius.circular(4)))),
               const SizedBox(height: 15),
               Row(children: [
@@ -826,7 +873,7 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
       decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFC),
+          color: AppColors.softSurface,
           borderRadius: BorderRadius.circular(10)),
       child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -837,7 +884,7 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                     fontSize: 8,
-                    color: Color(0xFF94A3B8),
+                    color: AppColors.secondaryGray,
                     fontWeight: FontWeight.w700)),
             const SizedBox(height: 2),
             Text(value,
@@ -974,7 +1021,8 @@ class _EmptyState extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.all(40),
       child: Column(children: const [
-        Icon(Icons.search_off_rounded, size: 42, color: Color(0xFFCBD5E1)),
+        Icon(Icons.search_off_rounded,
+            size: 42, color: AppColors.disabled),
         SizedBox(height: 10),
         Text('No items found',
             style: TextStyle(
@@ -983,7 +1031,8 @@ class _EmptyState extends StatelessWidget {
                 color: _consumptionMuted)),
         SizedBox(height: 4),
         Text('Try another search or filter.',
-            style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+            style:
+                TextStyle(fontSize: 12, color: AppColors.textGray)),
       ]),
     );
   }
