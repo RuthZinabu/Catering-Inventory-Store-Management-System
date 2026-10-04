@@ -151,7 +151,7 @@ class ReportController extends Controller
 
         $sort = $filters['sort'] ?? 'consumption';
         $rows = match ($sort) {
-            'variance' => $rows->sortByDesc(fn (array $row) => abs($row['variance_quantity']))->values(),
+            'variance' => $rows->sortByDesc(fn (array $row) => abs((float) ($row['variance_quantity'] ?? 0)))->values(),
             'wastage' => $rows->sortByDesc('wastage_quantity')->values(),
             'name' => $rows->sortBy('name')->values(),
             default => $rows->sortByDesc('actual_quantity')->values(),
@@ -417,18 +417,55 @@ class ReportController extends Controller
 
     private function expiryReport(?array $storeIds): array
     {
-        $query = $this->stockQuery($storeIds);
-        $expiring = (clone $query)->where('store_stock.status', 'Expiring Soon')->distinct('items.id')->count('items.id');
-        $expired = (clone $query)->where('store_stock.status', 'Expired')->distinct('items.id')->count('items.id');
+        $query = DB::table('inventory_batches')->where('quantity_remaining', '>', 0);
+        if ($storeIds !== null) {
+            $query->whereIn('store_id', $storeIds);
+        }
+        $today = Carbon::today();
+        $threeDays = $today->copy()->addDays(3);
+        $sevenDays = $today->copy()->addDays(7);
+        $thirtyDays = $today->copy()->addDays(30);
+        $countBetween = fn (Carbon $start, Carbon $end): int => (int) (clone $query)
+            ->whereBetween('expires_on', [$start->toDateString(), $end->toDateString()])
+            ->distinct()
+            ->count('item_id');
+        $trackedByUnit = (clone $query)
+            ->join('items', 'items.id', '=', 'inventory_batches.item_id')
+            ->select('items.unit')
+            ->selectRaw('SUM(inventory_batches.quantity_remaining) AS quantity')
+            ->groupBy('items.unit')
+            ->get()
+            ->mapWithKeys(fn ($row) => [$row->unit => round((float) $row->quantity, 3)])
+            ->all();
+        $trackedSubquery = DB::table('inventory_batches')
+            ->select('store_id', 'item_id')
+            ->selectRaw('SUM(quantity_remaining) AS tracked_quantity')
+            ->groupBy('store_id', 'item_id');
+        $untrackedStock = DB::table('store_stock')
+            ->leftJoinSub($trackedSubquery, 'tracked_batches', function ($join) {
+                $join->on('tracked_batches.store_id', '=', 'store_stock.store_id')
+                    ->on('tracked_batches.item_id', '=', 'store_stock.item_id');
+            })
+            ->whereRaw('store_stock.quantity > COALESCE(tracked_batches.tracked_quantity, 0) + 0.0005');
+        if ($storeIds !== null) {
+            $untrackedStock->whereIn('store_stock.store_id', $storeIds);
+        }
+        $expiring = $countBetween($today, $sevenDays);
 
         return [
             'expiring_soon_items' => $expiring,
-            'expired_items' => $expired,
+            'expired_items' => (int) (clone $query)->whereDate('expires_on', '<', $today->toDateString())->distinct()->count('item_id'),
             'total_at_risk_items' => $expiring,
-            'tracking_basis' => 'store stock status',
-            'lot_expiry_dates_available' => false,
-            'day_buckets' => ['0_to_3_days' => null, '4_to_7_days' => null, '8_to_30_days' => null],
-            'limitation' => 'The inventory schema stores an expiring status, but not per-lot expiration dates, so exact day buckets cannot be calculated.',
+            'tracked_batch_count' => (clone $query)->count(),
+            'tracked_quantity_by_unit' => $trackedByUnit,
+            'untracked_stock_items_count' => (int) $untrackedStock->distinct()->count('store_stock.item_id'),
+            'tracking_basis' => 'remaining inventory-batch quantity and its exact expiry date',
+            'lot_expiry_dates_available' => true,
+            'day_buckets' => [
+                '0_to_3_days' => $countBetween($today, $threeDays),
+                '4_to_7_days' => $countBetween($today->copy()->addDays(4), $sevenDays),
+                '8_to_30_days' => $countBetween($today->copy()->addDays(8), $thirtyDays),
+            ],
         ];
     }
 
@@ -503,7 +540,7 @@ class ReportController extends Controller
         }
 
         $records = $issues
-            ->select('items.id', 'items.name', 'items.category', 'items.unit')
+            ->select('items.id', 'items.name', 'items.category', 'kitchen_issue_items.unit')
             ->selectRaw('SUM(kitchen_issue_items.quantity_issued) AS actual_quantity')
             ->selectRaw('SUM(kitchen_issue_items.quantity_requested) AS planned_quantity')
             ->selectRaw(
@@ -512,61 +549,142 @@ class ReportController extends Controller
             ->selectRaw(
                 'SUM(CASE WHEN kitchen_issue_items.quantity_issued > 0 AND COALESCE(store_stock.current_cost, store_stock.last_cost, items.default_purchase_price) IS NULL THEN kitchen_issue_items.quantity_issued ELSE 0 END) AS unpriced_quantity'
             )
-            ->groupBy('items.id', 'items.name', 'items.category', 'items.unit')
+            ->groupBy('items.id', 'items.name', 'items.category', 'kitchen_issue_items.unit')
             ->get();
 
-        $wasteQuery = DB::table('waste_records')
-            ->whereNull('deleted_at')
-            ->where('status', 'Confirmed')
-            ->whereNotNull('item_id')
-            ->whereBetween('date', [$from, $to]);
+        $production = DB::table('production_run_items')
+            ->join('production_runs', 'production_runs.id', '=', 'production_run_items.production_run_id')
+            ->leftJoin('items AS production_items', 'production_items.id', '=', 'production_run_items.item_id')
+            ->whereBetween('production_runs.production_date', [$from->toDateString(), $to->toDateString()]);
         if ($storeIds !== null) {
-            $wasteQuery->whereIn('store_id', $storeIds);
+            $production->whereIn('production_runs.store_id', $storeIds);
         }
         if ($search !== null && trim($search) !== '') {
             $pattern = '%'.mb_strtolower(trim($search)).'%';
-            $wasteQuery->join('items AS waste_items', 'waste_items.id', '=', 'waste_records.item_id')
-                ->whereRaw('LOWER(waste_items.name) LIKE ?', [$pattern]);
+            $production->whereRaw('LOWER(COALESCE(production_items.name, production_run_items.ingredient_name)) LIKE ?', [$pattern]);
         }
-        $wasteByItem = $wasteQuery
-            ->select('item_id')
-            ->selectRaw('SUM(quantity) AS wastage_quantity')
-            ->groupBy('item_id')
-            ->get()
-            ->keyBy('item_id');
+        $theoreticalRecords = $production
+            ->select('production_run_items.item_id', 'production_run_items.ingredient_name', 'production_run_items.unit')
+            ->selectRaw("COALESCE(production_items.name, production_run_items.ingredient_name) AS name")
+            ->selectRaw("COALESCE(production_items.category, 'Unlinked recipe ingredient') AS category")
+            ->selectRaw('SUM(production_run_items.theoretical_quantity) AS theoretical_quantity')
+            ->selectRaw('SUM(production_run_items.theoretical_quantity * COALESCE(production_run_items.unit_cost, 0)) AS theoretical_cost')
+            ->selectRaw('SUM(CASE WHEN production_run_items.unit_cost IS NULL THEN production_run_items.theoretical_quantity ELSE 0 END) AS unpriced_theoretical_quantity')
+            ->groupBy(
+                'production_run_items.item_id',
+                'production_run_items.ingredient_name',
+                'production_run_items.unit',
+                'production_items.name',
+                'production_items.category'
+            )
+            ->get();
 
-        $rows = $records->map(function ($record) use ($wasteByItem): array {
-            $actual = (float) $record->actual_quantity;
-            $planned = (float) $record->planned_quantity;
-            $variance = $actual - $planned;
-            $unpriced = (float) $record->unpriced_quantity > 0;
-            $knownCost = round((float) $record->known_consumption_cost, 2);
-            $wastage = (float) ($wasteByItem[$record->id]->wastage_quantity ?? 0);
-            $variancePercent = $planned > 0
-                ? round($variance * 100 / $planned, 1)
-                : ($actual > 0 ? 100.0 : 0.0);
-            $status = abs($variancePercent) >= 10 ? 'high'
-                : (abs($variancePercent) >= 5 ? 'moderate' : 'normal');
-            $unitCost = $actual > 0 ? $knownCost / $actual : null;
+        $wasteQuery = DB::table('waste_records')
+            ->leftJoin('items AS waste_items', 'waste_items.id', '=', 'waste_records.item_id')
+            ->whereNull('waste_records.deleted_at')
+            ->where('waste_records.status', 'Confirmed')
+            ->whereBetween('waste_records.date', [$from, $to]);
+        if ($storeIds !== null) {
+            $wasteQuery->whereIn('waste_records.store_id', $storeIds);
+        }
+        if ($search !== null && trim($search) !== '') {
+            $pattern = '%'.mb_strtolower(trim($search)).'%';
+            $wasteQuery->whereRaw('LOWER(COALESCE(waste_items.name, waste_records.item)) LIKE ?', [$pattern]);
+        }
+        $wasteRecords = $wasteQuery
+            ->select('waste_records.item_id', 'waste_records.item', 'waste_records.unit')
+            ->selectRaw('COALESCE(waste_items.name, waste_records.item) AS name')
+            ->selectRaw("COALESCE(waste_items.category, 'Uncategorized') AS category")
+            ->selectRaw('SUM(waste_records.quantity) AS wastage_quantity')
+            ->groupBy('waste_records.item_id', 'waste_records.item', 'waste_records.unit', 'waste_items.name', 'waste_items.category')
+            ->get()
+            ;
+
+        $rows = [];
+        $ensureRow = function (?string $itemId, string $name, string $category, string $unit) use (&$rows): string {
+            $identity = $itemId ? 'item:'.$itemId : 'name:'.mb_strtolower(trim($name));
+            $key = $identity.'|'.mb_strtolower(trim($unit));
+            if (!isset($rows[$key])) {
+                $rows[$key] = [
+                    'id' => $itemId ?: 'ingredient:'.substr(sha1($identity.'|'.$unit), 0, 16),
+                    'name' => $name,
+                    'category' => $category,
+                    'unit' => $unit,
+                    'actual_quantity' => 0.0,
+                    'planned_quantity' => 0.0,
+                    'theoretical_quantity' => null,
+                    'wastage_quantity' => 0.0,
+                    'known_consumption_cost' => 0.0,
+                    'unpriced_actual_quantity' => 0.0,
+                    'theoretical_cost' => 0.0,
+                    'unpriced_theoretical_quantity' => 0.0,
+                ];
+            }
+
+            return $key;
+        };
+
+        foreach ($records as $record) {
+            $key = $ensureRow($record->id, $record->name, $record->category ?? '', $record->unit ?? '');
+            $rows[$key]['actual_quantity'] += (float) $record->actual_quantity;
+            $rows[$key]['planned_quantity'] += (float) $record->planned_quantity;
+            $rows[$key]['known_consumption_cost'] += (float) $record->known_consumption_cost;
+            $rows[$key]['unpriced_actual_quantity'] += (float) $record->unpriced_quantity;
+        }
+        foreach ($theoreticalRecords as $record) {
+            $key = $ensureRow($record->item_id, $record->name, $record->category, $record->unit);
+            $rows[$key]['theoretical_quantity'] = ($rows[$key]['theoretical_quantity'] ?? 0) + (float) $record->theoretical_quantity;
+            $rows[$key]['theoretical_cost'] += (float) $record->theoretical_cost;
+            $rows[$key]['unpriced_theoretical_quantity'] += (float) $record->unpriced_theoretical_quantity;
+        }
+        foreach ($wasteRecords as $record) {
+            $key = $ensureRow($record->item_id, $record->name, $record->category, $record->unit);
+            $rows[$key]['wastage_quantity'] += (float) $record->wastage_quantity;
+        }
+
+        $rows = array_map(function (array $row): array {
+            $actual = (float) $row['actual_quantity'];
+            $theoretical = $row['theoretical_quantity'] === null
+                ? null
+                : (float) $row['theoretical_quantity'];
+            $variance = $theoretical === null ? null : $actual - $theoretical;
+            $variancePercent = $theoretical === null
+                ? null
+                : ($theoretical > 0
+                    ? round($variance * 100 / $theoretical, 1)
+                    : ($actual > 0 ? 100.0 : 0.0));
+            $status = $variancePercent === null ? 'unavailable'
+                : (abs($variancePercent) >= 10 ? 'high'
+                    : (abs($variancePercent) >= 5 ? 'moderate' : 'normal'));
+            $actualCostComplete = (float) $row['unpriced_actual_quantity'] <= 0;
+            $theoreticalCostComplete = (float) $row['unpriced_theoretical_quantity'] <= 0;
+            $unitCost = $actual > 0 && $actualCostComplete
+                ? (float) $row['known_consumption_cost'] / $actual
+                : ($theoretical !== null && $theoretical > 0 && $theoreticalCostComplete
+                    ? (float) $row['theoretical_cost'] / $theoretical
+                    : null);
 
             return [
-                'id' => $record->id,
-                'name' => $record->name,
-                'category' => $record->category,
-                'unit' => $record->unit,
+                'id' => $row['id'],
+                'name' => $row['name'],
+                'category' => $row['category'],
+                'unit' => $row['unit'],
                 'actual_quantity' => round($actual, 3),
-                'planned_quantity' => round($planned, 3),
-                'theoretical_quantity' => null,
-                'wastage_quantity' => round($wastage, 3),
-                'variance_quantity' => round($variance, 3),
+                'planned_quantity' => round((float) $row['planned_quantity'], 3),
+                'theoretical_quantity' => $theoretical === null ? null : round($theoretical, 3),
+                'wastage_quantity' => round((float) $row['wastage_quantity'], 3),
+                'variance_quantity' => $variance === null ? null : round($variance, 3),
                 'variance_percent' => $variancePercent,
                 'status' => $status,
                 'unit_cost' => $unitCost === null ? null : round($unitCost, 2),
-                'consumption_cost' => $unpriced ? null : $knownCost,
-                'variance_cost' => $unpriced ? null : round(max(0, $variance) * ($unitCost ?? 0), 2),
-                'cost_complete' => ! $unpriced,
+                'consumption_cost' => $actualCostComplete ? round((float) $row['known_consumption_cost'], 2) : null,
+                'variance_cost' => $variance === null || $unitCost === null
+                    ? null
+                    : round(max(0, $variance) * $unitCost, 2),
+                'cost_complete' => $actualCostComplete,
+                'theoretical_available' => $theoretical !== null,
             ];
-        })->values()->all();
+        }, array_values($rows));
 
         return ['summary' => $this->consumptionSummary($rows), 'items' => $rows];
     }
@@ -575,54 +693,108 @@ class ReportController extends Controller
     {
         $byUnit = [];
         $knownCost = 0.0;
-        $varianceCost = 0.0;
+        $knownVarianceCost = 0.0;
         $allCostsKnown = true;
+        $allVarianceCostsKnown = true;
+        $hasTheoretical = false;
+        $hasActualWithoutTheoretical = false;
+        $actualItemCount = 0;
+        $actualItemCountWithTheoretical = 0;
 
         foreach ($rows as $row) {
             $unit = $row['unit'] ?: 'unspecified';
             $byUnit[$unit] ??= [
                 'actual_quantity' => 0.0,
                 'planned_quantity' => 0.0,
+                'theoretical_quantity' => 0.0,
                 'wastage_quantity' => 0.0,
                 'variance_quantity' => 0.0,
+                'item_count' => 0,
+                'theoretical_item_count' => 0,
+                'actual_items_without_theoretical' => 0,
+                'actual_item_count' => 0,
+                'actual_items_with_theoretical' => 0,
             ];
+            $byUnit[$unit]['item_count']++;
             $byUnit[$unit]['actual_quantity'] += $row['actual_quantity'];
             $byUnit[$unit]['planned_quantity'] += $row['planned_quantity'];
             $byUnit[$unit]['wastage_quantity'] += $row['wastage_quantity'];
-            $byUnit[$unit]['variance_quantity'] += $row['variance_quantity'];
+            if ($row['theoretical_quantity'] !== null) {
+                $hasTheoretical = true;
+                $byUnit[$unit]['theoretical_quantity'] += $row['theoretical_quantity'];
+                $byUnit[$unit]['variance_quantity'] += $row['variance_quantity'];
+                $byUnit[$unit]['theoretical_item_count']++;
+                if ($row['actual_quantity'] > 0) {
+                    $actualItemCountWithTheoretical++;
+                    $byUnit[$unit]['actual_items_with_theoretical']++;
+                }
+            } elseif ($row['actual_quantity'] > 0) {
+                $hasActualWithoutTheoretical = true;
+                $byUnit[$unit]['actual_items_without_theoretical']++;
+            }
+            if ($row['actual_quantity'] > 0) {
+                $actualItemCount++;
+                $byUnit[$unit]['actual_item_count']++;
+            }
 
-            if ($row['consumption_cost'] === null || $row['variance_cost'] === null) {
+            if ($row['consumption_cost'] === null) {
                 $allCostsKnown = false;
             } else {
                 $knownCost += $row['consumption_cost'];
-                $varianceCost += $row['variance_cost'];
+            }
+            if ($row['theoretical_quantity'] !== null) {
+                if ($row['variance_cost'] === null) {
+                    $allVarianceCostsKnown = false;
+                } else {
+                    $knownVarianceCost += $row['variance_cost'];
+                }
             }
         }
 
         foreach ($byUnit as &$totals) {
-            foreach ($totals as &$quantity) {
-                $quantity = round($quantity, 3);
+            foreach (['actual_quantity', 'planned_quantity', 'theoretical_quantity', 'wastage_quantity', 'variance_quantity'] as $quantityKey) {
+                $totals[$quantityKey] = round($totals[$quantityKey], 3);
             }
-            unset($quantity);
         }
         unset($totals);
         $singleUnit = count($byUnit) === 1 ? reset($byUnit) : null;
+        $theoreticalComplete = !$hasActualWithoutTheoretical;
+        $theoreticalValue = $singleUnit !== null && $hasTheoretical && $theoreticalComplete
+            ? $singleUnit['theoretical_quantity']
+            : null;
+        $varianceValue = $singleUnit !== null && $hasTheoretical && $theoreticalComplete
+            ? $singleUnit['variance_quantity']
+            : null;
 
         return [
             'actual_quantity_by_unit' => $byUnit,
-            'total_consumption_quantity' => $singleUnit['actual_quantity'] ?? null,
-            'planned_quantity' => $singleUnit['planned_quantity'] ?? null,
-            'theoretical_quantity' => null,
-            'wastage_quantity' => $singleUnit['wastage_quantity'] ?? null,
-            'variance_quantity' => $singleUnit['variance_quantity'] ?? null,
+            'total_consumption_quantity' => $singleUnit['actual_quantity'] ?? (empty($byUnit) ? 0 : null),
+            'planned_quantity' => $singleUnit['planned_quantity'] ?? (empty($byUnit) ? 0 : null),
+            'theoretical_quantity_by_unit' => $hasTheoretical
+                ? collect($byUnit)->map(fn ($totals) => $totals['actual_items_without_theoretical'] > 0
+                    ? null
+                    : $totals['theoretical_quantity'])->all()
+                : [],
+            'theoretical_quantity' => $theoreticalValue,
+            'wastage_quantity' => $singleUnit['wastage_quantity'] ?? (empty($byUnit) ? 0 : null),
+            'variance_quantity' => $varianceValue,
             'mixed_units' => count($byUnit) > 1,
             'consumption_cost' => $allCostsKnown ? round($knownCost, 2) : null,
-            'variance_cost' => $allCostsKnown ? round($varianceCost, 2) : null,
+            'variance_cost' => $hasTheoretical && $theoreticalComplete && $allVarianceCostsKnown
+                ? round($knownVarianceCost, 2)
+                : null,
             'currency' => 'ETB',
             'cost_complete' => $allCostsKnown,
-            'variance_basis' => 'issued quantity minus requested quantity on kitchen issues marked Issued',
-            'theoretical_data_available' => false,
-            'limitation' => 'Kitchen issues record requested and issued quantities, but the system does not record meal production or recipe usage, so theoretical consumption is unavailable.',
+            'variance_basis' => 'issued kitchen quantity minus recipe ingredient quantities scaled to recorded production servings',
+            'actual_quantity_basis' => 'quantity issued to the kitchen; not a direct measurement of ingredients consumed during preparation',
+            'theoretical_data_available' => $hasTheoretical,
+            'theoretical_complete' => $theoreticalComplete,
+            'theoretical_coverage_percent' => $actualItemCount === 0
+                ? null
+                : round($actualItemCountWithTheoretical * 100 / $actualItemCount, 1),
+            'limitation' => $hasTheoretical
+                ? null
+                : 'No production runs have been recorded for this period. Record recipe production to calculate theoretical ingredient usage.',
         ];
     }
 }

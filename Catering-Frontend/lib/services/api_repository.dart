@@ -14,6 +14,7 @@ import 'waste_service.dart';
 import 'recipe_service.dart';
 import 'transfer_service.dart';
 import 'kitchen_issue_service.dart';
+import 'api_service.dart' as direct_api;
 
 /// Main repository that coordinates API services for all data operations
 class ApiRepository {
@@ -265,10 +266,31 @@ class ApiRepository {
     return await _wasteService.update(id, data);
   }
 
-  // Expiry Items - TODO: Implement API endpoints
+  // Expiry Items
   Future<List<ExpiryItem>> getExpiryItems() async {
-    // This will need to be implemented when expiry API is available
-    return [];
+    final storeId = direct_api.ApiClient.instance.storeId;
+    if (storeId == null) {
+      throw StateError('Select a store before loading expiry batches.');
+    }
+    final path = Uri(
+      path: '/inventory-batches',
+      queryParameters: {'store_id': storeId, 'per_page': '100'},
+    ).toString();
+    final response = await direct_api.ApiClient.instance.get(path);
+    final data = Map<String, dynamic>.from(response['data'] as Map);
+    return (data['items'] as List? ?? const [])
+        .map((item) => ExpiryItem.fromJson(Map<String, dynamic>.from(item as Map)))
+        .toList();
+  }
+
+  Future<ExpiryItem> createInventoryBatch(Map<String, dynamic> data) async {
+    final response = await direct_api.ApiClient.instance.post('/inventory-batches', data);
+    return ExpiryItem.fromJson(Map<String, dynamic>.from(response['data'] as Map));
+  }
+
+  Future<ExpiryItem> updateInventoryBatch(String id, Map<String, dynamic> data) async {
+    final response = await direct_api.ApiClient.instance.put('/inventory-batches/$id', data);
+    return ExpiryItem.fromJson(Map<String, dynamic>.from(response['data'] as Map));
   }
 
   // Recipes

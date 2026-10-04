@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\MovementType;
+use App\Services\InventoryBatchService;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -70,6 +71,20 @@ class StockMovement extends Model
     const SYNC_SYNCED = 'synced';
     const SYNC_PENDING = 'pending';
     const SYNC_CONFLICT = 'conflict';
+
+    protected static function booted(): void
+    {
+        static::created(function (StockMovement $movement): void {
+            $decrease = (float) $movement->quantity_before - (float) $movement->quantity_after;
+            if ($decrease > 0) {
+                app(InventoryBatchService::class)->consume(
+                    $movement->store_id,
+                    $movement->item_id,
+                    $decrease
+                );
+            }
+        });
+    }
 
     /**
      * Get the item.

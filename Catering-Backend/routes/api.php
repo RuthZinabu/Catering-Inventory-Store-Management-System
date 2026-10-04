@@ -178,6 +178,12 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::middleware('permission:inventory.view')->group(function () {
         Route::get('kitchen-issues', [App\Http\Controllers\KitchenIssueController::class, 'index']);
         Route::get('kitchen-issues/{kitchenIssue}', [App\Http\Controllers\KitchenIssueController::class, 'show']);
+        Route::get('inventory-batches', [App\Http\Controllers\InventoryBatchController::class, 'index']);
+    });
+
+    Route::middleware('permission:inventory.update')->group(function () {
+        Route::post('inventory-batches', [App\Http\Controllers\InventoryBatchController::class, 'store']);
+        Route::put('inventory-batches/{inventoryBatch}', [App\Http\Controllers\InventoryBatchController::class, 'update']);
     });
 
     Route::middleware('permission:inventory.create')->group(function () {
@@ -237,6 +243,11 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::middleware('permission:recipes.view')->group(function () {
         Route::get('recipes', [App\Http\Controllers\RecipeController::class, 'index']);
         Route::get('recipes/{recipe}', [App\Http\Controllers\RecipeController::class, 'show']);
+        Route::get('production-runs', [App\Http\Controllers\ProductionRunController::class, 'index']);
+    });
+
+    Route::middleware('permission:recipes.create')->group(function () {
+        Route::post('production-runs', [App\Http\Controllers\ProductionRunController::class, 'store']);
     });
 
     Route::middleware('permission:recipes.create')->group(function () {

@@ -94,6 +94,12 @@ class _GoodsReceivingScreenState extends State<GoodsReceivingScreen> {
                     'rejection_reason': line.reason.text.trim().isEmpty
                         ? null
                         : line.reason.text.trim(),
+                    'expires_on': line.expiresOn.text.trim().isEmpty
+                        ? null
+                        : line.expiresOn.text.trim(),
+                    'lot_number': line.lotNumber.text.trim().isEmpty
+                        ? null
+                        : line.lotNumber.text.trim(),
                   })
               .toList(),
         },
@@ -226,6 +232,22 @@ class _GoodsReceivingScreenState extends State<GoodsReceivingScreen> {
           TextFormField(
               controller: line.reason,
               decoration: const InputDecoration(labelText: 'Rejection Reason')),
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: line.expiresOn,
+            readOnly: true,
+            decoration: const InputDecoration(
+              labelText: 'Expiry date (optional)',
+              helperText: 'Enter a date to track this received stock by lot.',
+              suffixIcon: Icon(Icons.calendar_today_outlined),
+            ),
+            onTap: () => _pickExpiryDate(line),
+          ),
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: line.lotNumber,
+            decoration: const InputDecoration(labelText: 'Batch / lot number (optional)'),
+          ),
         ]),
       ),
     );
@@ -255,6 +277,16 @@ class _GoodsReceivingScreenState extends State<GoodsReceivingScreen> {
       lastDate: DateTime(2100),
     );
     if (date != null) _date.text = _dateString(date);
+  }
+
+  Future<void> _pickExpiryDate(_ReceiptLineForm line) async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: DateTime.tryParse(line.expiresOn.text) ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (date != null) line.expiresOn.text = _dateString(date);
   }
 
   Future<Uint8List> _grnPdf(
@@ -586,6 +618,8 @@ class _ReceiptLineForm {
   final TextEditingController accepted;
   final TextEditingController rejected = TextEditingController(text: '0');
   final TextEditingController reason = TextEditingController();
+  final TextEditingController expiresOn = TextEditingController();
+  final TextEditingController lotNumber = TextEditingController();
   String qualityStatus = 'Accepted';
 
   _ReceiptLineForm(this.orderLine)
@@ -599,6 +633,8 @@ class _ReceiptLineForm {
     accepted.dispose();
     rejected.dispose();
     reason.dispose();
+    expiresOn.dispose();
+    lotNumber.dispose();
   }
 }
 

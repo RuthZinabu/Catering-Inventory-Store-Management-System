@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\MovementType;
 use App\Enums\StockStatus;
+use App\Models\InventoryBatch;
 use App\Models\Item;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
@@ -150,6 +151,8 @@ class PurchaseOrderController extends Controller
             'items.*.rejected_quantity' => 'required|numeric|min:0',
             'items.*.quality_status' => ['required', Rule::in(['Accepted', 'Partially Accepted', 'Rejected'])],
             'items.*.rejection_reason' => 'nullable|string',
+            'items.*.expires_on' => 'nullable|date_format:Y-m-d',
+            'items.*.lot_number' => 'nullable|string|max:100',
         ]);
 
         $receipt = DB::transaction(function () use ($request, $purchaseOrder, $validated) {
@@ -176,7 +179,7 @@ class PurchaseOrderController extends Controller
                     abort(422, 'Received quantity cannot exceed the quantity still outstanding.');
                 }
 
-                PurchaseReceiptItem::create([
+                $receiptItem = PurchaseReceiptItem::create([
                     'purchase_receipt_id' => $receipt->id,
                     'purchase_order_item_id' => $line->id,
                     'received_quantity' => $receivedQuantity,
@@ -185,6 +188,19 @@ class PurchaseOrderController extends Controller
                     'quality_status' => $received['quality_status'],
                     'rejection_reason' => $received['rejection_reason'] ?? null,
                 ]);
+                if ($acceptedQuantity > 0 && !empty($received['expires_on'])) {
+                    InventoryBatch::create([
+                        'store_id' => $purchaseOrder->destination_store_id,
+                        'item_id' => $line->item_id,
+                        'purchase_receipt_item_id' => $receiptItem->id,
+                        'lot_number' => $received['lot_number'] ?? null,
+                        'expires_on' => $received['expires_on'],
+                        'received_quantity' => $acceptedQuantity,
+                        'quantity_remaining' => $acceptedQuantity,
+                        'unit_cost' => $line->unit_price,
+                        'created_by' => $request->user()->id,
+                    ]);
+                }
                 $line->increment('received_quantity', $receivedQuantity);
 
                 if ($acceptedQuantity > 0) {

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../models/inventory_models.dart';
 import '../../services/api_repository.dart';
 import 'expiry_detail_screen.dart';
+import 'expiry_batch_form_screen.dart';
 
 class ExpiryListScreen extends StatefulWidget {
   const ExpiryListScreen({super.key});
@@ -310,7 +311,19 @@ class _ExpiryListScreenState extends State<ExpiryListScreen> {
           ],
         ),
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _openBatchForm,
+        icon: const Icon(Icons.add),
+        label: const Text('Track batch'),
+      ),
     );
+  }
+
+  Future<void> _openBatchForm() async {
+    final created = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => const ExpiryBatchFormScreen()),
+    );
+    if (created == true) _loadExpiryItems();
   }
 
   Widget _expiryCard(BuildContext context, ExpiryItem item) {
