@@ -1,6 +1,7 @@
-import 'package:catering_inventory_store_management_system/models/store_repository.dart';
 import 'package:flutter/material.dart';
 import '../../models/store_model.dart';
+import '../../services/api/api_exception.dart';
+import '../../services/store_service.dart';
 
 class StoreFormScreen extends StatefulWidget {
   final Store? store;
@@ -23,6 +24,7 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
 
   String _selectedType = 'main_warehouse';
   bool _isActive = true;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -36,10 +38,7 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
       _phoneCtrl.text = store.phone;
       _emailCtrl.text = store.email;
       _managerCtrl.text = store.manager;
-      _selectedType = storeTypes.firstWhere(
-        (type) => type['value'] == store.code.split('-')[0],
-        orElse: () => storeTypes.first,
-      )['value']!;
+      _selectedType = store.storeType ?? storeTypes.first['value']!;
       _isActive = store.isActive;
     } else {
       // Set default values for new store
@@ -71,10 +70,7 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
         elevation: 0,
         title: Text(
           widget.store != null ? 'Edit Store' : 'Add New Store',
-          style: const TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 20,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 20),
         ),
         centerTitle: true,
         leading: IconButton(
@@ -92,10 +88,9 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
               // Store type selection
               Text(
                 'Store Type',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w600),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 12),
               Wrap(
@@ -114,8 +109,9 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
                       color: isSelected
                           ? const Color(0xFF2563EB)
                           : const Color(0xFF64748B),
-                      fontWeight:
-                          isSelected ? FontWeight.w600 : FontWeight.normal,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.normal,
                     ),
                   );
                 }).toList(),
@@ -125,10 +121,9 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
               // Basic info
               Text(
                 'Basic Information',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w600),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 12),
 
@@ -147,8 +142,10 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                        const BorderSide(color: Color(0xFF2563EB), width: 2),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF2563EB),
+                      width: 2,
+                    ),
                   ),
                 ),
                 validator: (value) {
@@ -175,8 +172,10 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                        const BorderSide(color: Color(0xFF2563EB), width: 2),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF2563EB),
+                      width: 2,
+                    ),
                   ),
                 ),
                 validator: (value) {
@@ -204,8 +203,10 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                        const BorderSide(color: Color(0xFF2563EB), width: 2),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF2563EB),
+                      width: 2,
+                    ),
                   ),
                 ),
               ),
@@ -226,8 +227,10 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                        const BorderSide(color: Color(0xFF2563EB), width: 2),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF2563EB),
+                      width: 2,
+                    ),
                   ),
                 ),
               ),
@@ -247,13 +250,16 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide:
-                              const BorderSide(color: Color(0xFFE2E8F0)),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE2E8F0),
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(
-                              color: Color(0xFF2563EB), width: 2),
+                            color: Color(0xFF2563EB),
+                            width: 2,
+                          ),
                         ),
                       ),
                       keyboardType: TextInputType.phone,
@@ -271,16 +277,29 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide:
-                              const BorderSide(color: Color(0xFFE2E8F0)),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE2E8F0),
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(
-                              color: Color(0xFF2563EB), width: 2),
+                            color: Color(0xFF2563EB),
+                            width: 2,
+                          ),
                         ),
                       ),
                       keyboardType: TextInputType.emailAddress,
+                      validator: (value) {
+                        final email = value?.trim() ?? '';
+                        if (email.isNotEmpty &&
+                            !RegExp(
+                              r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+                            ).hasMatch(email)) {
+                          return 'Enter a valid email address';
+                        }
+                        return null;
+                      },
                     ),
                   ),
                 ],
@@ -302,8 +321,10 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                        const BorderSide(color: Color(0xFF2563EB), width: 2),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF2563EB),
+                      width: 2,
+                    ),
                   ),
                 ),
               ),
@@ -312,9 +333,9 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
               // Status
               SwitchListTile(
                 title: const Text('Active'),
-                subtitle: Text(_isActive
-                    ? 'Store is currently active'
-                    : 'Store is inactive'),
+                subtitle: Text(
+                  _isActive ? 'Store is currently active' : 'Store is inactive',
+                ),
                 value: _isActive,
                 onChanged: (value) => setState(() => _isActive = value),
                 activeColor: const Color(0xFF16A34A),
@@ -323,10 +344,21 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
 
               // Save button
               ElevatedButton.icon(
-                onPressed: _saveStore,
-                icon: const Icon(Icons.save),
+                onPressed: _isSaving ? null : () => _saveStore(),
+                icon: _isSaving
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.save),
                 label: Text(
-                    widget.store != null ? 'Update Store' : 'Create Store'),
+                  _isSaving
+                      ? 'Saving...'
+                      : widget.store != null
+                      ? 'Update Store'
+                      : 'Create Store',
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF2563EB),
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -342,55 +374,64 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
     );
   }
 
-  void _saveStore() {
-    if (_formKey.currentState!.validate()) {
-      final now = DateTime.now();
+  Future<void> _saveStore() async {
+    if (_isSaving || !_formKey.currentState!.validate()) return;
 
-      if (widget.store != null) {
-        // Update existing store
-        final updatedStore = widget.store!.copyWith(
-          name: _nameCtrl.text.trim(),
-          code: _codeCtrl.text.trim(),
-          description: _descriptionCtrl.text.trim(),
-          location: _locationCtrl.text.trim(),
-          phone: _phoneCtrl.text.trim(),
-          email: _emailCtrl.text.trim(),
-          manager: _managerCtrl.text.trim(),
-          isActive: _isActive,
-          updatedAt: now,
-        );
-        StoreRepository.updateStore(updatedStore);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${updatedStore.name} updated successfully'),
-            backgroundColor: const Color(0xFF16A34A),
-          ),
-        );
-      } else {
-        // Create new store
-        final newStore = Store(
-          id: 'STORE-${DateTime.now().millisecondsSinceEpoch}',
-          name: _nameCtrl.text.trim(),
-          code: _codeCtrl.text.trim(),
-          description: _descriptionCtrl.text.trim(),
-          location: _locationCtrl.text.trim(),
-          phone: _phoneCtrl.text.trim(),
-          email: _emailCtrl.text.trim(),
-          manager: _managerCtrl.text.trim(),
-          isActive: _isActive,
-          createdAt: now,
-          updatedAt: now,
-        );
-        StoreRepository.addStore(newStore);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${newStore.name} created successfully'),
-            backgroundColor: const Color(0xFF16A34A),
-          ),
-        );
+    setState(() => _isSaving = true);
+    final data = <String, dynamic>{
+      'name': _nameCtrl.text.trim(),
+      'code': _codeCtrl.text.trim(),
+      'description': _descriptionCtrl.text.trim(),
+      'location': _locationCtrl.text.trim(),
+      'phone': _phoneCtrl.text.trim(),
+      'email': _emailCtrl.text.trim(),
+      'manager': _managerCtrl.text.trim(),
+      'store_type': _selectedType,
+      'is_active': _isActive,
+    };
+
+    try {
+      final savedStore = widget.store == null
+          ? await StoreService.instance.create(data)
+          : await StoreService.instance.update(widget.store!.id, data);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${savedStore.name} saved successfully'),
+          backgroundColor: const Color(0xFF16A34A),
+        ),
+      );
+      Navigator.pop(context, savedStore);
+    } on ApiException catch (error) {
+      if (mounted) _showError(_apiErrorMessage(error));
+    } catch (_) {
+      if (mounted) {
+        _showError('Could not save the store. Please try again.');
       }
-
-      Navigator.pop(context);
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
+  }
+
+  String _apiErrorMessage(ApiException error) {
+    final fieldErrors = error.errors?.values
+        .expand((value) => value is List ? value : [value])
+        .map((value) => value.toString())
+        .toList();
+
+    if (fieldErrors != null && fieldErrors.isNotEmpty) {
+      return fieldErrors.join('\n');
+    }
+    return error.message;
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: const Color(0xFFEF4444),
+      ),
+    );
   }
 }

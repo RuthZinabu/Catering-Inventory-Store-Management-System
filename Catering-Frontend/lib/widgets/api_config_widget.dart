@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../config/app_config.dart';
+import '../services/api/api_client.dart';
 
 /// Widget to display and configure API settings for development
 class ApiConfigWidget extends StatefulWidget {
@@ -29,6 +30,7 @@ class _ApiConfigWidgetState extends State<ApiConfigWidget> {
     final newUrl = _urlController.text.trim();
     if (newUrl.isNotEmpty && newUrl != AppConfig.apiBaseUrl) {
       AppConfig.setCustomApiUrl(newUrl);
+      ApiClient.instance.dio.options.baseUrl = AppConfig.effectiveApiUrl;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('API URL updated to: $newUrl'),
@@ -37,6 +39,7 @@ class _ApiConfigWidgetState extends State<ApiConfigWidget> {
       );
     } else if (newUrl == AppConfig.apiBaseUrl) {
       AppConfig.clearCustomApiUrl();
+      ApiClient.instance.dio.options.baseUrl = AppConfig.effectiveApiUrl;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Using default API URL'),
@@ -49,6 +52,7 @@ class _ApiConfigWidgetState extends State<ApiConfigWidget> {
 
   void _resetToDefault() {
     AppConfig.clearCustomApiUrl();
+    ApiClient.instance.dio.options.baseUrl = AppConfig.effectiveApiUrl;
     _urlController.text = AppConfig.effectiveApiUrl;
     setState(() {});
     ScaffoldMessenger.of(context).showSnackBar(
@@ -84,14 +88,14 @@ class _ApiConfigWidgetState extends State<ApiConfigWidget> {
                 const SizedBox(width: 8),
                 Text(
                   'API Configuration',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            
+
             // Current Configuration
             Container(
               padding: const EdgeInsets.all(12),
@@ -116,18 +120,18 @@ class _ApiConfigWidgetState extends State<ApiConfigWidget> {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // URL Configuration
             Text(
               'Custom API URL (for development):',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
-            
+
             Row(
               children: [
                 Expanded(
@@ -147,18 +151,18 @@ class _ApiConfigWidgetState extends State<ApiConfigWidget> {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 12),
-            
+
             // Quick Settings
             Text(
               'Quick Settings:',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
-            
+
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -180,9 +184,9 @@ class _ApiConfigWidgetState extends State<ApiConfigWidget> {
                 );
               }).toList(),
             ),
-            
+
             const SizedBox(height: 12),
-            
+
             Row(
               children: [
                 ElevatedButton.icon(

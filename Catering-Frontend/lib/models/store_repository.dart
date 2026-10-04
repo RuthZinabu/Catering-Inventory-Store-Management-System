@@ -17,6 +17,12 @@ class StoreRepository {
     _stores.add(store);
   }
 
+  static void replaceStores(Iterable<Store> stores) {
+    _stores
+      ..clear()
+      ..addAll(stores);
+  }
+
   static void updateStore(Store store) {
     final index = _stores.indexWhere((s) => s.id == store.id);
     if (index != -1) {

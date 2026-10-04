@@ -5,6 +5,9 @@ enum Environment { development, staging, production }
 
 class AppConfig {
   static Environment _environment = Environment.development;
+  static const String _apiBaseUrlOverride = String.fromEnvironment(
+    'API_BASE_URL',
+  );
 
   static Environment get environment => _environment;
 
@@ -56,7 +59,8 @@ class AppConfig {
 
   /// Get the effective API URL (custom override or default)
   static String get effectiveApiUrl {
-    return _customApiUrl ?? apiBaseUrl;
+    if (_customApiUrl != null) return _customApiUrl!;
+    return _apiBaseUrlOverride.isNotEmpty ? _apiBaseUrlOverride : apiBaseUrl;
   }
 
   // Timeout Configuration
