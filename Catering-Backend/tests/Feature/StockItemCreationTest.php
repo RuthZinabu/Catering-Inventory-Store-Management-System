@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Store;
+use App\Models\Supplier;
 use App\Models\User;
 use Tests\TestCase;
 
@@ -21,6 +22,10 @@ class StockItemCreationTest extends TestCase
             'code' => 'UPLOAD-STORE',
             'store_type' => Store::TYPE_GENERAL,
         ]);
+        $supplier = Supplier::create([
+            'name' => 'Local Foods',
+            'company' => 'Local Foods Ltd',
+        ]);
 
         $this->actingAs($user, 'sanctum')
             ->postJson("/api/stores/{$store->id}/stock/items", [
@@ -31,6 +36,7 @@ class StockItemCreationTest extends TestCase
                     'item_type' => 'food',
                     'unit' => 'kg',
                     'default_purchase_price' => 2.5,
+                    'supplier_id' => $supplier->id,
                 ],
                 'quantity' => 8,
                 'min_quantity' => 2,
@@ -39,9 +45,14 @@ class StockItemCreationTest extends TestCase
             ])
             ->assertCreated()
             ->assertJsonPath('data.item.name', 'Rice')
+            ->assertJsonPath('data.item.supplier.id', $supplier->id)
             ->assertJsonPath('data.quantity', '8.000');
 
         $this->assertDatabaseCount('items', 1);
+        $this->assertDatabaseHas('items', [
+            'code' => 'UPLOAD-ITEM',
+            'supplier_id' => $supplier->id,
+        ]);
         $this->assertDatabaseCount('store_stock', 1);
         $this->assertDatabaseHas('stock_movements', [
             'type' => 'Stock In',
@@ -50,6 +61,45 @@ class StockItemCreationTest extends TestCase
             'quantity_after' => 8,
             'note' => 'Opening stock',
         ]);
+    }
+
+    public function test_upload_rejects_inactive_supplier_without_creating_records(): void
+    {
+        $user = User::create([
+            'name' => 'Stock Admin',
+            'email' => 'inactive-supplier-admin@example.test',
+            'password' => 'test-password',
+            'role' => User::ROLE_ADMIN,
+        ]);
+        $store = Store::create([
+            'name' => 'Upload Store',
+            'code' => 'INACTIVE-SUPPLIER-STORE',
+            'store_type' => Store::TYPE_GENERAL,
+        ]);
+        $supplier = Supplier::create([
+            'name' => 'Inactive Foods',
+            'company' => 'Inactive Foods Ltd',
+            'status' => 'Inactive',
+        ]);
+
+        $this->actingAs($user, 'sanctum')
+            ->postJson("/api/stores/{$store->id}/stock/items", [
+                'item' => [
+                    'code' => 'INACTIVE-SUPPLIER-ITEM',
+                    'name' => 'Rice',
+                    'category' => 'Dry Food',
+                    'item_type' => 'food',
+                    'unit' => 'kg',
+                    'supplier_id' => $supplier->id,
+                ],
+                'quantity' => 8,
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['item.supplier_id']);
+
+        $this->assertDatabaseCount('items', 0);
+        $this->assertDatabaseCount('store_stock', 0);
+        $this->assertDatabaseCount('stock_movements', 0);
     }
 
     public function test_invalid_item_details_do_not_create_partial_records(): void
