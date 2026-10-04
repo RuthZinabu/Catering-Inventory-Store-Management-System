@@ -48,6 +48,11 @@ class StockItemCreationTest extends TestCase
             ->assertJsonPath('data.item.supplier.id', $supplier->id)
             ->assertJsonPath('data.quantity', '8.000');
 
+        $this->getJson('/api/stock?item_type=food')
+            ->assertOk()
+            ->assertJsonPath('data.items.0.name', 'Rice')
+            ->assertJsonPath('data.pagination.total', 1);
+
         $this->assertDatabaseCount('items', 1);
         $this->assertDatabaseHas('items', [
             'code' => 'UPLOAD-ITEM',

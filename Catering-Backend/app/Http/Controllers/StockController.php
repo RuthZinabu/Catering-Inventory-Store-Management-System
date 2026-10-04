@@ -46,6 +46,12 @@ class StockController extends Controller
                     $q->where('category', $request->category);
                 });
             }
+
+            if ($request->filled('item_type')) {
+                $query->whereHas('item', function($q) use ($request) {
+                    $q->where('item_type', $request->item_type);
+                });
+            }
             
             if ($request->filled('store_id')) {
                 $query->where('store_id', $request->store_id);

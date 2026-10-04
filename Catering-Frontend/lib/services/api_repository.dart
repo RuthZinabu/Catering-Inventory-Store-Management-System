@@ -198,7 +198,7 @@ class ApiRepository {
         queryParams: ListQueryParams(
           search: search,
           filters: {
-            if (category != null) 'category': category.name,
+            if (category != null) 'item_type': category.name,
           },
         ),
       );
@@ -208,7 +208,7 @@ class ApiRepository {
         queryParams: ListQueryParams(
           search: search,
           filters: {
-            if (category != null) 'category': category.name,
+            if (category != null) 'item_type': category.name,
           },
         ),
       );

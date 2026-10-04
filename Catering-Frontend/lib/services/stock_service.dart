@@ -236,7 +236,7 @@ class StockService extends BaseApiService
     StockCategory category, {
     String? storeId,
   }) async {
-    final params = <String, dynamic>{'category': category.name};
+    final params = <String, dynamic>{'item_type': category.name};
     if (storeId != null) params['store_id'] = storeId;
 
     final result = await getAll(queryParams: ListQueryParams(filters: params));
