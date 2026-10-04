@@ -1,0 +1,1 @@
+- [Report data semantics](report-data-semantics.md) — report on tracked expiry batches and recorded production; label kitchen issues as a usage proxy.

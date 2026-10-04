@@ -217,6 +217,7 @@ class ReportControllerTest extends TestCase
             ->assertJsonPath('data.kpis.expiring_soon', 1)
             ->assertJsonPath('data.reports.expiry.day_buckets.0_to_3_days', 0)
             ->assertJsonPath('data.reports.expiry.day_buckets.4_to_7_days', 1)
+            ->assertJsonPath('data.reports.expiry.total_at_risk_items', 1)
             ->assertJsonPath('data.reports.expiry.lot_expiry_dates_available', true);
     }
 
@@ -285,7 +286,15 @@ class ReportControllerTest extends TestCase
             ->assertJsonPath('data.items.0.variance_quantity', 1)
             ->assertJsonPath('data.items.0.variance_cost', 2.5)
             ->assertJsonPath('data.summary.theoretical_data_available', true)
-            ->assertJsonPath('data.summary.theoretical_complete', true);
+            ->assertJsonPath('data.summary.theoretical_complete', true)
+            ->assertJsonPath('data.summary.production_run_count', 1)
+            ->assertJsonPath('data.summary.produced_servings', 4)
+            ->assertJsonPath('data.summary.production_data_available', true);
+
+        $this->getJson('/api/reports/overview?period=daily')
+            ->assertOk()
+            ->assertJsonPath('data.reports.consumption.summary.production_run_count', 1)
+            ->assertJsonPath('data.reports.consumption.summary.produced_servings', 4);
     }
 
     private function createContext(string $suffix): array

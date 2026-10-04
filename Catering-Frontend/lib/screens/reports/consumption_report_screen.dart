@@ -394,9 +394,21 @@ class _ConsumptionReportScreenState extends State<ConsumptionReportScreen> {
               : (_summary['theoretical_data_available'] == true
                   ? 'Incomplete comparison'
                   : 'Record production for comparison');
+          final productionRuns = _summary['production_run_count'];
+          final producedServings = _summary['produced_servings'];
           final summaryCards = [
             ('Issued to Kitchen', quantity('total_consumption_quantity'), unitCaption, _consumptionBlue),
             ('Theoretical', quantity('theoretical_quantity', theory: true), 'Recipe-based requirement', _consumptionInk),
+            (
+              'Produced Servings',
+              producedServings is num
+                  ? '${_formatNumber(producedServings)} servings'
+                  : '—',
+              productionRuns is num
+                  ? '${_formatNumber(productionRuns)} recorded runs'
+                  : 'Production not loaded',
+              _consumptionBlue,
+            ),
             ('Confirmed Wastage', quantity('wastage_quantity'), unitCaption, _consumptionAmber),
             ('Variance', quantity('variance_quantity'), variancePercent, _consumptionRed),
             ('Issue Cost', _formatMoney(_summary['consumption_cost']), 'this period', _consumptionInk),

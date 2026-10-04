@@ -1,5 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+
+import '../../services/api_service.dart';
+import '../inventory_screen.dart';
+import '../purchases/purchase_list_screen.dart';
+import '../stock_transfers/stock_transfer_list_screen.dart';
+import '../waste/waste_list_screen.dart';
 import 'consumption_report_screen.dart';
+import '../expiry/expiry_list_screen.dart';
 
 const _blue = Color(0xFF2563EB);
 const _ink = Color(0xFF10162B);
@@ -18,6 +26,132 @@ class ReportsScreen extends StatefulWidget {
 
 class _ReportsScreenState extends State<ReportsScreen> {
   String _period = 'Daily';
+  bool _customRange = false;
+  DateTime? _from;
+  DateTime? _to;
+  Map<String, dynamic> _report = {};
+  String? _error;
+  DateTime? _refreshedAt;
+  bool _loading = true;
+  int _requestNumber = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadReport();
+  }
+
+  Future<void> _loadReport() async {
+    final requestNumber = ++_requestNumber;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      await ApiClient.instance.restoreSession();
+      final query = <String, String>{'period': _period.toLowerCase()};
+      final storeId = ApiClient.instance.storeId;
+      if (storeId != null) query['store_id'] = storeId;
+      if (_customRange && _from != null && _to != null) {
+        query['from'] = _dateString(_from!);
+        query['to'] = _dateString(_to!);
+      }
+
+      final path =
+          Uri(path: '/reports/overview', queryParameters: query).toString();
+      final response = await ApiClient.instance.get(path);
+      final report = Map<String, dynamic>.from(response['data'] as Map);
+      if (!mounted || requestNumber != _requestNumber) return;
+      setState(() {
+        _report = report;
+        _refreshedAt = DateTime.now();
+        _loading = false;
+      });
+    } on ApiException catch (error) {
+      if (!mounted || requestNumber != _requestNumber) return;
+      setState(() {
+        _error = error.message;
+        _loading = false;
+      });
+    } catch (error) {
+      if (!mounted || requestNumber != _requestNumber) return;
+      setState(() {
+        _error = error.toString();
+        _loading = false;
+      });
+    }
+  }
+
+  Map<String, dynamic> _mapValue(dynamic value) =>
+      value is Map ? Map<String, dynamic>.from(value) : <String, dynamic>{};
+
+  Map<String, dynamic> _reportSection(String key) =>
+      _mapValue(_mapValue(_report['reports'])[key]);
+
+  String _formatNumber(dynamic value) {
+    final number = value is num ? value : num.tryParse(value?.toString() ?? '');
+    return number == null ? '—' : NumberFormat('#,##0.##').format(number);
+  }
+
+  String _formatMoney(dynamic value) {
+    if (value is! num) return '—';
+    return 'ETB ${NumberFormat('#,##0.00').format(value)}';
+  }
+
+  String _quantityValue(dynamic total, dynamic quantitiesByUnit, String key) {
+    final unitQuantities = _mapValue(quantitiesByUnit);
+    if (total is num) {
+      final unit = unitQuantities.length == 1
+          ? ' ${unitQuantities.keys.first}'
+          : '';
+      return '${_formatNumber(total)}$unit';
+    }
+    if (unitQuantities.isEmpty) return '—';
+    return unitQuantities.entries
+        .map((entry) {
+          final values = entry.value is num
+              ? entry.value
+              : _mapValue(entry.value)[key];
+          return '${_formatNumber(values)} ${entry.key}';
+        })
+        .join(' · ');
+  }
+
+  String _dateString(DateTime date) =>
+      '${date.year.toString().padLeft(4, '0')}-'
+      '${date.month.toString().padLeft(2, '0')}-'
+      '${date.day.toString().padLeft(2, '0')}';
+
+  String _periodLabel() {
+    final period = _mapValue(_report['period']);
+    final from = DateTime.tryParse(period['from']?.toString() ?? '');
+    final to = DateTime.tryParse(period['to']?.toString() ?? '');
+    if (from == null || to == null) return 'Loading report period';
+    final format = DateFormat('MMM d, yyyy');
+    return from.year == to.year && from.month == to.month && from.day == to.day
+        ? format.format(from)
+        : '${format.format(from)} – ${format.format(to)}';
+  }
+
+  String _periodBadge() => _customRange ? 'Custom' : _period;
+
+  bool get _hasReportActivity {
+    if (_report.isEmpty) return false;
+    final kpis = _mapValue(_report['kpis']);
+    final purchases = _reportSection('purchases');
+    final expiry = _reportSection('expiry');
+    final consumption = _mapValue(_reportSection('consumption')['summary']);
+    return [
+      kpis['total_items'],
+      kpis['stock_movements'],
+      kpis['expiring_soon'],
+      kpis['waste_record_count'],
+      purchases['orders_placed'],
+      expiry['tracked_batch_count'],
+      consumption['production_run_count'],
+    ].any((value) => value is num && value > 0);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,6 +161,42 @@ class _ReportsScreenState extends State<ReportsScreen> {
         child: CustomScrollView(
           slivers: [
             SliverToBoxAdapter(child: _buildHeader(context)),
+            if (_loading)
+              const SliverToBoxAdapter(
+                child: LinearProgressIndicator(minHeight: 2),
+              ),
+            if (_error != null)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+                  child: Material(
+                    color: const Color(0xFFFFF1F0),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Could not load live reports: $_error',
+                              style: const TextStyle(color: _red, fontSize: 12),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: _loadReport,
+                            child: const Text('Retry'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            if (!_loading &&
+                _error == null &&
+                _report.isNotEmpty &&
+                !_hasReportActivity)
+              SliverToBoxAdapter(child: _buildEmptyState()),
             SliverToBoxAdapter(child: _buildKpis()),
             SliverToBoxAdapter(child: _buildPeriodFilter()),
             SliverToBoxAdapter(child: _buildReportGrid(context)),
@@ -96,17 +266,24 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       offset: const Offset(0, 4))
                 ],
               ),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(Icons.calendar_today_outlined, size: 15, color: _blue),
-                  SizedBox(width: 8),
-                  Text('Aug 10 – Aug 16, 2026',
-                      style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF334155))),
-                  Spacer(),
-                  Icon(Icons.expand_more_rounded,
+                  const Icon(Icons.calendar_today_outlined,
+                      size: 15, color: _blue),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _customRange && _from != null && _to != null
+                          ? '${DateFormat('MMM d, yyyy').format(_from!)} – ${DateFormat('MMM d, yyyy').format(_to!)}'
+                          : _periodLabel(),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF334155),
+                      ),
+                    ),
+                  ),
+                  const Icon(Icons.expand_more_rounded,
                       size: 18, color: Color(0xFF94A3B8)),
                 ],
               ),
@@ -122,14 +299,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
     return Tooltip(
       message: label,
       child: InkWell(
-        onTap: () {
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text('$label report'),
-                duration: const Duration(seconds: 1)),
-          );
-        },
+        onTap: label == 'Refresh'
+            ? _loadReport
+            : () => ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Report export is not available yet.'),
+                    duration: Duration(seconds: 2),
+                  ),
+                ),
         borderRadius: BorderRadius.circular(12),
         child: Container(
           padding: const EdgeInsets.all(10),
@@ -144,41 +321,43 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
   Widget _buildKpis() {
-    const data = [
+    final kpis = _mapValue(_report['kpis']);
+    final stock = _reportSection('current_stock');
+    final data = <(String, String, String, IconData, Color)>[
       (
         'Total Items',
-        '1,284',
-        '+12 vs last week',
+        _formatNumber(kpis['total_items']),
+        '${_formatNumber(stock['in_stock_items'])} currently in stock',
         Icons.inventory_2_outlined,
-        _blue
+        _blue,
       ),
       (
         'Inventory Value',
-        'ETB 48.2K',
-        '+3.2% vs last month',
+        _formatMoney(kpis['inventory_value']),
+        'Current stock valuation',
         Icons.account_balance_wallet_outlined,
-        Color(0xFF0F766E)
+        const Color(0xFF0F766E),
       ),
       (
         'Stock Movements',
-        '347',
-        '-8% vs last week',
+        _formatNumber(kpis['stock_movements']),
+        'During selected period',
         Icons.swap_vert_rounded,
-        Color(0xFF7C3AED)
+        const Color(0xFF7C3AED),
       ),
       (
         'Expiring Soon',
-        '23',
-        '+5 in next 7 days',
+        _formatNumber(kpis['expiring_soon']),
+        'Tracked batches · next 7 days',
         Icons.schedule_outlined,
-        _amber
+        _amber,
       ),
       (
-        'Waste This Week',
-        'ETB 1,240',
-        '-2% vs last week',
+        'Waste This Period',
+        _formatMoney(kpis['waste_value']),
+        '${_formatNumber(kpis['waste_record_count'])} confirmed records',
         Icons.delete_outline_rounded,
-        _red
+        _red,
       ),
     ];
 
@@ -191,7 +370,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
         separatorBuilder: (_, __) => const SizedBox(width: 10),
         itemBuilder: (_, index) {
           final item = data[index];
-          final positive = item.$3.startsWith('+');
+          final captionColor = item.$3.startsWith('+')
+              ? _green
+              : item.$3.startsWith('-')
+                  ? _red
+                  : _muted;
           return Container(
             width: 166,
             padding: const EdgeInsets.all(14),
@@ -232,7 +415,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
-                        color: positive ? _green : _red)),
+                        color: captionColor)),
               ],
             ),
           );
@@ -254,9 +437,17 @@ class _ReportsScreenState extends State<ReportsScreen> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: ['Daily', 'Weekly', 'Monthly'].map((period) {
-            final active = _period == period;
+            final active = _period == period && !_customRange;
             return GestureDetector(
-              onTap: () => setState(() => _period = period),
+              onTap: () {
+                setState(() {
+                  _period = period;
+                  _customRange = false;
+                  _from = null;
+                  _to = null;
+                });
+                _loadReport();
+              },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
                 padding:
@@ -287,96 +478,239 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
   Widget _buildReportGrid(BuildContext context) {
+    final stock = _reportSection('current_stock');
+    final valuation = _reportSection('inventory_valuation');
+    final movements = _reportSection('stock_movement');
+    final purchases = _reportSection('purchases');
+    final suppliers = _reportSection('suppliers');
+    final expiry = _reportSection('expiry');
+    final waste = _reportSection('waste');
+    final consumption = _mapValue(_reportSection('consumption')['summary']);
+    final valuationByType = _mapValue(valuation['by_item_type']);
+    final valuationRows = valuationByType.entries
+        .take(3)
+        .map((entry) => (
+              entry.key.replaceAll('_', ' '),
+              _formatMoney(_mapValue(entry.value)['value']),
+              _ink,
+            ))
+        .toList();
+    if (valuationRows.isEmpty) {
+      valuationRows.add(('Item types', 'No stock records', _muted));
+    }
+    final topSuppliers =
+        suppliers['top_suppliers'] as List? ?? const <dynamic>[];
+    final supplierRows = topSuppliers
+        .take(3)
+        .map((supplier) {
+          final row = _mapValue(supplier);
+          return (
+            row['name']?.toString() ?? 'Supplier',
+            _formatMoney(row['total_spend']),
+            _ink,
+          );
+        })
+        .toList();
+    if (supplierRows.isEmpty) {
+      supplierRows.add(('Suppliers', 'No purchase records', _muted));
+    }
+    final wasteReasons = _mapValue(waste['cost_by_reason']);
+    final expiryBuckets = _mapValue(expiry['day_buckets']);
+    final productionRecorded = consumption['production_data_available'] == true;
     final cards = [
       _ReportCardData(
           'Current Stock',
-          'Today',
+          'Current',
           Icons.assignment_outlined,
           [
-            ('Total SKUs', '1,284', _ink),
-            ('In Stock', '1,102', _ink),
-            ('Low Stock (< 10)', '46', _amber),
-            ('Out of Stock', '18', _red),
-            ('Stock Health', '● 86%', _green),
+            ('Total SKUs', _formatNumber(stock['total_skus']), _ink),
+            ('In Stock', _formatNumber(stock['in_stock_items']), _ink),
+            ('Low Stock', _formatNumber(stock['low_stock_items']), _amber),
+            ('Out of Stock', _formatNumber(stock['out_of_stock_items']), _red),
+            (
+              'Stock Health',
+              stock['stock_health_percent'] is num
+                  ? '${_formatNumber(stock['stock_health_percent'])}%'
+                  : '—',
+              _green,
+            ),
           ],
-          'View all'),
+          'View inventory'),
       _ReportCardData(
           'Inventory Valuation',
-          'ETB 48.2K',
+          _formatMoney(valuation['total_value']),
           Icons.monetization_on_outlined,
           [
-            ('Raw Materials', 'ETB 22.4K', _ink),
-            ('Work-in-Progress', 'ETB 8.7K', _ink),
-            ('Finished Goods', 'ETB 17.1K', _ink),
-            ('Avg. Cost / Item', 'ETB 37.60', _ink),
+            ...valuationRows,
+            (
+              'Average / Item',
+              _formatMoney(valuation['average_value_per_item']),
+              _ink,
+            ),
           ],
-          'Breakdown'),
+          'View inventory'),
       _ReportCardData(
           'Stock Movement',
-          'Last 7d',
+          _periodBadge(),
           Icons.swap_horiz_rounded,
           [
-            ('Inbound (Received)', '+218', _green),
-            ('Outbound (Issued)', '-192', _red),
-            ('Transfers', '37', _ink),
-            ('Net Change', '+26', _green),
+            (
+              'Inbound',
+              _quantityValue(
+                movements['inbound_quantity'],
+                movements['quantity_by_unit'],
+                'inbound_quantity',
+              ),
+              _green,
+            ),
+            (
+              'Outbound',
+              _quantityValue(
+                movements['outbound_quantity'],
+                movements['quantity_by_unit'],
+                'outbound_quantity',
+              ),
+              _red,
+            ),
+            ('Transfers', _formatNumber(movements['transfer_count']), _ink),
+            (
+              'Net Change',
+              _quantityValue(
+                movements['net_quantity_change'],
+                movements['quantity_by_unit'],
+                'net_quantity_change',
+              ),
+              _ink,
+            ),
           ],
-          'Details'),
+          'View transfers'),
       _ReportCardData(
           'Purchase Report',
-          'This week',
+          _periodBadge(),
           Icons.shopping_cart_outlined,
           [
-            ('Orders Placed', '14', _ink),
-            ('Items Ordered', '342', _ink),
-            ('Total Spent', 'ETB 11,820', _ink),
-            ('Avg. Order Value', 'ETB 844', _ink),
+            ('Orders Placed', _formatNumber(purchases['orders_placed']), _ink),
+            (
+              'Items Ordered',
+              _quantityValue(
+                purchases['items_ordered'],
+                purchases['items_ordered_by_unit'],
+                'items_ordered',
+              ),
+              _ink,
+            ),
+            ('Total Spent', _formatMoney(purchases['total_spent']), _ink),
+            (
+              'Average Order',
+              _formatMoney(purchases['average_order_value']),
+              _ink,
+            ),
           ],
-          'Orders'),
+          'View orders'),
       _ReportCardData(
           'Supplier Report',
-          'Top 5',
+          'Top suppliers',
           Icons.local_shipping_outlined,
           [
-            ('Apex Supplies', 'ETB 4.2K', _ink),
-            ('Riverside Ltd', 'ETB 3.8K', _ink),
-            ('GreenLeaf Co', 'ETB 2.9K', _ink),
-            ('On-time Delivery', '94%', _green),
+            ...supplierRows,
+            (
+              'On-time Delivery (${_formatNumber(suppliers['on_time_delivery_sample_size'])} orders)',
+              suppliers['on_time_delivery_percent'] is num
+                  ? '${_formatNumber(suppliers['on_time_delivery_percent'])}%'
+                  : 'Not available',
+              _green,
+            ),
           ],
-          'All suppliers'),
+          'View orders'),
       _ReportCardData(
           'Expiry Report',
-          'Urgent',
+          '${_formatNumber(expiry['tracked_batch_count'])} lots tracked',
           Icons.hourglass_bottom_rounded,
           [
-            ('Expiring in 0–3 days', '8', _red),
-            ('Expiring in 4–7 days', '15', _amber),
-            ('Expiring in 8–30 days', '34', _ink),
-            ('Total at risk', '23', _red),
+            ('Expired items', _formatNumber(expiry['expired_items']), _red),
+            (
+              'Expiring in 0–3 days',
+              _formatNumber(expiryBuckets['0_to_3_days']),
+              _red,
+            ),
+            (
+              'Expiring in 4–7 days',
+              _formatNumber(expiryBuckets['4_to_7_days']),
+              _amber,
+            ),
+            (
+              'Expiring in 8–30 days',
+              _formatNumber(expiryBuckets['8_to_30_days']),
+              _ink,
+            ),
+            (
+              'At risk · next 30 days',
+              _formatNumber(expiry['total_at_risk_items']),
+              _red,
+            ),
+            (
+              'Items without expiry lots',
+              _formatNumber(expiry['untracked_stock_items_count']),
+              _amber,
+            ),
           ],
-          'Manage expiries'),
+          'Manage lots'),
       _ReportCardData(
           'Waste Report',
-          'This week',
+          _periodBadge(),
           Icons.delete_outline_rounded,
           [
-            ('Spoilage', 'ETB 740', _ink),
-            ('Damaged', 'ETB 320', _ink),
-            ('Expired', 'ETB 180', _ink),
-            ('Waste as % of Sales', '1.8%', _ink),
+            ('Spoilage', _formatMoney(wasteReasons['spoilage']), _ink),
+            ('Damaged', _formatMoney(wasteReasons['damaged']), _ink),
+            ('Expired', _formatMoney(wasteReasons['expired']), _ink),
+            ('Other', _formatMoney(wasteReasons['other']), _ink),
+            (
+              'Confirmed Records',
+              _formatNumber(waste['record_count']),
+              _ink,
+            ),
           ],
-          'Analyze waste'),
+          'View waste'),
       _ReportCardData(
           'Consumption Report',
-          'This week',
+          productionRecorded ? 'Production recorded' : 'No production records',
           Icons.restaurant_outlined,
           [
-            ('Total Consumption', '1,847 kg', _blue),
-            ('Theoretical', '1,690 kg', _ink),
-            ('Wastage', '87 kg', _amber),
-            ('Variance Cost', 'ETB 710', _red),
+            (
+              'Issued to Kitchen',
+              _quantityValue(
+                consumption['total_consumption_quantity'],
+                consumption['actual_quantity_by_unit'],
+                'actual_quantity',
+              ),
+              _blue,
+            ),
+            (
+              'Produced Servings',
+              _formatNumber(consumption['produced_servings']),
+              _ink,
+            ),
+            (
+              'Theoretical',
+              _quantityValue(
+                consumption['theoretical_quantity'],
+                consumption['theoretical_quantity_by_unit'],
+                'theoretical_quantity',
+              ),
+              _ink,
+            ),
+            (
+              'Wastage',
+              _quantityValue(
+                consumption['wastage_quantity'],
+                consumption['actual_quantity_by_unit'],
+                'wastage_quantity',
+              ),
+              _amber,
+            ),
+            ('Variance Cost', _formatMoney(consumption['variance_cost']), _red),
           ],
-          'View consumption',
+          'View details',
           highlighted: true),
     ];
 
@@ -397,20 +731,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
               crossAxisCount: columns,
               crossAxisSpacing: 14,
               mainAxisSpacing: 14,
-              mainAxisExtent: 246,
+              mainAxisExtent: 264,
             ),
             itemBuilder: (context, index) {
               final card = cards[index];
               return _ReportCard(
                 data: card,
-                onTap: card.title == 'Consumption Report'
-                    ? () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const ConsumptionReportScreen()))
-                    : () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text('${card.title} details'),
-                        duration: const Duration(seconds: 1))),
+                onTap: () => _openReportDestination(context, card.title),
               );
             },
           );
@@ -419,7 +746,68 @@ class _ReportsScreenState extends State<ReportsScreen> {
     );
   }
 
+  Future<void> _openReportDestination(
+      BuildContext context, String title) async {
+    final Widget? destination = switch (title) {
+      'Current Stock' => const InventoryScreen(),
+      'Inventory Valuation' => const InventoryScreen(),
+      'Stock Movement' => const StockTransferListScreen(),
+      'Purchase Report' => const PurchaseListScreen(),
+      'Supplier Report' => const PurchaseListScreen(),
+      'Expiry Report' => const ExpiryListScreen(),
+      'Waste Report' => const WasteListScreen(),
+      'Consumption Report' => const ConsumptionReportScreen(),
+      _ => null,
+    };
+    if (destination == null) return;
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(builder: (_) => destination),
+    );
+    if (mounted) await _loadReport();
+  }
+
+  Widget _buildEmptyState() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: _border),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.assessment_outlined, color: _blue),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'No report activity was recorded for the selected scope and period. Current stock and expiry summaries are shown below.',
+                style: TextStyle(
+                  color: _muted,
+                  fontSize: 12,
+                  height: 1.4,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildInsightBanner(BuildContext context) {
+    final expiry = _reportSection('expiry');
+    final untrackedValue = expiry['untracked_stock_items_count'];
+    final untrackedCount = untrackedValue is num
+        ? untrackedValue.toInt()
+        : int.tryParse(untrackedValue?.toString() ?? '');
+    final insight = untrackedCount == null
+        ? 'Expiry coverage will appear when the live report has loaded.'
+        : untrackedCount > 0
+            ? '$untrackedCount stocked items have quantities not assigned to tracked expiry lots. Record batches to include their expiry dates.'
+            : 'Current stock quantities are covered by tracked expiry batches.';
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 22, 20, 0),
       child: Container(
@@ -434,37 +822,26 @@ class _ReportsScreenState extends State<ReportsScreen> {
           children: [
             const Icon(Icons.lightbulb_outline_rounded, color: _blue, size: 22),
             const SizedBox(width: 10),
-            const Expanded(
-              child: Text.rich(TextSpan(
-                text: 'Insight: ',
-                style: TextStyle(
-                    fontWeight: FontWeight.w800, color: _ink, fontSize: 12),
-                children: [
-                  TextSpan(
-                      text: 'Stock turnover is ',
-                      style: TextStyle(fontWeight: FontWeight.w500)),
-                  TextSpan(
-                      text: '4.2x',
-                      style: TextStyle(fontWeight: FontWeight.w800)),
-                  TextSpan(
-                      text: ' this month — above target. ',
-                      style: TextStyle(fontWeight: FontWeight.w500)),
-                  TextSpan(
-                      text: 'Great performance!',
-                      style: TextStyle(
-                          color: _green, fontWeight: FontWeight.w700)),
-                ],
-              )),
+            Expanded(
+              child: Text.rich(
+                TextSpan(
+                  text: 'Expiry coverage: ',
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w800, color: _ink, fontSize: 12),
+                  children: [
+                    TextSpan(
+                      text: insight,
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              ),
             ),
             const SizedBox(width: 8),
             IconButton(
-              onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text('Full report generation started'),
-                      duration: Duration(seconds: 1))),
-              icon: const Icon(Icons.file_present_outlined,
-                  color: _green, size: 20),
-              tooltip: 'Generate full report',
+              onPressed: _loadReport,
+              icon: const Icon(Icons.refresh_rounded, color: _green, size: 20),
+              tooltip: 'Refresh expiry coverage',
               visualDensity: VisualDensity.compact,
             ),
           ],
@@ -474,27 +851,40 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
   Widget _buildFooter() {
-    return const Padding(
-      padding: EdgeInsets.fromLTRB(20, 22, 20, 0),
+    final refreshedAt = _refreshedAt;
+    final status = refreshedAt == null
+        ? (_error == null ? 'Loading live database report' : 'Live report unavailable')
+        : 'Live database data · refreshed ${DateFormat('MMM d, yyyy HH:mm').format(refreshedAt)} · $_periodLabel()';
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 22, 20, 0),
       child: Center(
         child: Text(
-            'Data refreshed: Aug 16, 2026 14:32  •  Sample data for demonstration',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+          status,
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+        ),
       ),
     );
   }
 
   Future<void> _showDatePicker(BuildContext context) async {
-    await showDateRangePicker(
+    final today = DateUtils.dateOnly(DateTime.now());
+    final picked = await showDateRangePicker(
       context: context,
-      firstDate: DateTime(2025),
-      lastDate: DateTime(2027),
+      firstDate: DateTime(2000),
+      lastDate: today.add(const Duration(days: 365)),
       initialDateRange: DateTimeRange(
-        start: DateTime(2026, 8, 10),
-        end: DateTime(2026, 8, 16),
+        start: _from ?? today,
+        end: _to ?? today,
       ),
     );
+    if (picked == null || !mounted) return;
+    setState(() {
+      _customRange = true;
+      _from = DateUtils.dateOnly(picked.start);
+      _to = DateUtils.dateOnly(picked.end);
+    });
+    _loadReport();
   }
 }
 

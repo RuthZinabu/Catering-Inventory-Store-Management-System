@@ -455,7 +455,7 @@ class ReportController extends Controller
         return [
             'expiring_soon_items' => $expiring,
             'expired_items' => (int) (clone $query)->whereDate('expires_on', '<', $today->toDateString())->distinct()->count('item_id'),
-            'total_at_risk_items' => $expiring,
+            'total_at_risk_items' => $countBetween($today, $thirtyDays),
             'tracked_batch_count' => (clone $query)->count(),
             'tracked_quantity_by_unit' => $trackedByUnit,
             'untracked_stock_items_count' => (int) $untrackedStock->distinct()->count('store_stock.item_id'),
@@ -578,6 +578,15 @@ class ReportController extends Controller
                 'production_items.category'
             )
             ->get();
+        $productionRuns = DB::table('production_runs')
+            ->whereBetween('production_date', [$from->toDateString(), $to->toDateString()]);
+        if ($storeIds !== null) {
+            $productionRuns->whereIn('store_id', $storeIds);
+        }
+        $productionTotals = (clone $productionRuns)
+            ->selectRaw('COUNT(*) AS run_count')
+            ->selectRaw('COALESCE(SUM(produced_servings), 0) AS produced_servings')
+            ->first();
 
         $wasteQuery = DB::table('waste_records')
             ->leftJoin('items AS waste_items', 'waste_items.id', '=', 'waste_records.item_id')
@@ -686,7 +695,13 @@ class ReportController extends Controller
             ];
         }, array_values($rows));
 
-        return ['summary' => $this->consumptionSummary($rows), 'items' => $rows];
+        $summary = $this->consumptionSummary($rows);
+        $summary['production_run_count'] = (int) ($productionTotals->run_count ?? 0);
+        $summary['produced_servings'] = round((float) ($productionTotals->produced_servings ?? 0), 3);
+        $summary['production_data_available'] = $summary['production_run_count'] > 0;
+        $summary['production_summary_basis'] = 'count and sum of production runs recorded for the selected period';
+
+        return ['summary' => $summary, 'items' => $rows];
     }
 
     private function consumptionSummary(array $rows): array
