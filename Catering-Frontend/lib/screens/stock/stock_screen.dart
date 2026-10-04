@@ -149,11 +149,11 @@ class _StockScreenState extends State<StockScreen>
     }
   }
 
-  void _showCategorySelectionDialog(BuildContext context) {
-    showDialog(
+  Future<void> _showCategorySelectionDialog(BuildContext context) async {
+    final category = await showDialog<String>(
       context: context,
       barrierColor: Colors.black.withOpacity(0.5),
-      builder: (context) => Dialog(
+      builder: (dialogContext) => Dialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
         ),
@@ -186,10 +186,7 @@ class _StockScreenState extends State<StockScreen>
                 description: 'Perishable food items',
                 icon: Icons.restaurant_outlined,
                 color: const Color(0xFFEF4444),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _openStockForm(const FoodStockFormScreen());
-                },
+                onTap: () => Navigator.of(dialogContext).pop('food'),
               ),
               const SizedBox(height: 12),
               // Catering option
@@ -199,7 +196,7 @@ class _StockScreenState extends State<StockScreen>
                 description: 'Permanent or temporary items',
                 icon: Icons.workspace_premium_rounded,
                 color: const Color(0xFF7C3AED),
-                onTap: () => _showCateringSubtypeDialog(context),
+                onTap: () => Navigator.of(dialogContext).pop('catering'),
               ),
               const SizedBox(height: 12),
               // Electronics option
@@ -209,23 +206,36 @@ class _StockScreenState extends State<StockScreen>
                 description: 'Devices and equipment',
                 icon: Icons.electrical_services_rounded,
                 color: const Color(0xFF0369A1),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _openStockForm(const ElectronicsStockFormScreen());
-                },
+                onTap: () => Navigator.of(dialogContext).pop('electronics'),
               ),
             ],
           ),
         ),
       ),
     );
+
+    if (!mounted || category == null) return;
+
+    switch (category) {
+      case 'food':
+        await _openStockForm(const FoodStockFormScreen());
+        break;
+      case 'catering':
+        final subtype = await _showCateringSubtypeDialog(context);
+        if (!mounted || subtype == null) return;
+        await _openStockForm(CateringStockFormScreen(subtype: subtype));
+        break;
+      case 'electronics':
+        await _openStockForm(const ElectronicsStockFormScreen());
+        break;
+    }
   }
 
-  void _showCateringSubtypeDialog(BuildContext context) {
-    showDialog(
+  Future<String?> _showCateringSubtypeDialog(BuildContext context) {
+    return showDialog<String>(
       context: context,
       barrierColor: Colors.black.withOpacity(0.5),
-      builder: (context) => Dialog(
+      builder: (dialogContext) => Dialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
         ),
@@ -258,12 +268,7 @@ class _StockScreenState extends State<StockScreen>
                 description: 'Reusable assets for events',
                 icon: Icons.workspace_premium_rounded,
                 color: const Color(0xFF7C3AED),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _openStockForm(
-                    const CateringStockFormScreen(subtype: 'permanent'),
-                  );
-                },
+                onTap: () => Navigator.of(dialogContext).pop('permanent'),
               ),
               const SizedBox(height: 12),
               // Temporary option
@@ -273,12 +278,7 @@ class _StockScreenState extends State<StockScreen>
                 description: 'Consumables for events',
                 icon: Icons.eco_rounded,
                 color: const Color(0xFFF59E0B),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _openStockForm(
-                    const CateringStockFormScreen(subtype: 'temporary'),
-                  );
-                },
+                onTap: () => Navigator.of(dialogContext).pop('temporary'),
               ),
             ],
           ),

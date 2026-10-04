@@ -8,6 +8,7 @@ import 'package:catering_inventory_store_management_system/screens/stock/caterin
 import 'package:catering_inventory_store_management_system/screens/stock/electronics_stock_form_screen.dart';
 import 'package:catering_inventory_store_management_system/screens/stock/food_stock_form_screen.dart';
 import 'package:catering_inventory_store_management_system/screens/stock/stock_form_screen.dart';
+import 'package:catering_inventory_store_management_system/screens/stock/stock_screen.dart';
 import 'package:catering_inventory_store_management_system/services/api/api_client.dart';
 
 const _supplierId = '11111111-1111-4111-8111-111111111111';
@@ -145,6 +146,33 @@ void main() {
         expect(item['item_type'], scenario.itemType);
         expect(item['supplier_id'], _supplierId);
         expect(body['location_description'], 'Central Kitchen');
+      },
+    );
+  }
+
+  for (final subtype in ['Permanent', 'Temporary']) {
+    testWidgets(
+      '$subtype catering choice opens the matching catering form',
+      (tester) async {
+        await tester.pumpWidget(const MaterialApp(home: StockScreen()));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('New Item'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Catering').last);
+        await tester.pumpAndSettle();
+
+        expect(find.text('Catering Type'), findsOneWidget);
+        await tester.tap(find.text(subtype).last);
+        await tester.pumpAndSettle();
+
+        expect(find.text('New Catering Item'), findsOneWidget);
+        expect(find.text('Add New Item'), findsNothing);
+        expect(find.text('Catering Type'), findsNothing);
+        final form = tester.widget<CateringStockFormScreen>(
+          find.byType(CateringStockFormScreen),
+        );
+        expect(form.subtype, subtype.toLowerCase());
       },
     );
   }
@@ -309,6 +337,18 @@ class _StockFormApiAdapter implements HttpClientAdapter {
         'items': [store],
         'stores': [store],
         'pagination': _pagination(page),
+      });
+    }
+
+    if (options.method == 'GET' && path.endsWith('/stock')) {
+      return _jsonResponse({
+        'items': <Map<String, dynamic>>[],
+        'pagination': {
+          'current_page': 1,
+          'last_page': 1,
+          'per_page': 100,
+          'total': 0,
+        },
       });
     }
 
