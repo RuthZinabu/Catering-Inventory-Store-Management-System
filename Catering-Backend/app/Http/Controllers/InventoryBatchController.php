@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\InventoryBatch;
 use App\Models\StoreStock;
+use App\Services\OperationalNotificationService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -102,8 +103,21 @@ class InventoryBatchController extends Controller
             ]);
         });
 
+        $batch->load(['item:id,name,code,category,unit', 'store:id,name']);
+        if ($batch->expires_on->lte(now()->addDays(7))) {
+            app(OperationalNotificationService::class)->notifyStores(
+                [$batch->store_id],
+                $request->user(),
+                'Inventory batch near expiry',
+                "{$batch->item->name} expires on {$batch->expires_on->toDateString()}.",
+                'inventory',
+                'inventory_batch',
+                $batch->id
+            );
+        }
+
         return $this->success(
-            $this->serialize($batch->load(['item:id,name,code,category,unit', 'store:id,name'])),
+            $this->serialize($batch),
             'Inventory batch recorded successfully',
             201
         );

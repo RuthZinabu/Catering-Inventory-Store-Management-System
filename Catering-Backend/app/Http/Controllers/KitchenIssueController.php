@@ -7,6 +7,7 @@ use App\Enums\StockStatus;
 use App\Models\KitchenIssue;
 use App\Models\StockMovement;
 use App\Models\StoreStock;
+use App\Services\OperationalNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -72,6 +73,16 @@ class KitchenIssueController extends Controller
             return $issue;
         });
 
+        app(OperationalNotificationService::class)->notifyStores(
+            [$issue->store_id],
+            $request->user(),
+            'Kitchen issue needs approval',
+            "Kitchen issue {$issue->number} was submitted for approval.",
+            'kitchen',
+            'kitchen_issue',
+            $issue->id
+        );
+
         return $this->success($this->serializeIssue($issue->load([
             'store:id,name,code', 'requestedBy:id,name', 'approvedBy:id,name', 'items.item:id,code,name,category,unit',
         ])), 'Kitchen issue request submitted for approval', 201);
@@ -119,6 +130,16 @@ class KitchenIssueController extends Controller
             'approved_at' => now(),
             'approval_notes' => $validated['approval_notes'] ?? $kitchenIssue->approval_notes,
         ]);
+        app(OperationalNotificationService::class)->notifyUser(
+            $kitchenIssue->requested_by,
+            $request->user(),
+            'Kitchen issue approved',
+            "Kitchen issue {$kitchenIssue->number} was approved.",
+            'kitchen',
+            $kitchenIssue->store_id,
+            'kitchen_issue',
+            $kitchenIssue->id
+        );
         return $this->success($this->serializeIssue($kitchenIssue->fresh()->load([
             'store:id,name,code', 'requestedBy:id,name', 'approvedBy:id,name', 'items.item:id,code,name,category,unit',
         ])), 'Kitchen issue approved');
@@ -171,6 +192,17 @@ class KitchenIssueController extends Controller
             ]);
             return $issue->fresh();
         });
+
+        app(OperationalNotificationService::class)->notifyUser(
+            $issue->requested_by,
+            $request->user(),
+            'Kitchen issue completed',
+            "Items for kitchen issue {$issue->number} were issued.",
+            'kitchen',
+            $issue->store_id,
+            'kitchen_issue',
+            $issue->id
+        );
 
         return $this->success($this->serializeIssue($issue->load([
             'store:id,name,code', 'requestedBy:id,name', 'approvedBy:id,name', 'items.item:id,code,name,category,unit',

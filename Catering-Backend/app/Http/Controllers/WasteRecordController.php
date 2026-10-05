@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Item;
 use App\Models\User;
 use App\Models\WasteRecord;
+use App\Services\OperationalNotificationService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -113,6 +114,18 @@ class WasteRecordController extends Controller
             'notes' => $validated['notes'] ?? null,
             'created_by' => $user->id,
         ]);
+
+        if ($record->status === WasteRecord::STATUS_PENDING_REVIEW && $record->store_id) {
+            app(OperationalNotificationService::class)->notifyStores(
+                [$record->store_id],
+                $user,
+                'Waste record needs review',
+                "Waste record {$record->number} for {$record->item} was submitted for review.",
+                'waste',
+                'waste_record',
+                $record->id
+            );
+        }
 
         return $this->success(
             $this->toApiArray($record),

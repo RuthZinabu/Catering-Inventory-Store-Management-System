@@ -8,6 +8,7 @@ use App\Models\StockMovement;
 use App\Models\StoreStock;
 use App\Models\Transfer;
 use App\Models\TransferItem;
+use App\Services\OperationalNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -74,6 +75,16 @@ class TransferController extends Controller
             $this->replaceItems($transfer, $validated['items']);
             return $transfer;
         });
+
+        app(OperationalNotificationService::class)->notifyStores(
+            [$transfer->from_store_id, $transfer->to_store_id],
+            $request->user(),
+            'Transfer request submitted',
+            "Transfer {$transfer->transfer_number} is awaiting review.",
+            'transfers',
+            'transfer',
+            $transfer->id
+        );
 
         return $this->success($this->serializeTransfer($transfer->load([
             'fromStore:id,name,code', 'toStore:id,name,code', 'items.item:id,code,name,unit', 'requestedBy:id,name',
@@ -142,6 +153,16 @@ class TransferController extends Controller
                 $item->update(['quantity_approved' => $item->quantity_requested]);
             }
         });
+        app(OperationalNotificationService::class)->notifyUser(
+            $transfer->requested_by,
+            $request->user(),
+            'Transfer approved',
+            "Transfer {$transfer->transfer_number} was approved.",
+            'transfers',
+            $transfer->from_store_id,
+            'transfer',
+            $transfer->id
+        );
         return $this->success($this->serializeTransfer($transfer->fresh()->load([
             'fromStore:id,name,code', 'toStore:id,name,code', 'items.item:id,code,name,unit', 'requestedBy:id,name',
         ])), 'Transfer approved successfully');
@@ -196,6 +217,16 @@ class TransferController extends Controller
             ]);
             return $transfer->fresh();
         });
+
+        app(OperationalNotificationService::class)->notifyStores(
+            [$transfer->to_store_id],
+            $request->user(),
+            'Transfer on the way',
+            "Transfer {$transfer->transfer_number} has shipped and is awaiting receipt.",
+            'transfers',
+            'transfer',
+            $transfer->id
+        );
 
         return $this->success($this->serializeTransfer($transfer->load([
             'fromStore:id,name,code', 'toStore:id,name,code', 'items.item:id,code,name,unit', 'requestedBy:id,name',
@@ -267,6 +298,16 @@ class TransferController extends Controller
             ]);
             return $transfer->fresh();
         });
+
+        app(OperationalNotificationService::class)->notifyStores(
+            [$transfer->from_store_id],
+            $request->user(),
+            'Transfer received',
+            "Transfer {$transfer->transfer_number} has been received at the destination store.",
+            'transfers',
+            'transfer',
+            $transfer->id
+        );
 
         return $this->success($this->serializeTransfer($transfer->load([
             'fromStore:id,name,code', 'toStore:id,name,code', 'items.item:id,code,name,unit', 'requestedBy:id,name',

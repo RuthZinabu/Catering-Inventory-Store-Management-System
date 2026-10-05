@@ -14,6 +14,7 @@ use App\Models\PurchaseReturn;
 use App\Models\PurchaseReturnItem;
 use App\Models\StockMovement;
 use App\Models\StoreStock;
+use App\Services\OperationalNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -79,6 +80,18 @@ class PurchaseOrderController extends Controller
             return $order;
         });
 
+        if ($order->status === 'Pending') {
+            app(OperationalNotificationService::class)->notifyStores(
+                [$order->destination_store_id],
+                $request->user(),
+                'Purchase order needs review',
+                "Purchase order {$order->number} was submitted for approval.",
+                'purchases',
+                'purchase_order',
+                $order->id
+            );
+        }
+
         return $this->success($this->loadOrder($order), 'Purchase order created successfully', 201);
     }
 
@@ -130,6 +143,16 @@ class PurchaseOrderController extends Controller
             'approved_by' => $request->user()->id,
             'approved_at' => now(),
         ]);
+        app(OperationalNotificationService::class)->notifyUser(
+            $purchaseOrder->created_by,
+            $request->user(),
+            'Purchase order approved',
+            "Purchase order {$purchaseOrder->number} was approved.",
+            'purchases',
+            $purchaseOrder->destination_store_id,
+            'purchase_order',
+            $purchaseOrder->id
+        );
         return $this->success($this->loadOrder($purchaseOrder->fresh()), 'Purchase order approved successfully');
     }
 
@@ -155,7 +178,8 @@ class PurchaseOrderController extends Controller
             'items.*.lot_number' => 'nullable|string|max:100',
         ]);
 
-        $receipt = DB::transaction(function () use ($request, $purchaseOrder, $validated) {
+        $totalRejectedQuantity = 0.0;
+        $receipt = DB::transaction(function () use ($request, $purchaseOrder, $validated, &$totalRejectedQuantity) {
             $receipt = PurchaseReceipt::create([
                 'purchase_order_id' => $purchaseOrder->id,
                 'received_by' => $request->user()->id,
@@ -172,6 +196,7 @@ class PurchaseOrderController extends Controller
                 $receivedQuantity = (float) $received['received_quantity'];
                 $acceptedQuantity = (float) $received['accepted_quantity'];
                 $rejectedQuantity = (float) $received['rejected_quantity'];
+                $totalRejectedQuantity += $rejectedQuantity;
                 if (abs($receivedQuantity - $acceptedQuantity - $rejectedQuantity) > 0.001) {
                     abort(422, 'Received quantity must equal accepted quantity plus rejected quantity.');
                 }
@@ -251,6 +276,18 @@ class PurchaseOrderController extends Controller
             ]);
             return $receipt;
         });
+
+        if ($totalRejectedQuantity > 0) {
+            app(OperationalNotificationService::class)->notifyStores(
+                [$purchaseOrder->destination_store_id],
+                $request->user(),
+                'Goods rejected during receiving',
+                "Some goods for purchase order {$purchaseOrder->number} were rejected during receiving.",
+                'purchases',
+                'purchase_order',
+                $purchaseOrder->id
+            );
+        }
 
         return $this->success($receipt->load('items'), 'Goods received successfully', 201);
     }

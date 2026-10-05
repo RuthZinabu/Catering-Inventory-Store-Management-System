@@ -4,6 +4,8 @@ import '../services/auth_service.dart';
 import '../models/inventory_models.dart';
 import '../models/stock_models.dart';
 import 'profile_screen.dart';
+import 'notifications_screen.dart';
+import '../services/api_service.dart' as legacy_api;
 import '../widgets/loading_error_widgets.dart';
 import '../utils/responsive.dart';
 import '../theme/app_colors.dart';
@@ -18,6 +20,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   bool _isLoading = true;
   String? _error;
+  int _unreadNotificationCount = 0;
 
   List<InventoryItem> _inventoryItems = [];
   List<StockItem> _stockItems = [];
@@ -26,6 +29,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _loadDashboardData();
+    _loadUnreadNotificationCount();
+  }
+
+  Future<void> _loadUnreadNotificationCount() async {
+    try {
+      final response =
+          await legacy_api.ApiClient.instance.get('/notifications?per_page=1');
+      final data = Map<String, dynamic>.from(response['data'] as Map);
+      if (mounted) {
+        setState(() {
+          _unreadNotificationCount =
+              (data['unread_count'] as num?)?.toInt() ?? 0;
+        });
+      }
+    } catch (_) {
+      // The dashboard remains available if notification loading fails.
+    }
   }
 
   Future<void> _loadDashboardData() async {
@@ -56,6 +76,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
         });
       }
     }
+  }
+
+  Future<void> _refreshDashboard() async {
+    await Future.wait([
+      _loadDashboardData(),
+      _loadUnreadNotificationCount(),
+    ]);
   }
 
   // Calculate dashboard metrics from live data
@@ -102,7 +129,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: _loadDashboardData,
+          onRefresh: _refreshDashboard,
           child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
             children: [
@@ -125,6 +152,61 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ],
                     ),
                   ),
+                  Tooltip(
+                    message: 'Notifications',
+                    child: InkWell(
+                      customBorder: const CircleBorder(),
+                      onTap: () async {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const NotificationsScreen(),
+                          ),
+                        );
+                        _loadUnreadNotificationCount();
+                      },
+                      child: SizedBox(
+                        width: 44,
+                        height: 44,
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            const Center(
+                              child: Icon(Icons.notifications_none_rounded),
+                            ),
+                            if (_unreadNotificationCount > 0)
+                              Positioned(
+                                right: -2,
+                                top: -2,
+                                child: Container(
+                                  constraints: const BoxConstraints(
+                                    minWidth: 18,
+                                    minHeight: 18,
+                                  ),
+                                  padding:
+                                      const EdgeInsets.symmetric(horizontal: 4),
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.errorRed,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    _unreadNotificationCount > 99
+                                        ? '99+'
+                                        : '$_unreadNotificationCount',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   Tooltip(
                     message: 'Profile',
                     child: InkWell(

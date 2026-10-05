@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\StockMovement;
+use App\Services\OperationalNotificationService;
 use App\Enums\MovementType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -240,6 +241,16 @@ class StockMovementController extends Controller
             'performedBy:id,name',
             'correctsMovement:id,type,quantity'
         ]);
+
+        app(OperationalNotificationService::class)->notifyStores(
+            [$movement->store_id],
+            $user,
+            'Stock movement corrected',
+            "A stock movement for {$correction->item->name} was corrected: {$validated['reason']}",
+            'inventory',
+            'stock_movement',
+            $correction->id
+        );
 
         return $this->success($correction, 'Stock movement corrected successfully', 201);
     }

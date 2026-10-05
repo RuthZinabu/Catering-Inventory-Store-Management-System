@@ -302,5 +302,6 @@ class ApiClient {
 
   bool _isCacheablePath(String path) =>
       path.toLowerCase().contains('/auth/') ||
-      path.toLowerCase().contains('/users');
+      path.toLowerCase().contains('/users') ||
+      path.toLowerCase().contains('/notifications');
 }
