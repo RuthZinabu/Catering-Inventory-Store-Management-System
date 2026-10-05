@@ -62,6 +62,20 @@ class UserService extends BaseApiService
     }
   }
 
+  Future<List<Map<String, dynamic>>> getActivities(String userId) async {
+    final data = await executeRequest<Map<String, dynamic>>(
+      () => apiClient.get<Map<String, dynamic>>('/users/$userId/activities'),
+      errorContext: 'Failed to fetch user activity',
+    );
+    final activities = data['activities'];
+    if (activities is! List) {
+      throw const ApiException(message: 'The user activity response is invalid');
+    }
+    return activities
+        .map((activity) => Map<String, dynamic>.from(activity as Map))
+        .toList();
+  }
+
   @override
   Future<AppUser> create(Map<String, dynamic> data) async {
     return await executeRequest<AppUser>(

@@ -1,2 +1,3 @@
 - [Report data semantics](report-data-semantics.md) — report on tracked expiry batches and recorded production; label kitchen issues as a usage proxy.
 - [Notification delivery scope](notification-delivery-scope.md) — notifications are in-app inbox records only; do not send email, SMS, push, or other outbound alerts.
+- [User activity scope](user-activity-scope.md) — user-detail timelines show only actions attributed to the selected user.

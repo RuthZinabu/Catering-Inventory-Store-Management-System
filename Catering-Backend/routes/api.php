@@ -59,6 +59,7 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     // Users - require user management permissions
     Route::middleware('permission:users.view')->group(function () {
         Route::get('users', [App\Http\Controllers\UserController::class, 'index']);
+        Route::get('users/{user}/activities', [App\Http\Controllers\UserActivityController::class, 'index']);
         Route::get('users/{user}', [App\Http\Controllers\UserController::class, 'show']);
         Route::get('users/roles', [App\Http\Controllers\UserController::class, 'roles']);
         Route::get('users/permissions', [App\Http\Controllers\UserController::class, 'permissions']);

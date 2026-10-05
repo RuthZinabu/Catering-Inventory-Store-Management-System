@@ -59,6 +59,10 @@ class ApiRepository {
     return await _userService.getById(id);
   }
 
+  Future<List<Map<String, dynamic>>> getUserActivities(String id) async {
+    return _userService.getActivities(id);
+  }
+
   Future<AppUser> createUser(Map<String, dynamic> data) async {
     return await _userService.create(data);
   }

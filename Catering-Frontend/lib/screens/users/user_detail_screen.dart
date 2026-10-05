@@ -1,15 +1,30 @@
 import 'package:flutter/material.dart';
 
 import '../../models/inventory_models.dart';
+import '../../services/api_repository.dart';
 import 'user_create_screen.dart';
 
-class UserDetailScreen extends StatelessWidget {
+class UserDetailScreen extends StatefulWidget {
   final AppUser user;
 
   const UserDetailScreen({super.key, required this.user});
 
   @override
+  State<UserDetailScreen> createState() => _UserDetailScreenState();
+}
+
+class _UserDetailScreenState extends State<UserDetailScreen> {
+  late Future<List<Map<String, dynamic>>> _activitiesFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _activitiesFuture = ApiRepository.instance.getUserActivities(widget.user.id);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final user = widget.user;
     final statusColor = _statusColor(user.status);
     final initials = user.name
         .split(' ')
@@ -196,26 +211,11 @@ class UserDetailScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 14),
-                  // Audit trail placeholder
                   _infoCard(
                     context,
                     'Recent Activity',
                     Icons.history_rounded,
-                    [
-                      _activityRow(Icons.login_rounded,
-                          const Color(0xFF2563EB),
-                          'Logged in', user.lastLogin),
-                      _activityRow(
-                          Icons.inventory_2_outlined,
-                          const Color(0xFF16A34A),
-                          'Updated inventory',
-                          '23 Jul 2026, 14:30'),
-                      _activityRow(
-                          Icons.receipt_long,
-                          const Color(0xFF7C3AED),
-                          'Created purchase order',
-                          '22 Jul 2026, 10:15'),
-                    ],
+                    [_buildRecentActivity(context, user.name)],
                   ),
                   const SizedBox(height: 80),
                 ]),
@@ -316,8 +316,123 @@ class UserDetailScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildRecentActivity(BuildContext context, String userName) {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _activitiesFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return Row(
+            children: [
+              const Expanded(
+                child: Text('Could not load this user’s activity.'),
+              ),
+              IconButton(
+                tooltip: 'Retry',
+                onPressed: () {
+                  setState(() {
+                    _activitiesFuture =
+                        ApiRepository.instance.getUserActivities(widget.user.id);
+                  });
+                },
+                icon: const Icon(Icons.refresh_rounded),
+              ),
+            ],
+          );
+        }
+
+        final activities = snapshot.data ?? const [];
+        if (activities.isEmpty) {
+          return Text(
+            'No recorded activity for $userName yet.',
+            style: const TextStyle(color: Color(0xFF64748B)),
+          );
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Text(
+                'Showing actions recorded for $userName.',
+                style: const TextStyle(
+                  color: Color(0xFF64748B),
+                  fontSize: 12,
+                ),
+              ),
+            ),
+            ...activities.map((activity) {
+              final category = activity['category']?.toString() ?? '';
+              return _activityRow(
+                _activityIcon(category),
+                _activityColor(category),
+                activity['title']?.toString() ?? 'Activity',
+                activity['description']?.toString() ?? '',
+                _formatActivityTime(activity['occurred_at']),
+              );
+            }),
+          ],
+        );
+      },
+    );
+  }
+
+  IconData _activityIcon(String category) {
+    switch (category) {
+      case 'purchases':
+        return Icons.receipt_long_rounded;
+      case 'transfers':
+        return Icons.swap_horiz_rounded;
+      case 'kitchen':
+        return Icons.soup_kitchen_outlined;
+      case 'waste':
+        return Icons.delete_outline_rounded;
+      case 'production':
+        return Icons.restaurant_menu_rounded;
+      case 'inventory':
+      default:
+        return Icons.inventory_2_outlined;
+    }
+  }
+
+  Color _activityColor(String category) {
+    switch (category) {
+      case 'purchases':
+        return const Color(0xFF7C3AED);
+      case 'transfers':
+        return const Color(0xFF2563EB);
+      case 'kitchen':
+        return const Color(0xFFEA580C);
+      case 'waste':
+        return const Color(0xFFDC2626);
+      case 'production':
+        return const Color(0xFF0891B2);
+      case 'inventory':
+      default:
+        return const Color(0xFF16A34A);
+    }
+  }
+
+  String _formatActivityTime(dynamic value) {
+    final parsed = DateTime.tryParse(value?.toString() ?? '');
+    if (parsed == null) return '';
+    final local = parsed.toLocal();
+    final date = '${local.day.toString().padLeft(2, '0')}/'
+        '${local.month.toString().padLeft(2, '0')}/${local.year}';
+    final time = '${local.hour.toString().padLeft(2, '0')}:'
+        '${local.minute.toString().padLeft(2, '0')}';
+    return '$date, $time';
+  }
+
   Widget _activityRow(
-      IconData icon, Color color, String title, String time) {
+      IconData icon, Color color, String title, String description, String time) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -338,6 +453,18 @@ class UserDetailScreen extends StatelessWidget {
                 Text(title,
                     style: const TextStyle(
                         fontWeight: FontWeight.w700, fontSize: 13)),
+                if (description.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      description,
+                      style: const TextStyle(
+                        color: Color(0xFF334155),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 2),
                 Text(time,
                     style: const TextStyle(
                         color: Color(0xFF64748B), fontSize: 12)),
