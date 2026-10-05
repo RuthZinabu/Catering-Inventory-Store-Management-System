@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\ItemType;
 use App\Models\Item;
+use App\Services\OperationalNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -147,6 +148,16 @@ class ItemController extends Controller
 
         $item = Item::create($validated);
         $item->load(['creator:id,name']);
+
+        app(OperationalNotificationService::class)->notifyUsersWithPermission(
+            'inventory.view',
+            $request->user(),
+            'New inventory item',
+            "{$item->name} ({$item->code}) was added to the item catalog.",
+            'inventory',
+            'item',
+            $item->id
+        );
 
         return $this->success($item, 'Item created successfully', 201);
     }

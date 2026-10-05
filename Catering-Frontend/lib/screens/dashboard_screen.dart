@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../services/api_repository.dart';
 import '../services/auth_service.dart';
@@ -21,6 +23,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _isLoading = true;
   String? _error;
   int _unreadNotificationCount = 0;
+  bool _isRefreshingNotificationCount = false;
+  Timer? _notificationRefreshTimer;
 
   List<InventoryItem> _inventoryItems = [];
   List<StockItem> _stockItems = [];
@@ -30,9 +34,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.initState();
     _loadDashboardData();
     _loadUnreadNotificationCount();
+    _notificationRefreshTimer = Timer.periodic(
+      const Duration(seconds: 20),
+      (_) => _loadUnreadNotificationCount(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _notificationRefreshTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadUnreadNotificationCount() async {
+    if (_isRefreshingNotificationCount) return;
+    _isRefreshingNotificationCount = true;
     try {
       final response =
           await legacy_api.ApiClient.instance.get('/notifications?per_page=1');
@@ -45,6 +61,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }
     } catch (_) {
       // The dashboard remains available if notification loading fails.
+    } finally {
+      _isRefreshingNotificationCount = false;
     }
   }
 

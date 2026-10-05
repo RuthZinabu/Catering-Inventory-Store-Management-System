@@ -124,8 +124,12 @@ class UserController extends Controller
     /**
      * Remove the specified user
      */
-    public function destroy(User $user)
+    public function destroy(Request $request, User $user)
     {
+        if ($request->user()->is($user)) {
+            return $this->error('You cannot delete your own account.', 422);
+        }
+
         // Soft delete
         $user->delete();
 

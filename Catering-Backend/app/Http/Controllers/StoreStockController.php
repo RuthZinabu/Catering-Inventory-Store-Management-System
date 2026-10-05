@@ -6,6 +6,7 @@ use App\Models\Store;
 use App\Models\Item;
 use App\Models\StoreStock;
 use App\Models\StockMovement;
+use App\Services\OperationalNotificationService;
 use App\Enums\StockStatus;
 use App\Enums\MovementType;
 use App\Enums\ItemType;
@@ -191,6 +192,16 @@ class StoreStockController extends Controller
         });
 
         $stock->load(['item.supplier', 'store', 'lastCountedBy:id,name']);
+        app(OperationalNotificationService::class)->notifyUsersWithPermission(
+            'inventory.view',
+            $request->user(),
+            'New inventory item',
+            "{$stock->item->name} ({$stock->item->code}) was added to the item catalog.",
+            'inventory',
+            'item',
+            $stock->item->id
+        );
+
         return $this->success($stock, 'Stock item created successfully', 201);
     }
 

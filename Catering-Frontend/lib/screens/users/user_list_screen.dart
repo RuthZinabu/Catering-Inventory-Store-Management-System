@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/inventory_models.dart';
 import '../../services/api_repository.dart';
+import '../../services/auth_service.dart';
 import 'user_detail_screen.dart';
 import 'user_create_screen.dart';
 
@@ -237,6 +238,9 @@ class _UserListScreenState extends State<UserListScreen> {
 
   Widget _userCard(BuildContext context, AppUser user) {
     final statusColor = _statusColor(user.status);
+    final currentUser = AuthService.instance.currentUser;
+    final isAdmin = currentUser?.isAdmin ?? false;
+    final isCurrentUser = currentUser?.id == user.id;
     final initials = user.name
         .split(' ')
         .take(2)
@@ -344,16 +348,23 @@ class _UserListScreenState extends State<UserListScreen> {
                               .then((_) {
                             if (mounted) _loadUsers();
                           });
-                        } else {
+                        } else if (v == 'delete') {
+                          _deleteUser(user);
+                        } else if (v == 'deactivate') {
                           _deactivateUser(user);
                         }
                       },
-                      itemBuilder: (_) => const [
+                      itemBuilder: (_) => [
                         PopupMenuItem(
                             value: 'view', child: Text('View Profile')),
                         PopupMenuItem(value: 'edit', child: Text('Edit User')),
                         PopupMenuItem(
                             value: 'deactivate', child: Text('Deactivate')),
+                        if (isAdmin && !isCurrentUser)
+                          const PopupMenuItem(
+                            value: 'delete',
+                            child: Text('Delete User'),
+                          ),
                       ],
                       icon: const Icon(Icons.more_vert_rounded,
                           color: Color(0xFF64748B)),
@@ -546,6 +557,47 @@ class _UserListScreenState extends State<UserListScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Could not deactivate user: $error')),
+        );
+      }
+    }
+  }
+
+  Future<void> _deleteUser(AppUser user) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete user?'),
+        content: Text(
+          'This will remove ${user.name}’s access and hide their account from the user list. Their historical records will be retained.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFB42318),
+            ),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete user'),
+          ),
+        ],
+      ),
+    );
+    if (shouldDelete != true || !mounted) return;
+
+    try {
+      await ApiRepository.instance.deleteUser(user.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('User deleted.')),
+      );
+      await _loadUsers();
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not delete user: $error')),
         );
       }
     }

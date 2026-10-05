@@ -25,6 +25,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   final _searchController = TextEditingController();
   final _scrollController = ScrollController();
   Timer? _searchDebounce;
+  Timer? _notificationPoller;
   List<Map<String, dynamic>> _notifications = [];
   String _category = 'all';
   bool _unreadOnly = false;
@@ -41,16 +42,45 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     super.initState();
     _scrollController.addListener(_loadNextPageWhenNearEnd);
     _loadNotifications(reset: true);
+    _notificationPoller = Timer.periodic(
+      const Duration(seconds: 20),
+      (_) => _pollNotifications(),
+    );
   }
 
   @override
   void dispose() {
     _searchDebounce?.cancel();
+    _notificationPoller?.cancel();
     _searchController.dispose();
     _scrollController
       ..removeListener(_loadNextPageWhenNearEnd)
       ..dispose();
     super.dispose();
+  }
+
+  Future<void> _pollNotifications() async {
+    if (!mounted || _isLoading || _isLoadingMore) return;
+    final atTop = _notifications.isEmpty ||
+        !_scrollController.hasClients ||
+        _scrollController.position.pixels <= 80;
+    if (atTop) {
+      await _loadNotifications(reset: true, preserveExisting: true);
+      return;
+    }
+
+    try {
+      final response =
+          await legacy_api.ApiClient.instance.get('/notifications?per_page=1');
+      final data = Map<String, dynamic>.from(response['data'] as Map);
+      if (mounted) {
+        setState(() {
+          _unreadCount = (data['unread_count'] as num?)?.toInt() ?? 0;
+        });
+      }
+    } catch (_) {
+      // Keep the current inbox visible through transient polling failures.
+    }
   }
 
   void _loadNextPageWhenNearEnd() {
@@ -62,7 +92,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     _loadNotifications();
   }
 
-  Future<void> _loadNotifications({bool reset = false}) async {
+  Future<void> _loadNotifications({
+    bool reset = false,
+    bool preserveExisting = false,
+  }) async {
     if (!reset && (_isLoading || _isLoadingMore || _page >= _lastPage)) return;
     final requestVersion = reset ? ++_requestVersion : _requestVersion;
     final requestedPage = reset ? 1 : _page + 1;
@@ -71,9 +104,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         _isLoading = true;
         _isLoadingMore = false;
         _error = null;
-        _notifications = [];
-        _page = 1;
-        _lastPage = 1;
+        if (!preserveExisting) {
+          _notifications = [];
+          _page = 1;
+          _lastPage = 1;
+        }
       } else {
         _isLoadingMore = true;
       }
@@ -98,8 +133,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           .toList();
       if (!mounted || requestVersion != _requestVersion) return;
       setState(() {
-        if (reset) _notifications = [];
-        _notifications.addAll(pageItems);
+        if (reset) {
+          _notifications = pageItems;
+        } else {
+          _notifications.addAll(pageItems);
+        }
         _unreadCount = (data['unread_count'] as num?)?.toInt() ?? 0;
         _page = (pagination['current_page'] as num?)?.toInt() ?? requestedPage;
         _lastPage = (pagination['last_page'] as num?)?.toInt() ?? _page;

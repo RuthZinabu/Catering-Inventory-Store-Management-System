@@ -8,6 +8,32 @@ use Illuminate\Support\Facades\Notification;
 
 class OperationalNotificationService
 {
+    public function notifyUsersWithPermission(
+        string $permission,
+        User $actor,
+        string $title,
+        string $message,
+        string $category,
+        string $referenceType,
+        string $referenceId
+    ): void {
+        $recipients = User::query()
+            ->where('status', User::STATUS_ACTIVE)
+            ->get()
+            ->filter(fn (User $user) => $user->id === $actor->id || $user->hasPermission($permission));
+
+        if ($recipients->isNotEmpty()) {
+            Notification::send($recipients, new OperationalEvent(
+                $title,
+                $message,
+                $category,
+                null,
+                $referenceType,
+                $referenceId
+            ));
+        }
+    }
+
     public function notifyStores(
         array $storeIds,
         User $actor,
@@ -24,10 +50,10 @@ class OperationalNotificationService
 
         $recipients = User::query()
             ->where('status', User::STATUS_ACTIVE)
-            ->where('id', '!=', $actor->id)
-            ->where(function ($query) use ($storeIds) {
+            ->where(function ($query) use ($storeIds, $actor) {
                 $query->where('role', User::ROLE_ADMIN)
-                    ->orWhereHas('stores', fn ($stores) => $stores->whereIn('stores.id', $storeIds));
+                    ->orWhereHas('stores', fn ($stores) => $stores->whereIn('stores.id', $storeIds))
+                    ->orWhere('id', $actor->id);
             })
             ->get();
 
@@ -53,13 +79,15 @@ class OperationalNotificationService
         string $referenceType,
         string $referenceId
     ): void {
-        if (!$recipientId || $recipientId === $actor->id) {
+        if (!$recipientId) {
             return;
         }
 
-        $recipient = User::query()
-            ->where('status', User::STATUS_ACTIVE)
-            ->find($recipientId);
+        $recipient = $recipientId === $actor->id
+            ? ($actor->status === User::STATUS_ACTIVE ? $actor : null)
+            : User::query()
+                ->where('status', User::STATUS_ACTIVE)
+                ->find($recipientId);
 
         $recipient?->notify(new OperationalEvent(
             $title,
