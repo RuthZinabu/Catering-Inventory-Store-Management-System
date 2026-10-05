@@ -110,5 +110,8 @@ class NotFoundException extends ApiException {
 /// Timeout exception
 class TimeoutException extends ApiException {
   const TimeoutException({String? message})
-      : super(message: message ?? 'Request timeout');
+      : super(
+          message: message ??
+              'The server took too long to respond. Check your connection and refresh before retrying.',
+        );
 }

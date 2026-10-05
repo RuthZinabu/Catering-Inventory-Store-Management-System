@@ -21,9 +21,12 @@ class _PurchaseFormScreenState extends State<PurchaseFormScreen> {
   final List<_PurchaseLineForm> _lines = [];
   List<Map<String, dynamic>> _suppliers = [];
   List<Map<String, dynamic>> _catalog = [];
+  List<Map<String, dynamic>> _stores = [];
   String? _supplierId;
+  String? _destinationStoreId;
   String? _error;
   bool _loading = true;
+  bool _optionsLoaded = false;
   bool _saving = false;
 
   bool get _editing => widget.purchase != null;
@@ -37,6 +40,7 @@ class _PurchaseFormScreenState extends State<PurchaseFormScreen> {
     _deliveryDate.text = purchase?.expectedDelivery ?? '';
     _notes.text = purchase?.notes ?? '';
     _supplierId = purchase?.supplierId;
+    _destinationStoreId = purchase?.storeId ?? ApiClient.instance.storeId;
     for (final line in purchase?.items ?? const <PurchaseLineViewModel>[]) {
       _lines.add(_PurchaseLineForm.fromModel(line));
     }
@@ -57,9 +61,14 @@ class _PurchaseFormScreenState extends State<PurchaseFormScreen> {
 
   Future<void> _loadOptions() async {
     try {
-      final supplierResponse =
-          await ApiClient.instance.get('/suppliers?per_page=100');
-      final itemResponse = await ApiClient.instance.get('/items?per_page=100');
+      final responses = await Future.wait([
+        ApiClient.instance.get('/suppliers?per_page=100'),
+        ApiClient.instance.get('/items?per_page=100'),
+        ApiClient.instance.get('/stores?active=true&per_page=100'),
+      ]);
+      final supplierResponse = responses[0];
+      final itemResponse = responses[1];
+      final storeResponse = responses[2];
       if (!mounted) return;
       setState(() {
         _suppliers = List<Map<String, dynamic>>.from(
@@ -70,10 +79,28 @@ class _PurchaseFormScreenState extends State<PurchaseFormScreen> {
           ((itemResponse['data'] as Map)['items'] as List? ?? const [])
               .map((entry) => Map<String, dynamic>.from(entry as Map)),
         );
+        final storeData = Map<String, dynamic>.from(storeResponse['data'] as Map);
+        _stores = List<Map<String, dynamic>>.from(
+          (storeData['stores'] as List? ?? storeData['items'] as List? ?? const [])
+              .map((entry) => Map<String, dynamic>.from(entry as Map)),
+        );
         _loading = false;
+        _optionsLoaded = true;
         if (_supplierId != null &&
             !_suppliers.any((row) => row['id'] == _supplierId)) {
           _supplierId = null;
+        }
+        final sessionStoreId = ApiClient.instance.storeId;
+        if (_destinationStoreId == null &&
+            sessionStoreId != null &&
+            _stores.any((row) => row['id']?.toString() == sessionStoreId)) {
+          _destinationStoreId = sessionStoreId;
+        }
+        if (_destinationStoreId != null &&
+            !_stores.any(
+              (row) => row['id']?.toString() == _destinationStoreId,
+            )) {
+          _destinationStoreId = null;
         }
       });
     } on ApiException catch (error) {
@@ -91,10 +118,9 @@ class _PurchaseFormScreenState extends State<PurchaseFormScreen> {
       setState(() => _error = 'Add at least one item to the purchase order.');
       return;
     }
-    final storeId = ApiClient.instance.storeId;
+    final storeId = _destinationStoreId;
     if (storeId == null) {
-      setState(
-          () => _error = 'No destination store is selected for this session.');
+      setState(() => _error = 'Select a destination store for this purchase.');
       return;
     }
 
@@ -115,6 +141,8 @@ class _PurchaseFormScreenState extends State<PurchaseFormScreen> {
     if (_number.text.trim().isNotEmpty) payload['number'] = _number.text.trim();
 
     try {
+      // Keep the existing purchase list scoped to the store just selected here.
+      await ApiClient.instance.selectStore(storeId);
       if (_editing) {
         await ApiClient.instance
             .put('/purchase-orders/${widget.purchase!.id}', payload);
@@ -165,6 +193,27 @@ class _PurchaseFormScreenState extends State<PurchaseFormScreen> {
                         value == null ? 'Select a supplier' : null,
                   ),
                   const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    value: _destinationStoreId,
+                    decoration: InputDecoration(
+                      labelText: 'Destination Store',
+                      helperText: _stores.isEmpty
+                          ? 'No active stores are available to your account.'
+                          : null,
+                    ),
+                    items: _stores
+                        .map((store) => DropdownMenuItem<String>(
+                              value: store['id'].toString(),
+                              child: Text(store['name'] as String? ?? ''),
+                            ))
+                        .toList(),
+                    onChanged: (value) =>
+                        setState(() => _destinationStoreId = value),
+                    validator: (value) => value == null
+                        ? 'Select a destination store'
+                        : null,
+                  ),
+                  const SizedBox(height: 12),
                   TextFormField(
                     controller: _number,
                     decoration: const InputDecoration(
@@ -211,6 +260,25 @@ class _PurchaseFormScreenState extends State<PurchaseFormScreen> {
                     Text(_error!,
                         style: TextStyle(
                             color: Theme.of(context).colorScheme.error)),
+                    if (!_optionsLoaded) ...[
+                      const SizedBox(height: 8),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton.icon(
+                          onPressed: _loading
+                              ? null
+                              : () {
+                                  setState(() {
+                                    _loading = true;
+                                    _error = null;
+                                  });
+                                  _loadOptions();
+                                },
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Retry loading purchase options'),
+                        ),
+                      ),
+                    ],
                   ],
                   const SizedBox(height: 20),
                   Row(children: [

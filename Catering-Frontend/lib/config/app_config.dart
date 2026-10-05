@@ -67,6 +67,9 @@ class AppConfig {
   static const Duration connectTimeout = Duration(seconds: 30);
   static const Duration receiveTimeout = Duration(seconds: 30);
   static const Duration sendTimeout = Duration(seconds: 30);
+  static const Duration requestTimeout = Duration(seconds: 30);
+  static const String requestTimeoutMessage =
+      'The server took too long to respond. Check your connection and refresh before retrying.';
 
   // Token Configuration
   static const String tokenKey = 'auth_token';

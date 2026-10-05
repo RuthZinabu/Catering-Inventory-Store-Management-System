@@ -1,3 +1,4 @@
+import 'dart:async' as async;
 import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -5,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/app_config.dart';
+import 'api/api_response_cache.dart';
 
 class ApiException implements Exception {
   final String message;
@@ -25,9 +27,10 @@ class ApiClient {
   );
   static const String _legacyTokenKey = 'api_access_token';
   static const String _storeKey = 'purchase_store_id';
-  static const int _maxCachedGetResponses = 100;
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
-  final Map<String, _CachedApiResponse> _getCache = {};
+  final ApiResponseCache<String> _getCache = ApiResponseCache<String>(
+    validDuration: AppConfig.cacheValidDuration,
+  );
 
   String? _token;
   String? storeId;
@@ -168,11 +171,27 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> uploadFile(String path, List<int> bytes, String filename) async {
+    _getCache.clear();
     final request = http.MultipartRequest('POST', Uri.parse('$_baseUrl$path'));
     request.headers['Accept'] = 'application/json';
     if (isAuthenticated) request.headers['Authorization'] = 'Bearer $_token';
     request.files.add(http.MultipartFile.fromBytes('logo', bytes, filename: filename));
-    final response = await http.Response.fromStream(await request.send());
+    late final http.Response response;
+    try {
+      final streamedResponse =
+          await request.send().timeout(AppConfig.requestTimeout);
+      response = await http.Response.fromStream(streamedResponse)
+          .timeout(AppConfig.requestTimeout);
+    } on async.TimeoutException {
+      throw const ApiException(AppConfig.requestTimeoutMessage);
+    } catch (_) {
+      throw const ApiException(
+        'Could not reach the server. Check your connection and try again.',
+      );
+    }
+    if (response.statusCode == 408 || response.statusCode == 504) {
+      throw const ApiException(AppConfig.requestTimeoutMessage);
+    }
     Map<String, dynamic> payload;
     try {
       payload = Map<String, dynamic>.from(jsonDecode(response.body) as Map);
@@ -182,7 +201,6 @@ class ApiClient {
     if (response.statusCode < 200 || response.statusCode >= 300 || payload['success'] == false) {
       throw ApiException(payload['message'] as String? ?? 'File upload failed (${response.statusCode}).');
     }
-    _getCache.clear();
     return payload;
   }
 
@@ -200,20 +218,16 @@ class ApiClient {
     final cacheKey = uri.toString();
     final cacheable = method == 'GET' && authenticated && !_isCacheablePath(path);
     if (cacheable) {
-      final cached = _getCache[cacheKey];
-      if (cached != null) {
-        if (DateTime.now().difference(cached.fetchedAt) <
-            AppConfig.cacheValidDuration) {
-          try {
-            return Map<String, dynamic>.from(jsonDecode(cached.jsonBody) as Map);
-          } on Object {
-            _getCache.remove(cacheKey);
-          }
-        } else {
+      final cachedBody = _getCache.get(cacheKey);
+      if (cachedBody != null) {
+        try {
+          return Map<String, dynamic>.from(jsonDecode(cachedBody) as Map);
+        } catch (_) {
           _getCache.remove(cacheKey);
         }
       }
     }
+    if (method != 'GET') _getCache.clear();
 
     final headers = <String, String>{'Accept': 'application/json'};
     if (body != null) headers['Content-Type'] = 'application/json';
@@ -225,23 +239,39 @@ class ApiClient {
     try {
       switch (method) {
         case 'GET':
-          response = await http.get(uri, headers: headers);
+          response = await http
+              .get(uri, headers: headers)
+              .timeout(AppConfig.requestTimeout);
           break;
         case 'POST':
-          response = await http.post(uri, headers: headers, body: jsonEncode(body));
+          response = await http
+              .post(uri, headers: headers, body: jsonEncode(body))
+              .timeout(AppConfig.requestTimeout);
           break;
         case 'PUT':
-          response = await http.put(uri, headers: headers, body: jsonEncode(body));
+          response = await http
+              .put(uri, headers: headers, body: jsonEncode(body))
+              .timeout(AppConfig.requestTimeout);
           break;
         case 'DELETE':
-          response = await http.delete(uri, headers: headers);
+          response = await http
+              .delete(uri, headers: headers)
+              .timeout(AppConfig.requestTimeout);
           break;
         default:
           throw const ApiException('Unsupported API request.');
       }
+    } on async.TimeoutException {
+      throw const ApiException(AppConfig.requestTimeoutMessage);
     } catch (error) {
       if (error is ApiException) rethrow;
-      throw ApiException('Could not connect to the API at $_baseUrl.');
+      throw const ApiException(
+        'Could not reach the server. Check your connection and try again.',
+      );
+    }
+
+    if (response.statusCode == 408 || response.statusCode == 504) {
+      throw const ApiException(AppConfig.requestTimeoutMessage);
     }
 
     Map<String, dynamic> payload;
@@ -262,18 +292,10 @@ class ApiClient {
 
     if (cacheable) {
       try {
-        _getCache[cacheKey] = _CachedApiResponse(
-          jsonEncode(payload),
-          DateTime.now(),
-        );
-        while (_getCache.length > _maxCachedGetResponses) {
-          _getCache.remove(_getCache.keys.first);
-        }
+        _getCache.put(cacheKey, jsonEncode(payload));
       } on Object {
         // Only JSON responses can be cached; successful requests still return normally.
       }
-    } else if (method != 'GET' && response.statusCode >= 200 && response.statusCode < 300) {
-      _getCache.clear();
     }
     return payload;
   }
@@ -281,11 +303,4 @@ class ApiClient {
   bool _isCacheablePath(String path) =>
       path.toLowerCase().contains('/auth/') ||
       path.toLowerCase().contains('/users');
-}
-
-class _CachedApiResponse {
-  final String jsonBody;
-  final DateTime fetchedAt;
-
-  const _CachedApiResponse(this.jsonBody, this.fetchedAt);
 }

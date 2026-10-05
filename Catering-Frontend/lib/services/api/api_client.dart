@@ -7,14 +7,16 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../config/app_config.dart';
 import 'api_exception.dart';
 import 'api_response.dart';
+import 'api_response_cache.dart';
 
 class ApiClient {
   static ApiClient? _instance;
-  static const int _maxCachedGetResponses = 100;
   late final Dio _dio;
   late final FlutterSecureStorage _secureStorage;
   String? _authToken;
-  final Map<String, _CachedGetResponse> _getCache = {};
+  final ApiResponseCache<String> _getCache = ApiResponseCache<String>(
+    validDuration: AppConfig.cacheValidDuration,
+  );
 
   ApiClient._internal() {
     _secureStorage = const FlutterSecureStorage();
@@ -124,8 +126,8 @@ class ApiClient {
     // Handle authentication errors with automatic token refresh
     if (apiException is AuthenticationException &&
       !error.requestOptions.path.endsWith('/auth/refresh')) {
-      final refreshed = await _tryRefreshToken();
-      if (refreshed) {
+      final refreshError = await _tryRefreshToken();
+      if (refreshError == null) {
         // Retry the original request
         try {
           final retryResponse = await _dio.request(
@@ -139,9 +141,13 @@ class ApiClient {
           );
           handler.resolve(retryResponse);
           return;
-        } catch (e) {
-          // If retry fails, proceed with original error
+        } on DioException catch (retryError) {
+          if (retryError.error is ApiException) {
+            apiException = retryError.error as ApiException;
+          }
         }
+      } else {
+        apiException = refreshError;
       }
     }
 
@@ -168,6 +174,9 @@ class ApiClient {
     }
 
     switch (statusCode) {
+      case 408:
+      case 504:
+        return const TimeoutException();
       case 401:
         return AuthenticationException(message: message);
       case 403:
@@ -209,7 +218,7 @@ class ApiClient {
   }
 
   /// Try to refresh the authentication token
-  Future<bool> _tryRefreshToken() async {
+  Future<ApiException?> _tryRefreshToken() async {
     try {
       final response = await _dio.post('/auth/refresh');
       final apiResponse = ApiResponse.fromJson(response.data, null);
@@ -217,13 +226,21 @@ class ApiClient {
       if (apiResponse.isSuccess && apiResponse.data != null) {
         final newToken = apiResponse.data['access_token'];
         await setAuthToken(newToken);
-        return true;
+        return null;
       }
-    } catch (e) {
+    } on DioException catch (error) {
       // Refresh failed, clear tokens
       await clearTokens();
+      if (error.error is ApiException) {
+        return error.error as ApiException;
+      }
+      return const AuthenticationException();
+    } catch (_) {
+      await clearTokens();
+      return const AuthenticationException();
     }
-    return false;
+    await clearTokens();
+    return const AuthenticationException();
   }
 
   /// Clear all stored tokens
@@ -284,15 +301,15 @@ class ApiClient {
       final cacheKey = _getCacheKey(endpoint, queryParameters);
       final cacheable = _isCacheableGet(endpoint);
       if (cacheable) {
-        final cached = _getCache[cacheKey];
-        if (cached != null) {
-          if (DateTime.now().difference(cached.fetchedAt) <
-              AppConfig.cacheValidDuration) {
+        final cachedBody = _getCache.get(cacheKey);
+        if (cachedBody != null) {
+          try {
             final cachedData =
-                jsonDecode(cached.jsonBody) as Map<String, dynamic>;
+                jsonDecode(cachedBody) as Map<String, dynamic>;
             return ApiResponse<T>.fromJson(cachedData, fromJson);
+          } catch (_) {
+            _getCache.remove(cacheKey);
           }
-          _getCache.remove(cacheKey);
         }
       }
 
@@ -302,13 +319,7 @@ class ApiClient {
       );
       if (cacheable && response.data is Map) {
         try {
-          _getCache[cacheKey] = _CachedGetResponse(
-            jsonEncode(response.data),
-            DateTime.now(),
-          );
-          while (_getCache.length > _maxCachedGetResponses) {
-            _getCache.remove(_getCache.keys.first);
-          }
+          _getCache.put(cacheKey, jsonEncode(response.data));
         } on Object {
           // A non-JSON response should not prevent the API call from succeeding.
         }
@@ -329,13 +340,13 @@ class ApiClient {
     Map<String, dynamic>? queryParameters,
     T Function(dynamic)? fromJson,
   }) async {
+    _getCache.clear();
     try {
       final response = await _dio.post(
         endpoint,
         data: data,
         queryParameters: queryParameters,
       );
-      _getCache.clear();
       return ApiResponse<T>.fromJson(response.data, fromJson);
     } on DioException catch (e) {
       if (e.error is ApiException) {
@@ -352,13 +363,13 @@ class ApiClient {
     Map<String, dynamic>? queryParameters,
     T Function(dynamic)? fromJson,
   }) async {
+    _getCache.clear();
     try {
       final response = await _dio.put(
         endpoint,
         data: data,
         queryParameters: queryParameters,
       );
-      _getCache.clear();
       return ApiResponse<T>.fromJson(response.data, fromJson);
     } on DioException catch (e) {
       if (e.error is ApiException) {
@@ -374,12 +385,12 @@ class ApiClient {
     Map<String, dynamic>? queryParameters,
     T Function(dynamic)? fromJson,
   }) async {
+    _getCache.clear();
     try {
       final response = await _dio.delete(
         endpoint,
         queryParameters: queryParameters,
       );
-      _getCache.clear();
       return ApiResponse<T>.fromJson(response.data, fromJson);
     } on DioException catch (e) {
       if (e.error is ApiException) {
@@ -421,11 +432,4 @@ class ApiClient {
     }
     return value.toString();
   }
-}
-
-class _CachedGetResponse {
-  final String jsonBody;
-  final DateTime fetchedAt;
-
-  const _CachedGetResponse(this.jsonBody, this.fetchedAt);
 }

@@ -23,7 +23,7 @@ class ErrorHandler {
         case ServerException:
           return 'Server error occurred. Please try again later.';
         case TimeoutException:
-          return 'Request timed out. Please check your connection and try again.';
+          return error.message;
         default:
           return error.message;
       }
