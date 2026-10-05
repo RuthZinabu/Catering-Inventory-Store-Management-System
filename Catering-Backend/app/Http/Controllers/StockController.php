@@ -134,14 +134,12 @@ class StockController extends Controller
             ]);
             
         } catch (\Exception $e) {
-            \Log::error('StockController@index error: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
+            \Log::error('Stock listing failed.');
             
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch stock items',
-                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error',
+                'error' => 'Internal server error',
             ], 500);
         }
     }
@@ -232,14 +230,12 @@ class StockController extends Controller
                 'message' => 'Stock item not found',
             ], 404);
         } catch (\Exception $e) {
-            \Log::error('StockController@show error: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
+            \Log::error('Stock item lookup failed.');
             
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch stock item',
-                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error',
+                'error' => 'Internal server error',
             ], 500);
         }
     }
@@ -327,14 +323,12 @@ class StockController extends Controller
                 'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
-            \Log::error('StockController@search error: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
+            \Log::error('Stock search failed.');
             
             return response()->json([
                 'success' => false,
                 'message' => 'Search failed',
-                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error',
+                'error' => 'Internal server error',
             ], 500);
         }
     }

@@ -7,6 +7,7 @@ import '../models/auth_models.dart';
 import 'api/api_client.dart';
 import 'api/api_exception.dart';
 import 'api/api_response.dart';
+import 'api_service.dart' as legacy_api;
 
 class AuthService extends ChangeNotifier {
   static AuthService? _instance;
@@ -74,6 +75,10 @@ class AuthService extends ChangeNotifier {
         
         // Store token and user data
         await _apiClient.setAuthToken(authResponse.accessToken);
+        await legacy_api.ApiClient.instance.synchronizeAuthToken(
+          authResponse.accessToken,
+          resetStore: true,
+        );
         await _storeUserData(authResponse.user);
         
         _currentUser = authResponse.user;
@@ -135,6 +140,8 @@ class AuthService extends ChangeNotifier {
       if (response.isSuccess && response.data != null) {
         final refreshResponse = RefreshTokenResponse.fromJson(response.data!);
         await _apiClient.setAuthToken(refreshResponse.accessToken);
+        await legacy_api.ApiClient.instance
+            .synchronizeAuthToken(refreshResponse.accessToken);
         return true;
       }
       return false;
@@ -191,6 +198,7 @@ class AuthService extends ChangeNotifier {
   /// Clear all user data
   Future<void> _clearUserData() async {
     await _apiClient.clearTokens();
+    await legacy_api.ApiClient.instance.clearLocalSession();
   }
 
   /// Set authentication state

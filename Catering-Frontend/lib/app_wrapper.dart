@@ -41,8 +41,8 @@ class _AppWrapperState extends State<AppWrapper> {
       // Check if user is already authenticated
       await _authProvider.checkAuthStatus();
     } catch (e) {
-      // Handle initialization error
-      debugPrint('App initialization error: $e');
+      // Avoid logging raw exceptions, which may contain server or account data.
+      debugPrint('App initialization failed.');
     } finally {
       if (mounted) {
         setState(() {

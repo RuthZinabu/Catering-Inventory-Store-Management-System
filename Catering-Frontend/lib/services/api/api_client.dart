@@ -1,7 +1,7 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../config/app_config.dart';
@@ -10,9 +10,11 @@ import 'api_response.dart';
 
 class ApiClient {
   static ApiClient? _instance;
+  static const int _maxCachedGetResponses = 100;
   late final Dio _dio;
   late final FlutterSecureStorage _secureStorage;
   String? _authToken;
+  final Map<String, _CachedGetResponse> _getCache = {};
 
   ApiClient._internal() {
     _secureStorage = const FlutterSecureStorage();
@@ -39,21 +41,6 @@ class ApiClient {
         },
       ),
     );
-
-    // Add logging interceptor in debug mode
-    if (AppConfig.enableLogging) {
-      _dio.interceptors.add(
-        PrettyDioLogger(
-          requestHeader: true,
-          requestBody: true,
-          responseHeader: true,
-          responseBody: true,
-          error: true,
-          compact: false,
-          maxWidth: 90,
-        ),
-      );
-    }
 
     // Add auth interceptor
     _dio.interceptors.add(
@@ -204,6 +191,9 @@ class ApiClient {
 
   /// Set authentication token
   Future<void> setAuthToken(String? token) async {
+    if (_authToken != token) {
+      _getCache.clear();
+    }
     _authToken = token;
     if (token != null) {
       await _secureStorage.write(key: AppConfig.tokenKey, value: token);
@@ -239,6 +229,7 @@ class ApiClient {
   /// Clear all stored tokens
   Future<void> clearTokens() async {
     _authToken = null;
+    _getCache.clear();
     await _secureStorage.delete(key: AppConfig.tokenKey);
     await _secureStorage.delete(key: AppConfig.refreshTokenKey);
     await _secureStorage.delete(key: AppConfig.userKey);
@@ -290,10 +281,38 @@ class ApiClient {
     T Function(dynamic)? fromJson,
   }) async {
     try {
+      final cacheKey = _getCacheKey(endpoint, queryParameters);
+      final cacheable = _isCacheableGet(endpoint);
+      if (cacheable) {
+        final cached = _getCache[cacheKey];
+        if (cached != null) {
+          if (DateTime.now().difference(cached.fetchedAt) <
+              AppConfig.cacheValidDuration) {
+            final cachedData =
+                jsonDecode(cached.jsonBody) as Map<String, dynamic>;
+            return ApiResponse<T>.fromJson(cachedData, fromJson);
+          }
+          _getCache.remove(cacheKey);
+        }
+      }
+
       final response = await _dio.get(
         endpoint,
         queryParameters: queryParameters,
       );
+      if (cacheable && response.data is Map) {
+        try {
+          _getCache[cacheKey] = _CachedGetResponse(
+            jsonEncode(response.data),
+            DateTime.now(),
+          );
+          while (_getCache.length > _maxCachedGetResponses) {
+            _getCache.remove(_getCache.keys.first);
+          }
+        } on Object {
+          // A non-JSON response should not prevent the API call from succeeding.
+        }
+      }
       return ApiResponse<T>.fromJson(response.data, fromJson);
     } on DioException catch (e) {
       if (e.error is ApiException) {
@@ -316,6 +335,7 @@ class ApiClient {
         data: data,
         queryParameters: queryParameters,
       );
+      _getCache.clear();
       return ApiResponse<T>.fromJson(response.data, fromJson);
     } on DioException catch (e) {
       if (e.error is ApiException) {
@@ -338,6 +358,7 @@ class ApiClient {
         data: data,
         queryParameters: queryParameters,
       );
+      _getCache.clear();
       return ApiResponse<T>.fromJson(response.data, fromJson);
     } on DioException catch (e) {
       if (e.error is ApiException) {
@@ -358,6 +379,7 @@ class ApiClient {
         endpoint,
         queryParameters: queryParameters,
       );
+      _getCache.clear();
       return ApiResponse<T>.fromJson(response.data, fromJson);
     } on DioException catch (e) {
       if (e.error is ApiException) {
@@ -366,4 +388,44 @@ class ApiClient {
       rethrow;
     }
   }
+
+  bool _isCacheableGet(String endpoint) {
+    final normalized = endpoint.toLowerCase();
+    return !normalized.contains('/auth/') && !normalized.contains('/users');
+  }
+
+  String _getCacheKey(
+    String endpoint,
+    Map<String, dynamic>? queryParameters,
+  ) {
+    final normalizedParameters =
+        _normalizeCacheValue(queryParameters ?? const {});
+    return '$endpoint|${jsonEncode(normalizedParameters)}';
+  }
+
+  dynamic _normalizeCacheValue(dynamic value) {
+    if (value is Map) {
+      final entries = value.entries.toList()
+        ..sort((a, b) => a.key.toString().compareTo(b.key.toString()));
+      return {
+        for (final entry in entries)
+          entry.key.toString(): _normalizeCacheValue(entry.value),
+      };
+    }
+    if (value is Iterable) {
+      return value.map(_normalizeCacheValue).toList();
+    }
+    if (value is DateTime) return value.toIso8601String();
+    if (value == null || value is String || value is num || value is bool) {
+      return value;
+    }
+    return value.toString();
+  }
+}
+
+class _CachedGetResponse {
+  final String jsonBody;
+  final DateTime fetchedAt;
+
+  const _CachedGetResponse(this.jsonBody, this.fetchedAt);
 }

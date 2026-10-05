@@ -23,8 +23,11 @@ class ApiClient {
     'API_BASE_URL',
     defaultValue: 'http://localhost:8000/api',
   );
-  static const String _tokenKey = 'api_access_token';
+  static const String _legacyTokenKey = 'api_access_token';
   static const String _storeKey = 'purchase_store_id';
+  static const int _maxCachedGetResponses = 100;
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+  final Map<String, _CachedApiResponse> _getCache = {};
 
   String? _token;
   String? storeId;
@@ -33,15 +36,48 @@ class ApiClient {
 
   Future<void> restoreSession() async {
     final preferences = await SharedPreferences.getInstance();
-    _token = await const FlutterSecureStorage().read(key: AppConfig.tokenKey) ??
-        preferences.getString(_tokenKey);
+    _token = await _secureStorage.read(key: AppConfig.tokenKey);
+    final legacyToken = preferences.getString(_legacyTokenKey);
+    if (_token == null && legacyToken != null) {
+      _token = legacyToken;
+      await _secureStorage.write(key: AppConfig.tokenKey, value: legacyToken);
+    }
+    if (legacyToken != null) {
+      await preferences.remove(_legacyTokenKey);
+    }
     storeId = preferences.getString(_storeKey);
   }
 
   Future<void> selectStore(String value) async {
     final preferences = await SharedPreferences.getInstance();
+    if (storeId != value) _getCache.clear();
     await preferences.setString(_storeKey, value);
     storeId = value;
+  }
+
+  /// Keep the legacy HTTP client aligned with the app's shared auth session.
+  Future<void> synchronizeAuthToken(
+    String? token, {
+    bool resetStore = false,
+  }) async {
+    final tokenChanged = _token != token;
+    if (tokenChanged) _getCache.clear();
+    _token = token;
+    if (tokenChanged && resetStore) {
+      storeId = null;
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.remove(_storeKey);
+    }
+  }
+
+  /// Clear legacy in-memory and preference state after app-wide logout.
+  Future<void> clearLocalSession() async {
+    _token = null;
+    storeId = null;
+    _getCache.clear();
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.remove(_legacyTokenKey);
+    await preferences.remove(_storeKey);
   }
 
   Future<Map<String, dynamic>> login({
@@ -59,8 +95,12 @@ class ApiClient {
       authenticated: false,
     );
     final data = Map<String, dynamic>.from(response['data'] as Map);
-    _token = data['access_token'] as String?;
+    final newToken = data['access_token'] as String?;
+    if (_token != newToken) _getCache.clear();
+    _token = newToken;
     if (_token == null || _token!.isEmpty) {
+      _token = null;
+      await _secureStorage.delete(key: AppConfig.tokenKey);
       throw const ApiException('The server did not return an access token.');
     }
 
@@ -80,28 +120,39 @@ class ApiClient {
     }
     if (stores.isEmpty) {
       _token = null;
+      await clearLocalSession();
+      await _secureStorage.delete(key: AppConfig.tokenKey);
       throw const ApiException('Your account has no accessible stores.');
     }
 
     final preferences = await SharedPreferences.getInstance();
-    await preferences.setString(_tokenKey, _token!);
-    await preferences.setString(_storeKey, stores.first['store_id'] as String? ?? stores.first['id'] as String);
-    storeId = stores.first['store_id'] as String? ?? stores.first['id'] as String;
+    await _secureStorage.write(key: AppConfig.tokenKey, value: _token!);
+    await preferences.remove(_legacyTokenKey);
+    final selectedStoreId =
+        stores.first['store_id'] as String? ?? stores.first['id'] as String;
+    if (storeId != selectedStoreId) _getCache.clear();
+    await preferences.setString(_storeKey, selectedStoreId);
+    storeId = selectedStoreId;
     return {'user': user, 'stores': stores};
   }
 
   Future<void> logout() async {
-    if (isAuthenticated) {
-      try {
+    try {
+      if (isAuthenticated) {
         await _send('POST', '/auth/logout');
-      } finally {
-        _token = null;
       }
+    } catch (_) {
+      // Continue clearing local credentials even if the server is unreachable.
+    } finally {
+      _token = null;
+      _getCache.clear();
+      await _secureStorage.delete(key: AppConfig.tokenKey);
+      await _secureStorage.delete(key: AppConfig.refreshTokenKey);
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.remove(_legacyTokenKey);
+      await preferences.remove(_storeKey);
+      storeId = null;
     }
-    final preferences = await SharedPreferences.getInstance();
-    await preferences.remove(_tokenKey);
-    await preferences.remove(_storeKey);
-    storeId = null;
   }
 
   Future<Map<String, dynamic>> get(String path) => _send('GET', path);
@@ -131,6 +182,7 @@ class ApiClient {
     if (response.statusCode < 200 || response.statusCode >= 300 || payload['success'] == false) {
       throw ApiException(payload['message'] as String? ?? 'File upload failed (${response.statusCode}).');
     }
+    _getCache.clear();
     return payload;
   }
 
@@ -145,6 +197,24 @@ class ApiClient {
     }
 
     final uri = Uri.parse('$_baseUrl$path');
+    final cacheKey = uri.toString();
+    final cacheable = method == 'GET' && authenticated && !_isCacheablePath(path);
+    if (cacheable) {
+      final cached = _getCache[cacheKey];
+      if (cached != null) {
+        if (DateTime.now().difference(cached.fetchedAt) <
+            AppConfig.cacheValidDuration) {
+          try {
+            return Map<String, dynamic>.from(jsonDecode(cached.jsonBody) as Map);
+          } on Object {
+            _getCache.remove(cacheKey);
+          }
+        } else {
+          _getCache.remove(cacheKey);
+        }
+      }
+    }
+
     final headers = <String, String>{'Accept': 'application/json'};
     if (body != null) headers['Content-Type'] = 'application/json';
     if (authenticated && isAuthenticated) {
@@ -189,6 +259,33 @@ class ApiClient {
           ? (payload['message'] as String? ?? 'Request failed (${response.statusCode}).')
           : detail);
     }
+
+    if (cacheable) {
+      try {
+        _getCache[cacheKey] = _CachedApiResponse(
+          jsonEncode(payload),
+          DateTime.now(),
+        );
+        while (_getCache.length > _maxCachedGetResponses) {
+          _getCache.remove(_getCache.keys.first);
+        }
+      } on Object {
+        // Only JSON responses can be cached; successful requests still return normally.
+      }
+    } else if (method != 'GET' && response.statusCode >= 200 && response.statusCode < 300) {
+      _getCache.clear();
+    }
     return payload;
   }
+
+  bool _isCacheablePath(String path) =>
+      path.toLowerCase().contains('/auth/') ||
+      path.toLowerCase().contains('/users');
+}
+
+class _CachedApiResponse {
+  final String jsonBody;
+  final DateTime fetchedAt;
+
+  const _CachedApiResponse(this.jsonBody, this.fetchedAt);
 }
