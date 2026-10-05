@@ -130,19 +130,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       final data = Map<String, dynamic>.from(response['data'] as Map);
       if (!mounted) return;
       setState(() {
-        notification['read_at'] =
-            (data['notification'] as Map?)?['read_at'] ??
-                DateTime.now().toIso8601String();
+        notification['read_at'] = (data['notification'] as Map?)?['read_at'] ??
+            DateTime.now().toIso8601String();
         _unreadCount = (data['unread_count'] as num?)?.toInt() ??
             (_unreadCount > 0 ? _unreadCount - 1 : 0);
         if (_unreadOnly) {
-          _notifications.removeWhere((item) => item['id'] == notification['id']);
+          _notifications
+              .removeWhere((item) => item['id'] == notification['id']);
         }
       });
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not mark notification as read: $error')),
+          SnackBar(
+              content: Text('Could not mark notification as read: $error')),
         );
       }
     }
@@ -257,7 +258,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Widget _buildList() {
     if (_isLoading && _notifications.isEmpty) {
-      return const ListView(
+      return ListView(
         physics: AlwaysScrollableScrollPhysics(),
         children: [
           SizedBox(height: 220),
@@ -370,8 +371,9 @@ class _NotificationCard extends StatelessWidget {
         onTap: onTap,
         contentPadding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
         leading: CircleAvatar(
-          backgroundColor:
-              unread ? AppColors.accentGold.withOpacity(0.25) : AppColors.border,
+          backgroundColor: unread
+              ? AppColors.accentGold.withOpacity(0.25)
+              : AppColors.border,
           child: Icon(
             _categoryIcon(notification['category'] as String?),
             color: AppColors.darkGreen,
@@ -482,7 +484,6 @@ class _NotificationCard extends StatelessWidget {
         '${local.month.toString().padLeft(2, '0')}/${local.year}';
   }
 
-  String _clock(DateTime time) =>
-      '${time.hour.toString().padLeft(2, '0')}:'
+  String _clock(DateTime time) => '${time.hour.toString().padLeft(2, '0')}:'
       '${time.minute.toString().padLeft(2, '0')}';
 }
