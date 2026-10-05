@@ -150,6 +150,37 @@ class AuthController extends Controller
     }
 
     /**
+     * Change the authenticated admin's own password.
+     */
+    public function changePassword(Request $request)
+    {
+        $user = $request->user();
+        abort_unless(
+            $user->role === User::ROLE_ADMIN,
+            403,
+            'Only administrators can change a password here.'
+        );
+
+        $validated = $request->validate([
+            'current_password' => 'required|string',
+            'new_password' => 'required|string|min:8|confirmed|different:current_password',
+        ]);
+
+        if (! Hash::check($validated['current_password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => ['The current password is incorrect.'],
+            ]);
+        }
+
+        $user->password = $validated['new_password'];
+        $user->password_changed_at = now();
+        $user->must_change_password = false;
+        $user->save();
+
+        return $this->success(null, 'Password updated successfully.');
+    }
+
+    /**
      * Refresh token
      */
     public function refresh(Request $request)

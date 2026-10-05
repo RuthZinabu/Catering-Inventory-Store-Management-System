@@ -150,6 +150,28 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  /// Change the current admin's password.
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+    required String newPasswordConfirmation,
+  }) async {
+    final response = await _apiClient.post<dynamic>(
+      '/auth/change-password',
+      data: {
+        'current_password': currentPassword,
+        'new_password': newPassword,
+        'new_password_confirmation': newPasswordConfirmation,
+      },
+    );
+
+    if (!response.isSuccess) {
+      throw ApiException(
+        message: response.message ?? 'Unable to update the password.',
+      );
+    }
+  }
+
   /// Load user profile from API
   Future<void> _loadUserProfile() async {
     try {

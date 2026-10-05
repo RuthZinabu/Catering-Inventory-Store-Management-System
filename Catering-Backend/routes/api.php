@@ -50,6 +50,7 @@ Route::prefix('auth')->middleware('throttle:auth')->group(function () {
     Route::post('logout', [App\Http\Controllers\AuthController::class, 'logout'])->middleware('auth:sanctum');
     Route::post('refresh', [App\Http\Controllers\AuthController::class, 'refresh'])->middleware('auth:sanctum');
     Route::get('profile', [App\Http\Controllers\AuthController::class, 'profile'])->middleware('auth:sanctum');
+    Route::post('change-password', [App\Http\Controllers\AuthController::class, 'changePassword'])->middleware('auth:sanctum');
 });
 
 // Protected routes with permission checks

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../services/api_repository.dart';
+import '../services/auth_service.dart';
 import '../models/inventory_models.dart';
 import '../models/stock_models.dart';
+import 'profile_screen.dart';
 import '../widgets/loading_error_widgets.dart';
 import '../utils/responsive.dart';
 import '../theme/app_colors.dart';
@@ -91,6 +93,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final now = DateTime.now();
     final dateLabel =
         '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}';
+    final user = AuthService.instance.currentUser;
+    final userName = user?.name.trim();
+    final avatarInitial =
+        userName != null && userName.isNotEmpty ? userName[0].toUpperCase() : 'U';
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -110,7 +116,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             style: Theme.of(context).textTheme.bodyMedium),
                         const SizedBox(height: 4),
                         Text(
-                          'Admin',
+                          userName?.isNotEmpty == true ? userName! : 'User',
                           style: Theme.of(context)
                               .textTheme
                               .headlineSmall
@@ -119,14 +125,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ],
                     ),
                   ),
-                  CircleAvatar(
-                    radius: 22,
-                    backgroundColor: AppColors.darkGreen,
-                    child: const Text(
-                      'A',
-                      style: TextStyle(
-                        color: AppColors.accentGold,
-                        fontWeight: FontWeight.w700,
+                  Tooltip(
+                    message: 'Profile',
+                    child: InkWell(
+                      customBorder: const CircleBorder(),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const ProfileScreen(),
+                          ),
+                        );
+                      },
+                      child: CircleAvatar(
+                        radius: 22,
+                        backgroundColor: AppColors.darkGreen,
+                        child: Text(
+                          avatarInitial,
+                          style: const TextStyle(
+                            color: AppColors.accentGold,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
                     ),
                   ),
