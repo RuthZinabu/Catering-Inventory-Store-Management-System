@@ -29,9 +29,19 @@ COPY . .
 RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
 
 # Set proper permissions
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html/storage \
-    && chmod -R 755 /var/www/html/bootstrap/cache
+# Create Laravel runtime directories and set permissions
+RUN mkdir -p \
+    /var/www/html/storage/framework/cache/data \
+    /var/www/html/storage/framework/sessions \
+    /var/www/html/storage/framework/views \
+    /var/www/html/storage/logs \
+    /var/www/html/bootstrap/cache \
+    && chown -R www-data:www-data \
+        /var/www/html/storage \
+        /var/www/html/bootstrap/cache \
+    && chmod -R 775 \
+        /var/www/html/storage \
+        /var/www/html/bootstrap/cache
 
 # Copy Nginx configuration
 COPY docker/nginx.conf /etc/nginx/nginx.conf
