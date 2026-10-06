@@ -252,6 +252,23 @@ class StockService extends BaseApiService
     return stockItems.whereType<FoodStockItem>().toList();
   }
 
+  /// Get food stock items with pagination
+  Future<List<FoodStockItem>> getFoodStockPaginated({
+    String? storeId,
+    int page = 1,
+    int perPage = 15,
+  }) async {
+    final params = <String, dynamic>{
+      'item_type': StockCategory.food.name,
+      'page': page,
+      'per_page': perPage,
+    };
+    if (storeId != null) params['store_id'] = storeId;
+
+    final result = await getAll(queryParams: ListQueryParams(filters: params));
+    return result.items.whereType<FoodStockItem>().toList();
+  }
+
   /// Get catering stock items
   Future<List<CateringStockItem>> getCateringStock({String? storeId}) async {
     final stockItems = await getByCategory(
@@ -259,6 +276,23 @@ class StockService extends BaseApiService
       storeId: storeId,
     );
     return stockItems.whereType<CateringStockItem>().toList();
+  }
+
+  /// Get catering stock items with pagination
+  Future<List<CateringStockItem>> getCateringStockPaginated({
+    String? storeId,
+    int page = 1,
+    int perPage = 15,
+  }) async {
+    final params = <String, dynamic>{
+      'item_type': StockCategory.catering.name,
+      'page': page,
+      'per_page': perPage,
+    };
+    if (storeId != null) params['store_id'] = storeId;
+
+    final result = await getAll(queryParams: ListQueryParams(filters: params));
+    return result.items.whereType<CateringStockItem>().toList();
   }
 
   /// Get electronics stock items
@@ -270,6 +304,23 @@ class StockService extends BaseApiService
       storeId: storeId,
     );
     return stockItems.whereType<ElectronicsStockItem>().toList();
+  }
+
+  /// Get electronics stock items with pagination
+  Future<List<ElectronicsStockItem>> getElectronicsStockPaginated({
+    String? storeId,
+    int page = 1,
+    int perPage = 15,
+  }) async {
+    final params = <String, dynamic>{
+      'item_type': StockCategory.electronics.name,
+      'page': page,
+      'per_page': perPage,
+    };
+    if (storeId != null) params['store_id'] = storeId;
+
+    final result = await getAll(queryParams: ListQueryParams(filters: params));
+    return result.items.whereType<ElectronicsStockItem>().toList();
   }
 
   /// Convert API response to appropriate stock item type

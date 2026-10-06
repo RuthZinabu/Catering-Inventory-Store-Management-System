@@ -231,13 +231,49 @@ class ApiRepository {
     return await _stockService.getFoodStock(storeId: storeId);
   }
 
+  Future<List<FoodStockItem>> getFoodStockPaginated({
+    String? storeId,
+    int page = 1,
+    int perPage = 15,
+  }) async {
+    return await _stockService.getFoodStockPaginated(
+      storeId: storeId,
+      page: page,
+      perPage: perPage,
+    );
+  }
+
   Future<List<CateringStockItem>> getCateringStock({String? storeId}) async {
     return await _stockService.getCateringStock(storeId: storeId);
+  }
+
+  Future<List<CateringStockItem>> getCateringStockPaginated({
+    String? storeId,
+    int page = 1,
+    int perPage = 15,
+  }) async {
+    return await _stockService.getCateringStockPaginated(
+      storeId: storeId,
+      page: page,
+      perPage: perPage,
+    );
   }
 
   Future<List<ElectronicsStockItem>> getElectronicsStock(
       {String? storeId}) async {
     return await _stockService.getElectronicsStock(storeId: storeId);
+  }
+
+  Future<List<ElectronicsStockItem>> getElectronicsStockPaginated({
+    String? storeId,
+    int page = 1,
+    int perPage = 15,
+  }) async {
+    return await _stockService.getElectronicsStockPaginated(
+      storeId: storeId,
+      page: page,
+      perPage: perPage,
+    );
   }
 
   // Stock Transfers
@@ -324,18 +360,24 @@ class ApiRepository {
     final response = await direct_api.ApiClient.instance.get(path);
     final data = Map<String, dynamic>.from(response['data'] as Map);
     return (data['items'] as List? ?? const [])
-        .map((item) => ExpiryItem.fromJson(Map<String, dynamic>.from(item as Map)))
+        .map((item) =>
+            ExpiryItem.fromJson(Map<String, dynamic>.from(item as Map)))
         .toList();
   }
 
   Future<ExpiryItem> createInventoryBatch(Map<String, dynamic> data) async {
-    final response = await direct_api.ApiClient.instance.post('/inventory-batches', data);
-    return ExpiryItem.fromJson(Map<String, dynamic>.from(response['data'] as Map));
+    final response =
+        await direct_api.ApiClient.instance.post('/inventory-batches', data);
+    return ExpiryItem.fromJson(
+        Map<String, dynamic>.from(response['data'] as Map));
   }
 
-  Future<ExpiryItem> updateInventoryBatch(String id, Map<String, dynamic> data) async {
-    final response = await direct_api.ApiClient.instance.put('/inventory-batches/$id', data);
-    return ExpiryItem.fromJson(Map<String, dynamic>.from(response['data'] as Map));
+  Future<ExpiryItem> updateInventoryBatch(
+      String id, Map<String, dynamic> data) async {
+    final response =
+        await direct_api.ApiClient.instance.put('/inventory-batches/$id', data);
+    return ExpiryItem.fromJson(
+        Map<String, dynamic>.from(response['data'] as Map));
   }
 
   // Recipes

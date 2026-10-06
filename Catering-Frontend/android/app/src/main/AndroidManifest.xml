@@ -2,7 +2,7 @@
     <uses-permission android:name="android.permission.CAMERA" />
 
     <application
-        android:label="catering_inventory_store_management_system"
+        android:label="Halal Catering"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

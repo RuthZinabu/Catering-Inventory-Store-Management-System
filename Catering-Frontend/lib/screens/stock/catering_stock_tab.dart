@@ -1,4 +1,5 @@
 import 'package:catering_inventory_store_management_system/widgets/search_bar.dart';
+import 'package:catering_inventory_store_management_system/widgets/see_all_button.dart';
 import 'package:flutter/material.dart';
 import '../../models/stock_models.dart';
 import '../../services/api_repository.dart';
@@ -13,42 +14,32 @@ class CateringStockTab extends StatefulWidget {
 }
 
 class _CateringStockTabState extends State<CateringStockTab>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, PaginationMixin {
   late TabController _tabController;
   String searchQuery = '';
   List<CateringStockItem> _allItems = [];
-  bool _isLoading = true;
-  String? _error;
+
+  @override
+  int get initialItemCount => 15;
+
+  @override
+  int get itemsPerPage => 15;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _loadCateringStock();
+    loadInitialItems();
   }
 
-  Future<void> _loadCateringStock() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-
-    try {
-      final items = await ApiRepository.instance.getCateringStock();
-      if (mounted) {
-        setState(() {
-          _allItems = items;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _error = e.toString();
-          _isLoading = false;
-        });
-      }
-    }
+  @override
+  Future<List> fetchItems(int page, int perPage) async {
+    final fetchedItems = await ApiRepository.instance.getCateringStockPaginated(
+      page: page,
+      perPage: perPage,
+    );
+    _allItems = fetchedItems;
+    return fetchedItems;
   }
 
   @override
@@ -59,19 +50,19 @@ class _CateringStockTabState extends State<CateringStockTab>
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
+    if (isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (_error != null) {
+    if (error != null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Error: $_error'),
+            Text('Error: $error'),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: _loadCateringStock,
+              onPressed: loadInitialItems,
               child: const Text('Retry'),
             ),
           ],
@@ -291,7 +282,7 @@ class _CateringStockTabState extends State<CateringStockTab>
           )
         else
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 112),
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
             sliver: SliverList(
               delegate: SliverChildBuilderDelegate((context, index) {
                 final item = items[index];
@@ -458,6 +449,19 @@ class _CateringStockTabState extends State<CateringStockTab>
               }, childCount: items.length),
             ),
           ),
+        // See All button
+        if (hasMore)
+          SliverToBoxAdapter(
+            child: SeeAllButton(
+              onPressed: loadMoreItems,
+              isLoading: isLoadingMore,
+              itemsToLoad: itemsPerPage,
+            ),
+          ),
+        // Bottom padding
+        const SliverToBoxAdapter(
+          child: SizedBox(height: 100),
+        ),
       ],
     );
   }
