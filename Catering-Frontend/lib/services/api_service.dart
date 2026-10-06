@@ -303,5 +303,7 @@ class ApiClient {
   bool _isCacheablePath(String path) =>
       path.toLowerCase().contains('/auth/') ||
       path.toLowerCase().contains('/users') ||
-      path.toLowerCase().contains('/notifications');
+      path.toLowerCase().contains('/notifications') ||
+      path.toLowerCase().contains('/reports/dashboard/kpis') ||
+      path.toLowerCase().contains('/reports/stock/low-stock');
 }

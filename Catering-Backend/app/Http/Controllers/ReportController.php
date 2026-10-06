@@ -65,15 +65,24 @@ class ReportController extends Controller
         $movements = $this->movementReport($storeIds, $from, $to);
         $expiry = $this->expiryReport($storeIds);
         $waste = $this->wasteReport($storeIds, $from, $to);
+        $expiryAlerts = $this->dashboardExpiryAlerts($storeIds);
 
         return $this->success([
             'kpis' => [
                 'total_items' => $stock['total_skus'],
+                'low_stock_items' => $stock['low_stock_items'],
+                'out_of_stock_items' => $stock['out_of_stock_items'],
+                'stock_health_percent' => $stock['stock_health_percent'],
                 'inventory_value' => $valuation['total_value'],
                 'stock_movements' => $movements['movement_count'],
                 'expiring_soon' => $expiry['expiring_soon_items'],
+                'expired_items' => $expiry['expired_items'],
+                'untracked_expiry_items' => $expiry['untracked_stock_items_count'],
                 'waste_value' => $waste['total_cost'],
                 'waste_record_count' => $waste['record_count'],
+            ],
+            'alerts' => [
+                'expiring_batches' => $expiryAlerts,
             ],
             'period' => ['from' => $from->toDateString(), 'to' => $to->toDateString()],
         ]);
@@ -104,7 +113,9 @@ class ReportController extends Controller
         $storeIds = $this->storeIds($request);
         $filters = $request->validate(['per_page' => 'nullable|integer|min:1|max:100']);
         $items = $this->stockItemsQuery($storeIds)
-            ->havingRaw('SUM(store_stock.quantity) > 0 AND SUM(store_stock.quantity) <= SUM(store_stock.min_quantity)')
+            ->havingRaw(
+                'SUM(store_stock.quantity) <= SUM(store_stock.min_quantity) AND (SUM(store_stock.min_quantity) > 0 OR SUM(store_stock.quantity) <= 0)'
+            )
             ->orderByRaw('SUM(store_stock.quantity) ASC')
             ->paginate($filters['per_page'] ?? 50);
 
@@ -467,6 +478,60 @@ class ReportController extends Controller
                 '8_to_30_days' => $countBetween($today->copy()->addDays(8), $thirtyDays),
             ],
         ];
+    }
+
+    private function dashboardExpiryAlerts(?array $storeIds): array
+    {
+        $today = Carbon::today();
+        $withinSevenDays = $today->copy()->addDays(7);
+        $query = DB::table('inventory_batches')
+            ->join('items', 'items.id', '=', 'inventory_batches.item_id')
+            ->join('stores', 'stores.id', '=', 'inventory_batches.store_id')
+            ->whereNull('items.deleted_at')
+            ->where('inventory_batches.quantity_remaining', '>', 0)
+            ->whereBetween('inventory_batches.expires_on', [
+                $today->copy()->subDays(7)->toDateString(),
+                $withinSevenDays->toDateString(),
+            ]);
+
+        if ($storeIds !== null) {
+            $query->whereIn('inventory_batches.store_id', $storeIds);
+        }
+
+        return $query
+            ->orderByRaw(
+                'CASE WHEN inventory_batches.expires_on >= ? THEN 0 ELSE 1 END',
+                [$today->toDateString()]
+            )
+            ->orderBy('inventory_batches.expires_on')
+            ->limit(5)
+            ->get([
+                'inventory_batches.id',
+                'inventory_batches.lot_number',
+                'inventory_batches.expires_on',
+                'inventory_batches.quantity_remaining',
+                'items.name as item_name',
+                'items.unit',
+                'stores.name as store_name',
+            ])
+            ->map(function ($batch) use ($today): array {
+                $expiresOn = Carbon::parse($batch->expires_on)->startOfDay();
+                $daysUntilExpiry = (int) $today->diffInDays($expiresOn, false);
+
+                return [
+                    'id' => $batch->id,
+                    'item' => $batch->item_name,
+                    'store' => $batch->store_name,
+                    'batch_number' => $batch->lot_number,
+                    'quantity' => (float) $batch->quantity_remaining,
+                    'unit' => $batch->unit,
+                    'expiry_date' => $expiresOn->toDateString(),
+                    'days_until_expiry' => $daysUntilExpiry,
+                    'status' => $daysUntilExpiry < 0 ? 'Expired' : 'Expiring soon',
+                ];
+            })
+            ->values()
+            ->all();
     }
 
     private function wasteReport(?array $storeIds, Carbon $from, Carbon $to): array

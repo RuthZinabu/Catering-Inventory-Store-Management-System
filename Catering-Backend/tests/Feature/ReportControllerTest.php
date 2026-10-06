@@ -109,6 +109,31 @@ class ReportControllerTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_low_stock_details_include_zero_stock_items_without_a_minimum(): void
+    {
+        [$user, $store, $item] = $this->createContext('zero-stock');
+        $user->stores()->attach($store->id, [
+            'id' => (string) Str::uuid(),
+            'role_in_store' => 'storekeeper',
+        ]);
+        StoreStock::create([
+            'item_id' => $item->id,
+            'store_id' => $store->id,
+            'quantity' => 0,
+            'min_quantity' => 0,
+            'current_cost' => 3,
+            'status' => StockStatus::OUT_OF_STOCK,
+        ]);
+
+        $this->actingAs($user, 'sanctum')
+            ->getJson('/api/reports/stock/low-stock?per_page=5')
+            ->assertOk()
+            ->assertJsonPath('data.pagination.total', 1)
+            ->assertJsonPath('data.items.0.quantity', 0)
+            ->assertJsonPath('data.summary.low_stock_items', 0)
+            ->assertJsonPath('data.summary.out_of_stock_items', 1);
+    }
+
     public function test_consumption_report_uses_issued_kitchen_quantities_and_confirmed_waste(): void
     {
         [$user, $store, $item] = $this->createContext('consumption');
@@ -219,6 +244,14 @@ class ReportControllerTest extends TestCase
             ->assertJsonPath('data.reports.expiry.day_buckets.4_to_7_days', 1)
             ->assertJsonPath('data.reports.expiry.total_at_risk_items', 1)
             ->assertJsonPath('data.reports.expiry.lot_expiry_dates_available', true);
+
+        $this->getJson('/api/reports/dashboard/kpis?period=daily')
+            ->assertOk()
+            ->assertJsonPath('data.kpis.total_items', 1)
+            ->assertJsonPath('data.kpis.expiring_soon', 1)
+            ->assertJsonPath('data.kpis.untracked_expiry_items', 1)
+            ->assertJsonPath('data.alerts.expiring_batches.0.batch_number', 'LATER-LOT')
+            ->assertJsonPath('data.alerts.expiring_batches.0.store', $store->name);
     }
 
     public function test_production_run_snapshots_recipe_usage_for_the_consumption_report(): void
