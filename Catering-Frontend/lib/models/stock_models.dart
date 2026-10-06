@@ -68,6 +68,12 @@ class StockItem {
   @JsonKey(name: 'last_updated')
   final DateTime lastUpdated;
 
+  // Metadata fields for API operations
+  @JsonKey(name: 'item_id')
+  final String? itemId;
+  @JsonKey(name: 'store_id')
+  final String? storeId;
+
   const StockItem({
     required this.id,
     required this.code,
@@ -84,6 +90,8 @@ class StockItem {
     required this.status,
     required this.description,
     required this.lastUpdated,
+    this.itemId,
+    this.storeId,
   });
 
   double get totalValue => quantity * purchasePrice;
@@ -122,6 +130,8 @@ class FoodStockItem extends StockItem {
     required super.status,
     required super.description,
     required super.lastUpdated,
+    super.itemId,
+    super.storeId,
     this.expiryDate,
     required this.batchNumber,
     this.requiresRefrigeration = false,
@@ -174,6 +184,8 @@ class CateringStockItem extends StockItem {
     required super.status,
     required super.description,
     required super.lastUpdated,
+    super.itemId,
+    super.storeId,
     required this.subtype,
     this.condition,
     this.isReserved,
@@ -221,6 +233,8 @@ class ElectronicsStockItem extends StockItem {
     required super.status,
     required super.description,
     required super.lastUpdated,
+    super.itemId,
+    super.storeId,
     required this.brand,
     required this.model,
     required this.serialNumber,

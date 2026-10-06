@@ -276,6 +276,15 @@ class ApiRepository {
     );
   }
 
+  // Stock Item Updates
+  Future<StockItem> updateStockItem(
+    String storeId,
+    String itemId,
+    Map<String, dynamic> data,
+  ) async {
+    return await _stockService.updateInStore(storeId, itemId, data);
+  }
+
   // Stock Transfers
   Future<List<StockTransferViewModel>> getStockTransfers() {
     return _transferService.getAll();

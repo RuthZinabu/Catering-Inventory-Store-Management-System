@@ -1,0 +1,47 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# Testing
+tests
+.phpunit.cache
+phpunit.xml
+.env.testing
+
+# Development
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Documentation
+*.md
+README.md
+CHANGELOG.md
+
+# Environment files (will be set via Render environment variables)
+.env
+.env.example
+.env.*
+
+# Logs
+storage/logs/*
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+vendor
+composer.lock
+
+# Postman
+.postman

@@ -35,7 +35,7 @@ class InventoryItem {
   @JsonKey(name: 'updated_at')
   final DateTime? updatedAt;
 
-  const InventoryItem({
+  InventoryItem({
     required this.id,
     required this.code,
     required this.name,
@@ -139,7 +139,7 @@ class Supplier {
   @JsonKey(name: 'logo_path')
   final String logoPath;
 
-  const Supplier({
+  Supplier({
     required this.id,
     required this.name,
     required this.company,
@@ -186,7 +186,7 @@ class PurchaseRecord {
   @JsonKey(name: 'created_at')
   final DateTime? createdAt;
 
-  const PurchaseRecord({
+  PurchaseRecord({
     required this.id,
     required this.number,
     required this.supplier,
@@ -219,7 +219,7 @@ class StockMovement {
   @JsonKey(name: 'performed_by')
   final String? performedBy;
 
-  const StockMovement({
+  StockMovement({
     required this.id,
     required this.item,
     required this.type,
@@ -244,7 +244,7 @@ class Recipe {
   @JsonKey(name: 'food_cost', fromJson: _parseDouble)
   final double foodCost;
 
-  const Recipe({
+  Recipe({
     required this.id,
     required this.name,
     required this.description,
@@ -268,7 +268,7 @@ class AlertItem {
   @JsonKey(name: 'is_read')
   final bool? isRead;
 
-  const AlertItem({
+  AlertItem({
     required this.id,
     required this.title,
     required this.detail,
@@ -304,7 +304,7 @@ class WasteRecord {
   final String status;
   final String notes;
 
-  const WasteRecord({
+  WasteRecord({
     required this.id,
     required this.number,
     required this.item,
@@ -340,7 +340,7 @@ class ExpiryItem {
   final String location;
   final String status; // 'Expired', 'Expiring Soon', 'OK'
 
-  const ExpiryItem({
+  ExpiryItem({
     required this.id,
     required this.item,
     required this.category,
@@ -373,7 +373,7 @@ class AppUser {
   final String lastLogin;
   final List<String> permissions;
 
-  const AppUser({
+  AppUser({
     required this.id,
     required this.name,
     required this.email,
@@ -408,7 +408,7 @@ class RecipeIngredient {
   @JsonKey(name: 'unit_cost', fromJson: _parseDouble)
   final double unitCost;
 
-  const RecipeIngredient({
+  RecipeIngredient({
     required this.name,
     required this.quantity,
     required this.unit,
@@ -438,7 +438,7 @@ class RecipeItem {
   final String prepTime;
   final String status; // 'Active', 'Inactive'
 
-  const RecipeItem({
+  RecipeItem({
     required this.id,
     required this.name,
     required this.category,
@@ -460,4 +460,45 @@ class RecipeItem {
       _$RecipeItemFromJson(json);
 
   Map<String, dynamic> toJson() => _$RecipeItemToJson(this);
+}
+
+// Helper functions for JSON parsing
+double _parseDouble(dynamic value) {
+  if (value == null) return 0.0;
+  if (value is double) return value;
+  if (value is int) return value.toDouble();
+  if (value is String) return double.tryParse(value) ?? 0.0;
+  return 0.0;
+}
+
+double? _parseDoubleOptional(dynamic value) {
+  if (value == null) return null;
+  if (value is double) return value;
+  if (value is int) return value.toDouble();
+  if (value is String) return double.tryParse(value);
+  return null;
+}
+
+int _parseInt(dynamic value) {
+  if (value == null) return 0;
+  if (value is int) return value;
+  if (value is double) return value.toInt();
+  if (value is String) return int.tryParse(value) ?? 0;
+  return 0;
+}
+
+int? _parseIntOptional(dynamic value) {
+  if (value == null) return null;
+  if (value is int) return value;
+  if (value is double) return value.toInt();
+  if (value is String) return int.tryParse(value);
+  return null;
+}
+
+bool? _parseBoolOptional(dynamic value) {
+  if (value == null) return null;
+  if (value is bool) return value;
+  if (value is int) return value != 0;
+  if (value is String) return value.toLowerCase() == 'true' || value == '1';
+  return null;
 }

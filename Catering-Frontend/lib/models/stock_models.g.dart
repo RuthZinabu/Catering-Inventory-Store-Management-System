@@ -47,6 +47,8 @@ StockItem _$StockItemFromJson(Map<String, dynamic> json) => StockItem(
       status: json['status'] as String,
       description: json['description'] as String,
       lastUpdated: DateTime.parse(json['last_updated'] as String),
+      itemId: json['item_id'] as String?,
+      storeId: json['store_id'] as String?,
     );
 
 Map<String, dynamic> _$StockItemToJson(StockItem instance) => <String, dynamic>{
@@ -65,6 +67,8 @@ Map<String, dynamic> _$StockItemToJson(StockItem instance) => <String, dynamic>{
       'status': instance.status,
       'description': instance.description,
       'last_updated': instance.lastUpdated.toIso8601String(),
+      'item_id': instance.itemId,
+      'store_id': instance.storeId,
     };
 
 const _$StockCategoryEnumMap = {
@@ -89,6 +93,8 @@ FoodStockItem _$FoodStockItemFromJson(Map<String, dynamic> json) =>
       status: json['status'] as String,
       description: json['description'] as String,
       lastUpdated: DateTime.parse(json['last_updated'] as String),
+      itemId: json['item_id'] as String?,
+      storeId: json['store_id'] as String?,
       expiryDate: json['expiry_date'] == null
           ? null
           : DateTime.parse(json['expiry_date'] as String),
@@ -112,6 +118,8 @@ Map<String, dynamic> _$FoodStockItemToJson(FoodStockItem instance) =>
       'status': instance.status,
       'description': instance.description,
       'last_updated': instance.lastUpdated.toIso8601String(),
+      'item_id': instance.itemId,
+      'store_id': instance.storeId,
       'expiry_date': instance.expiryDate?.toIso8601String(),
       'batch_number': instance.batchNumber,
       'requires_refrigeration': instance.requiresRefrigeration,
@@ -133,6 +141,8 @@ CateringStockItem _$CateringStockItemFromJson(Map<String, dynamic> json) =>
       status: json['status'] as String,
       description: json['description'] as String,
       lastUpdated: DateTime.parse(json['last_updated'] as String),
+      itemId: json['item_id'] as String?,
+      storeId: json['store_id'] as String?,
       subtype: $enumDecode(_$CateringSubtypeEnumMap, json['subtype']),
       condition: json['condition'] as String?,
       isReserved: json['is_reserved'] as bool?,
@@ -157,6 +167,8 @@ Map<String, dynamic> _$CateringStockItemToJson(CateringStockItem instance) =>
       'status': instance.status,
       'description': instance.description,
       'last_updated': instance.lastUpdated.toIso8601String(),
+      'item_id': instance.itemId,
+      'store_id': instance.storeId,
       'subtype': _$CateringSubtypeEnumMap[instance.subtype]!,
       'condition': instance.condition,
       'is_reserved': instance.isReserved,
@@ -187,6 +199,8 @@ ElectronicsStockItem _$ElectronicsStockItemFromJson(
       status: json['status'] as String,
       description: json['description'] as String,
       lastUpdated: DateTime.parse(json['last_updated'] as String),
+      itemId: json['item_id'] as String?,
+      storeId: json['store_id'] as String?,
       brand: json['brand'] as String,
       model: json['model'] as String,
       serialNumber: json['serial_number'] as String,
@@ -217,6 +231,8 @@ Map<String, dynamic> _$ElectronicsStockItemToJson(
       'status': instance.status,
       'description': instance.description,
       'last_updated': instance.lastUpdated.toIso8601String(),
+      'item_id': instance.itemId,
+      'store_id': instance.storeId,
       'brand': instance.brand,
       'model': instance.model,
       'serial_number': instance.serialNumber,

@@ -83,10 +83,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           color: AppColors.darkGreen,
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: const Icon(
-                          Icons.restaurant_menu,
-                          color: AppColors.accentGold,
-                          size: 32,
+                        child: Image.asset(
+                          'assets/images/halal_logo.png',
+                          width: 32,
+                          height: 32,
+                          fit: BoxFit.contain,
                         ),
                       ),
                       const SizedBox(height: 16),

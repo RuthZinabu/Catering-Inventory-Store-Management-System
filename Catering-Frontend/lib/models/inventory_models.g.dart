@@ -6,47 +6,6 @@ part of 'inventory_models.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-// Helper functions to parse strings and numbers
-double _parseDouble(dynamic value) {
-  if (value == null) return 0.0;
-  if (value is double) return value;
-  if (value is int) return value.toDouble();
-  if (value is String) return double.tryParse(value) ?? 0.0;
-  return 0.0;
-}
-
-double? _parseDoubleOptional(dynamic value) {
-  if (value == null) return null;
-  if (value is double) return value;
-  if (value is int) return value.toDouble();
-  if (value is String) return double.tryParse(value);
-  return null;
-}
-
-int _parseInt(dynamic value) {
-  if (value == null) return 0;
-  if (value is int) return value;
-  if (value is double) return value.toInt();
-  if (value is String) return int.tryParse(value) ?? 0;
-  return 0;
-}
-
-int? _parseIntOptional(dynamic value) {
-  if (value == null) return null;
-  if (value is int) return value;
-  if (value is double) return value.toInt();
-  if (value is String) return int.tryParse(value);
-  return null;
-}
-
-bool? _parseBoolOptional(dynamic value) {
-  if (value == null) return null;
-  if (value is bool) return value;
-  if (value is int) return value != 0;
-  if (value is String) return value.toLowerCase() == 'true' || value == '1';
-  return null;
-}
-
 InventoryItem _$InventoryItemFromJson(Map<String, dynamic> json) =>
     InventoryItem(
       id: json['id'] as String,
@@ -54,16 +13,16 @@ InventoryItem _$InventoryItemFromJson(Map<String, dynamic> json) =>
       name: json['name'] as String,
       category: json['category'] as String,
       unit: json['unit'] as String,
-      purchasePrice: _parseDouble(json['default_purchase_price']),
+      purchasePrice: (json['default_purchase_price'] as num).toDouble(),
       description: json['description'] as String,
-      internalCost: _parseDoubleOptional(json['internal_cost']),
-      minStock: _parseIntOptional(json['min_stock']),
-      maxStock: _parseIntOptional(json['max_stock']),
-      stockOnHand: _parseIntOptional(json['stock_on_hand']),
-      reorderPoint: _parseIntOptional(json['reorder_point']),
-      isActive: _parseBoolOptional(json['is_active']),
+      internalCost: (json['internal_cost'] as num?)?.toDouble(),
+      minStock: (json['min_stock'] as num?)?.toInt(),
+      maxStock: (json['max_stock'] as num?)?.toInt(),
+      stockOnHand: (json['stock_on_hand'] as num?)?.toInt(),
+      reorderPoint: (json['reorder_point'] as num?)?.toInt(),
+      isActive: json['is_active'] as bool?,
       itemType: json['item_type'] as String?,
-      shelfLifeDays: json['shelf_life_days'] as int?,
+      shelfLifeDays: (json['shelf_life_days'] as num?)?.toInt(),
       requiresRefrigeration: json['requires_refrigeration'] as bool?,
       createdAt: json['created_at'] == null
           ? null
@@ -96,23 +55,21 @@ Map<String, dynamic> _$InventoryItemToJson(InventoryItem instance) =>
     };
 
 Supplier _$SupplierFromJson(Map<String, dynamic> json) => Supplier(
-      id: json['id'].toString(),
-      name: json['name'] as String? ?? json['company'] as String? ?? '',
-      company: json['company'] as String? ?? '',
-      contactPerson: json['contact_person'] as String? ?? '',
-      phone: json['phone'] as String? ?? '',
-      email: json['email'] as String? ?? '',
-      address: json['address'] as String? ?? '',
-      taxNumber: json['tax_number'] as String? ?? '',
-      status: json['status'] as String? ?? 'Active',
-      outstandingBalance: _parseDouble(json['outstanding_balance']),
+      id: json['id'] as String,
+      name: json['name'] as String,
+      company: json['company'] as String,
+      contactPerson: json['contact_person'] as String,
+      phone: json['phone'] as String,
+      email: json['email'] as String,
+      address: json['address'] as String,
+      taxNumber: json['tax_number'] as String,
+      status: json['status'] as String,
+      outstandingBalance: (json['outstanding_balance'] as num).toDouble(),
       category: json['category'] as String? ?? '',
       registrationNumber: json['registration_number'] as String? ?? '',
       notes: json['notes'] as String? ?? '',
       paymentTerms: json['payment_terms'] as String? ?? '',
-      creditLimit: json['credit_limit'] == null
-          ? null
-          : _parseDouble(json['credit_limit']),
+      creditLimit: (json['credit_limit'] as num?)?.toDouble(),
       logoPath: json['logo_path'] as String? ?? '',
     );
 
@@ -132,7 +89,7 @@ Map<String, dynamic> _$SupplierToJson(Supplier instance) => <String, dynamic>{
       'notes': instance.notes,
       'payment_terms': instance.paymentTerms,
       'credit_limit': instance.creditLimit,
-      'logo_path': instance.logoPath.isEmpty ? null : instance.logoPath,
+      'logo_path': instance.logoPath,
     };
 
 PurchaseRecord _$PurchaseRecordFromJson(Map<String, dynamic> json) =>
@@ -142,11 +99,11 @@ PurchaseRecord _$PurchaseRecordFromJson(Map<String, dynamic> json) =>
       supplier: json['supplier'] as String,
       date: DateTime.parse(json['order_date'] as String),
       item: json['item'] as String,
-      quantity: _parseInt(json['quantity']),
-      unitPrice: _parseDouble(json['unit_price']),
-      vat: _parseDouble(json['vat']),
-      discount: _parseDouble(json['discount']),
-      total: _parseDouble(json['total']),
+      quantity: (json['quantity'] as num).toInt(),
+      unitPrice: (json['unit_price'] as num).toDouble(),
+      vat: (json['vat'] as num).toDouble(),
+      discount: (json['discount'] as num).toDouble(),
+      total: (json['total'] as num).toDouble(),
       status: json['status'] as String?,
       createdAt: json['created_at'] == null
           ? null
@@ -174,7 +131,7 @@ StockMovement _$StockMovementFromJson(Map<String, dynamic> json) =>
       id: json['id'] as String,
       item: json['item'] as String,
       type: json['type'] as String,
-      quantity: _parseInt(json['quantity']),
+      quantity: (json['quantity'] as num).toInt(),
       date: DateTime.parse(json['date'] as String),
       note: json['note'] as String,
       performedBy: json['performed_by'] as String?,
@@ -198,7 +155,7 @@ Recipe _$RecipeFromJson(Map<String, dynamic> json) => Recipe(
       ingredients: (json['ingredients'] as List<dynamic>)
           .map((e) => e as String)
           .toList(),
-      foodCost: _parseDouble(json['food_cost']),
+      foodCost: (json['food_cost'] as num).toDouble(),
     );
 
 Map<String, dynamic> _$RecipeToJson(Recipe instance) => <String, dynamic>{
@@ -235,8 +192,8 @@ WasteRecord _$WasteRecordFromJson(Map<String, dynamic> json) => WasteRecord(
       item: json['item'] as String,
       category: json['category'] as String,
       unit: json['unit'] as String,
-      quantity: _parseDouble(json['quantity']),
-      estimatedCost: _parseDouble(json['estimated_cost']),
+      quantity: (json['quantity'] as num).toDouble(),
+      estimatedCost: (json['estimated_cost'] as num).toDouble(),
       reason: json['reason'] as String,
       recordedBy: json['recorded_by'] as String,
       date: DateTime.parse(json['date'] as String),
@@ -265,7 +222,7 @@ ExpiryItem _$ExpiryItemFromJson(Map<String, dynamic> json) => ExpiryItem(
       item: json['item'] as String,
       category: json['category'] as String,
       unit: json['unit'] as String,
-      quantity: _parseDouble(json['quantity']),
+      quantity: (json['quantity'] as num).toDouble(),
       expiryDate: DateTime.parse(json['expiry_date'] as String),
       batchNumber: json['batch_number'] as String,
       location: json['location'] as String,
@@ -316,9 +273,9 @@ Map<String, dynamic> _$AppUserToJson(AppUser instance) => <String, dynamic>{
 RecipeIngredient _$RecipeIngredientFromJson(Map<String, dynamic> json) =>
     RecipeIngredient(
       name: json['name'] as String,
-      quantity: _parseDouble(json['quantity']),
+      quantity: (json['quantity'] as num).toDouble(),
       unit: json['unit'] as String,
-      unitCost: _parseDouble(json['unit_cost']),
+      unitCost: (json['unit_cost'] as num).toDouble(),
     );
 
 Map<String, dynamic> _$RecipeIngredientToJson(RecipeIngredient instance) =>
@@ -334,11 +291,11 @@ RecipeItem _$RecipeItemFromJson(Map<String, dynamic> json) => RecipeItem(
       name: json['name'] as String,
       category: json['category'] as String,
       description: json['description'] as String,
-      servings: _parseInt(json['servings']),
+      servings: (json['servings'] as num).toInt(),
       ingredients: (json['ingredients'] as List<dynamic>)
           .map((e) => RecipeIngredient.fromJson(e as Map<String, dynamic>))
           .toList(),
-      sellingPrice: _parseDouble(json['selling_price']),
+      sellingPrice: (json['selling_price'] as num).toDouble(),
       prepTime: json['prep_time'] as String,
       status: json['status'] as String,
     );
@@ -350,7 +307,7 @@ Map<String, dynamic> _$RecipeItemToJson(RecipeItem instance) =>
       'category': instance.category,
       'description': instance.description,
       'servings': instance.servings,
-      'ingredients': instance.ingredients.map((e) => e.toJson()).toList(),
+      'ingredients': instance.ingredients,
       'selling_price': instance.sellingPrice,
       'prep_time': instance.prepTime,
       'status': instance.status,

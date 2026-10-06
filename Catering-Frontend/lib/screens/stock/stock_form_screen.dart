@@ -430,7 +430,7 @@ class _StockFormScreenState extends State<StockFormScreen> {
     );
   }
 
-  void _submitForm() {
+  Future<void> _submitForm() async {
     if (_currentStep == 0) {
       if (_formKey1.currentState!.validate()) {
         setState(() => _currentStep++);
@@ -486,7 +486,32 @@ class _StockFormScreenState extends State<StockFormScreen> {
         // TODO: Replace with actual API calls when electronics stock endpoints are implemented
         if (_isEditMode) {
           // Update electronics stock item via API
-          // await ApiRepository.instance.updateElectronicsStock(widget.item!.id, item.toJson());
+          if (widget.item!.storeId != null && widget.item!.itemId != null) {
+            try {
+              await ApiRepository.instance.updateStockItem(
+                widget.item!.storeId!,
+                widget.item!.itemId!,
+                {
+                  'quantity': quantity,
+                  'min_quantity': minQuantity,
+                  'max_quantity': maxQuantity,
+                  'current_cost': purchasePrice,
+                  'location_description': location,
+                  'adjustment_reason': 'Updated via mobile app',
+                },
+              );
+            } catch (e) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Failed to update item: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+              return;
+            }
+          }
         } else {
           // Create electronics stock item via API
           // await ApiRepository.instance.createElectronicsStock(item.toJson());
@@ -518,7 +543,32 @@ class _StockFormScreenState extends State<StockFormScreen> {
         // TODO: Replace with actual API calls when catering stock endpoints are implemented
         if (_isEditMode) {
           // Update catering stock item via API
-          // await ApiRepository.instance.updateCateringStock(widget.item!.id, item.toJson());
+          if (widget.item!.storeId != null && widget.item!.itemId != null) {
+            try {
+              await ApiRepository.instance.updateStockItem(
+                widget.item!.storeId!,
+                widget.item!.itemId!,
+                {
+                  'quantity': quantity,
+                  'min_quantity': minQuantity,
+                  'max_quantity': maxQuantity,
+                  'current_cost': purchasePrice,
+                  'location_description': location,
+                  'adjustment_reason': 'Updated via mobile app',
+                },
+              );
+            } catch (e) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Failed to update item: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+              return;
+            }
+          }
         } else {
           // Create catering stock item via API
           // await ApiRepository.instance.createCateringStock(item.toJson());
@@ -549,7 +599,32 @@ class _StockFormScreenState extends State<StockFormScreen> {
         // TODO: Replace with actual API calls when food stock endpoints are implemented
         if (_isEditMode) {
           // Update food stock item via API
-          // await ApiRepository.instance.updateFoodStock(widget.item!.id, item.toJson());
+          if (widget.item!.storeId != null && widget.item!.itemId != null) {
+            try {
+              await ApiRepository.instance.updateStockItem(
+                widget.item!.storeId!,
+                widget.item!.itemId!,
+                {
+                  'quantity': quantity,
+                  'min_quantity': minQuantity,
+                  'max_quantity': maxQuantity,
+                  'current_cost': purchasePrice,
+                  'location_description': location,
+                  'adjustment_reason': 'Updated via mobile app',
+                },
+              );
+            } catch (e) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Failed to update item: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+              return;
+            }
+          }
         } else {
           // Create food stock item via API
           // await ApiRepository.instance.createFoodStock(item.toJson());
