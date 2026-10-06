@@ -97,6 +97,14 @@ class StockController extends Controller
                     'description' => $stock->item->description ?? '',
                     'last_updated' => $stock->updated_at,
                     
+                    // Item-type specific fields
+                    'catering_subtype' => $stock->item->catering_subtype,
+                    'shelf_life_days' => $stock->item->shelf_life_days,
+                    'requires_refrigeration' => $stock->item->requires_refrigeration ?? false,
+                    'brand' => $stock->item->brand,
+                    'model' => $stock->item->model,
+                    'warranty_period_months' => $stock->item->warranty_period_months,
+                    
                     // Additional fields for compatibility
                     'item_id' => $stock->item_id,
                     'store_id' => $stock->store_id,
@@ -184,6 +192,14 @@ class StockController extends Controller
                     'status' => $stockItem->status?->value ?? 'Unknown',
                     'description' => $stockItem->item->description ?? '',
                     'last_updated' => $stockItem->updated_at,
+                    
+                    // Item-type specific fields
+                    'catering_subtype' => $stockItem->item->catering_subtype,
+                    'shelf_life_days' => $stockItem->item->shelf_life_days,
+                    'requires_refrigeration' => $stockItem->item->requires_refrigeration ?? false,
+                    'brand' => $stockItem->item->brand,
+                    'model' => $stockItem->item->model,
+                    'warranty_period_months' => $stockItem->item->warranty_period_months,
                     
                     // Additional fields for compatibility
                     'item_id' => $stockItem->item_id,
@@ -302,6 +318,15 @@ class StockController extends Controller
                     'status' => $stock->status?->value ?? 'Unknown',
                     'description' => $stock->item->description ?? '',
                     'last_updated' => $stock->updated_at,
+                    
+                    // Item-type specific fields
+                    'catering_subtype' => $stock->item->catering_subtype,
+                    'shelf_life_days' => $stock->item->shelf_life_days,
+                    'requires_refrigeration' => $stock->item->requires_refrigeration ?? false,
+                    'brand' => $stock->item->brand,
+                    'model' => $stock->item->model,
+                    'warranty_period_months' => $stock->item->warranty_period_months,
+                    
                     'item_id' => $stock->item_id,
                     'store' => [
                         'id' => $stock->store->id,
