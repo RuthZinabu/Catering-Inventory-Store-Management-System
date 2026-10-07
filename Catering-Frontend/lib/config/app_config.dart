@@ -21,9 +21,9 @@ class AppConfig {
       case Environment.development:
         return _getDevelopmentApiUrl();
       case Environment.staging:
-        return 'https://staging-api.cateringinventory.com/api';
+        return 'https://catering-inventory-store-management.onrender.com/api';
       case Environment.production:
-        return 'https://api.cateringinventory.com/api';
+        return 'https://catering-inventory-store-management.onrender.com/api';
     }
   }
 

@@ -23,7 +23,7 @@ class ApiClient {
   static final ApiClient instance = ApiClient._();
   static const String _baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://localhost:8000/api',
+    defaultValue: 'https://catering-inventory-store-management.onrender.com/api',
   );
   static const String _legacyTokenKey = 'api_access_token';
   static const String _storeKey = 'purchase_store_id';

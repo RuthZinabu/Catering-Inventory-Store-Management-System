@@ -4,11 +4,12 @@ import 'models/auth_models.dart';
 import 'providers/auth_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/api_test_screen.dart';
-import 'screens/api_config_screen.dart';
+import 'screens/api_config_screen.dart'; // API testing screen for development
 import 'app.dart';
 import 'config/app_config.dart';
 import 'utils/connectivity_manager.dart';
 import 'services/api_repository.dart';
+import 'widgets/logo_loading_transition.dart';
 
 /// Main app wrapper that handles authentication flow and initialization
 class AppWrapper extends StatefulWidget {
@@ -27,7 +28,7 @@ class _AppWrapperState extends State<AppWrapper> {
     super.initState();
 
     // Set environment (can be changed based on build config)
-    // AppConfig.setEnvironment(Environment.development);
+    AppConfig.setEnvironment(Environment.production);
 
     _authProvider = AuthProvider();
     _initializeApp();
@@ -74,6 +75,8 @@ class _AppWrapperState extends State<AppWrapper> {
         '/login': (context) => const LoginScreen(),
         '/main': (context) => const CateringInventoryApp(),
         '/api-test': (context) => const ApiTestScreen(),
+        // API Configuration Screen - for testing different API URLs during development
+        // Navigate to this screen to switch between localhost and production APIs
         '/api-config': (context) => const ApiConfigScreen(),
       },
     );
@@ -119,27 +122,19 @@ class InitializationScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // App Logo/Icon
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Icon(
-                Icons.restaurant_menu,
-                size: 64,
-                color: Colors.blue[700],
-              ),
+            // Professional logo loading animation
+            const LogoLoadingTransition(
+              size: 140,
+              duration: Duration(milliseconds: 2200),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 48),
 
             // App Name
             Text(
               AppConfig.appName,
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Colors.blue[700],
+                    color: const Color(0xFF1B5E20), // Dark green matching logo
                   ),
             ),
             const SizedBox(height: 8),
@@ -151,11 +146,7 @@ class InitializationScreen extends StatelessWidget {
                   ),
             ),
 
-            const SizedBox(height: 48),
-
-            // Loading indicator
-            const CircularProgressIndicator(),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
 
             Text(
               'Initializing...',
@@ -165,6 +156,8 @@ class InitializationScreen extends StatelessWidget {
             ),
 
             // Debug API Config button (only in development)
+            // This button allows you to switch between API URLs for testing
+            // To use: Tap this button to access API configuration screen
             if (AppConfig.isDebug) ...[
               const SizedBox(height: 32),
               ElevatedButton.icon(

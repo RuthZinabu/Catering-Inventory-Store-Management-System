@@ -3,7 +3,15 @@ import 'package:flutter/services.dart';
 import '../config/app_config.dart';
 import '../services/api/api_client.dart';
 
-/// Widget to display and configure API settings for development
+/// Widget to display and configure API settings for development and testing.
+///
+/// This widget allows developers to:
+/// - View current API base URL
+/// - Switch between different API endpoints (localhost, production, etc.)
+/// - Test API connectivity
+/// - Quickly toggle between development and production environments
+///
+/// Useful for testing the app with different backend servers without rebuilding.
 class ApiConfigWidget extends StatefulWidget {
   const ApiConfigWidget({super.key});
 
@@ -109,8 +117,8 @@ class _ApiConfigWidgetState extends State<ApiConfigWidget> {
                   Text(
                     'Current Configuration:',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                          fontWeight: FontWeight.w600,
+                        ),
                   ),
                   const SizedBox(height: 8),
                   _buildInfoRow('Platform', AppConfig.platformName),

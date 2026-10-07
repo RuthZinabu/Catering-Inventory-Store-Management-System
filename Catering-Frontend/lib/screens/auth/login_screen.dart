@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../models/auth_models.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_colors.dart';
+import '../../widgets/logo_loading_transition.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -272,13 +273,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         elevation: 2,
                       ),
                       child: _authProvider.isLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
+                          ? const LogoLoadingTransition(
+                              size: 24,
+                              duration: Duration(milliseconds: 1800),
                             )
                           : const Text(
                               'Sign In',
