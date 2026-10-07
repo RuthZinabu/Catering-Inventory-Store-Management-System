@@ -14,9 +14,10 @@ RUN apk add --no-cache \
     unzip \
     nginx \
     supervisor \
-    mysql-client \
+    postgresql-dev \
+    postgresql-client \
     netcat-openbsd \
-    && docker-php-ext-install pdo_mysql zip exif pcntl bcmath gd \
+    && docker-php-ext-install pdo_pgsql zip exif pcntl bcmath gd \
     && docker-php-ext-enable opcache
 
 # Install Composer
