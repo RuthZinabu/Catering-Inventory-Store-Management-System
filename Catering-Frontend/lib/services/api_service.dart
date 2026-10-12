@@ -21,10 +21,7 @@ class ApiClient {
   ApiClient._();
 
   static final ApiClient instance = ApiClient._();
-  static const String _baseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'https://catering-inventory-store-management.onrender.com/api',
-  );
+  String get _baseUrl => AppConfig.effectiveApiUrl;
   static const String _legacyTokenKey = 'api_access_token';
   static const String _storeKey = 'purchase_store_id';
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();

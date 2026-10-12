@@ -30,27 +30,42 @@ class _SupplierListScreenState extends State<SupplierListScreen> {
   }
 
   Future<void> _load() async {
+    if (!mounted) return;
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
       final response = await ApiClient.instance.get('/suppliers?per_page=100');
-      final rows = (response['data'] as Map)['suppliers'] as List? ?? const [];
+      final data = response['data'];
+      final rows = data is Map ? data['suppliers'] : null;
+      if (rows is! List) {
+        throw const ApiException(
+          'The server returned an invalid suppliers response. Please retry.',
+        );
+      }
+      final suppliers = rows.map((row) {
+        if (row is! Map) {
+          throw const ApiException(
+            'The server returned an invalid supplier record. Please retry.',
+          );
+        }
+        return Supplier.fromJson(Map<String, dynamic>.from(row));
+      }).toList();
       if (!mounted) return;
       setState(() {
-        _suppliers = rows
-            .map((row) =>
-                Supplier.fromJson(Map<String, dynamic>.from(row as Map)))
-            .toList();
-        _loading = false;
+        _suppliers = suppliers;
       });
-    } on ApiException catch (error) {
-      if (mounted)
+    } catch (error) {
+      if (mounted) {
         setState(() {
-          _loading = false;
-          _error = error.message;
+          _error = error is ApiException
+              ? error.message
+              : 'Could not load suppliers. Check your connection and try again.';
         });
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
   }
 
