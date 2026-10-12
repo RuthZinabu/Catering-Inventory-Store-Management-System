@@ -74,6 +74,64 @@ class TransferTest extends TestCase
         $this->assertDatabaseCount('stock_movements', 0);
     }
 
+    public function test_transfer_history_filters_by_item_and_store_through_each_status(): void
+    {
+        [$user, $fromStore, $toStore, $item] = $this->createContext('history');
+        $otherItem = Item::create([
+            'code' => 'TRANSFER-OTHER-HISTORY',
+            'name' => 'Other Transfer Item',
+            'category' => 'Test',
+            'item_type' => ItemType::FOOD,
+            'unit' => 'kg',
+            'created_by' => $user->id,
+        ]);
+        StoreStock::create([
+            'item_id' => $item->id,
+            'store_id' => $fromStore->id,
+            'quantity' => 10,
+            'reserved_quantity' => 0,
+            'status' => StockStatus::HEALTHY,
+        ]);
+
+        $this->actingAs($user, 'sanctum');
+        $transferId = $this->postJson('/api/transfers', [
+            'from_store_id' => $fromStore->id,
+            'to_store_id' => $toStore->id,
+            'items' => [['item_id' => $item->id, 'quantity_requested' => 3]],
+        ])->assertCreated()->json('data.id');
+        $this->postJson('/api/transfers', [
+            'from_store_id' => $fromStore->id,
+            'to_store_id' => $toStore->id,
+            'items' => [['item_id' => $otherItem->id, 'quantity_requested' => 2]],
+        ])->assertCreated();
+
+        $historyUrl = "/api/transfers?item_id={$item->id}&store_id={$fromStore->id}";
+        $this->getJson($historyUrl)
+            ->assertOk()
+            ->assertJsonCount(1, 'data.items')
+            ->assertJsonPath('data.items.0.id', $transferId)
+            ->assertJsonPath('data.items.0.status', 'pending');
+
+        $this->postJson("/api/transfers/{$transferId}/approve")->assertOk();
+        $this->getJson($historyUrl)
+            ->assertOk()
+            ->assertJsonPath('data.items.0.status', 'approved');
+
+        $this->postJson("/api/transfers/{$transferId}/ship")->assertOk();
+        $this->getJson($historyUrl)
+            ->assertOk()
+            ->assertJsonPath('data.items.0.status', 'in_transit');
+
+        $this->postJson("/api/transfers/{$transferId}/receive", [])->assertOk();
+        $this->getJson($historyUrl)
+            ->assertOk()
+            ->assertJsonPath('data.items.0.status', 'received');
+        $this->getJson("/api/transfers?item_id={$item->id}&store_id={$toStore->id}")
+            ->assertOk()
+            ->assertJsonCount(1, 'data.items')
+            ->assertJsonPath('data.items.0.id', $transferId);
+    }
+
     private function createContext(string $suffix): array
     {
         $user = User::create([

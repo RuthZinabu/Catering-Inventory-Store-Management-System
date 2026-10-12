@@ -30,7 +30,7 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
       _error = null;
     });
 
-    final itemId = widget.item.itemId ?? widget.item.id;
+    final itemId = widget.item.historyItemId;
     List<StockMovementEntry>? movements;
     var transferCount = 0;
     var transferHistoryLoaded = false;

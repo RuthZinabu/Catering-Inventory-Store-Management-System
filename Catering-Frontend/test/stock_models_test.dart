@@ -26,6 +26,7 @@ void main() {
     }));
 
     expect(stock.id, 'stock-id');
+    expect(stock.historyItemId, 'item-id');
     expect(stock.name, 'Serving tray');
     expect(stock.quantity, 4);
     expect(stock.location, 'Main Store');
@@ -45,6 +46,7 @@ void main() {
     }));
 
     expect(food.batchNumber, isEmpty);
+    expect(food.historyItemId, 'food-stock');
     expect(electronics.brand, isEmpty);
     expect(electronics.maintenanceStatus, 'Unknown');
   });

@@ -97,6 +97,7 @@ class StockItem {
   double get totalValue => quantity * purchasePrice;
   double get stockFraction =>
       maxQuantity > 0 ? (quantity / maxQuantity).clamp(0.0, 1.0) : 0;
+  String get historyItemId => itemId ?? id;
 
   factory StockItem.fromJson(Map<String, dynamic> json) =>
       _$StockItemFromJson(json);

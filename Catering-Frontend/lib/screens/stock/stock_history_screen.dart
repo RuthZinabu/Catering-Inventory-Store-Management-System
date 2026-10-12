@@ -1,21 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../models/stock_models.dart';
 import '../../services/api_repository.dart';
+import 'stock_history_helpers.dart';
 import '../stock_transfers/stock_transfer_models.dart';
-
-class _StockHistoryEntry {
-  final DateTime date;
-  final StockMovementEntry? movement;
-  final StockTransferViewModel? transfer;
-  final StockTransferLineViewModel? transferLine;
-
-  const _StockHistoryEntry({
-    required this.date,
-    this.movement,
-    this.transfer,
-    this.transferLine,
-  });
-}
 
 class StockHistoryScreen extends StatefulWidget {
   final StockItem item;
@@ -26,7 +13,7 @@ class StockHistoryScreen extends StatefulWidget {
 }
 
 class _StockHistoryScreenState extends State<StockHistoryScreen> {
-  List<_StockHistoryEntry> _history = [];
+  List<StockHistoryEntry> _history = [];
   bool _isLoading = true;
   String? _error;
   String? _warning;
@@ -44,7 +31,7 @@ class _StockHistoryScreenState extends State<StockHistoryScreen> {
       _warning = null;
     });
 
-    final itemId = widget.item.itemId ?? widget.item.id;
+    final itemId = widget.item.historyItemId;
     List<StockMovementEntry>? movements;
     List<StockTransferViewModel>? transfers;
     Object? movementError;
@@ -78,33 +65,12 @@ class _StockHistoryScreenState extends State<StockHistoryScreen> {
       return;
     }
 
-    final history = <_StockHistoryEntry>[];
-    if (movements != null) {
-      for (final movement in movements) {
-        // A transfer is represented once by its transfer record when that
-        // endpoint is available, instead of duplicating ship/receive rows.
-        if (transfers != null && movement.type == 'Transfer') continue;
-        history.add(
-          _StockHistoryEntry(date: movement.date, movement: movement),
-        );
-      }
-    }
-    if (transfers != null) {
-      for (final transfer in transfers) {
-        for (final line in transfer.lines.where((line) => line.itemId == itemId)) {
-          history.add(
-            _StockHistoryEntry(
-              date: DateTime.tryParse(transfer.date) ??
-                  DateTime.fromMillisecondsSinceEpoch(0),
-              transfer: transfer,
-              transferLine: line,
-            ),
-          );
-        }
-      }
-    }
-
-    history.sort((a, b) => b.date.compareTo(a.date));
+    final history = buildStockHistoryEntries(
+      itemId: itemId,
+      movements: movements ?? const <StockMovementEntry>[],
+      transfers: transfers ?? const <StockTransferViewModel>[],
+      transfersLoaded: transfers != null,
+    );
     setState(() {
       _history = history;
       _warning = movementError != null || transferError != null
