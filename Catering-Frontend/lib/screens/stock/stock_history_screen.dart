@@ -1,6 +1,21 @@
 import 'package:flutter/material.dart';
 import '../../models/stock_models.dart';
 import '../../services/api_repository.dart';
+import '../stock_transfers/stock_transfer_models.dart';
+
+class _StockHistoryEntry {
+  final DateTime date;
+  final StockMovementEntry? movement;
+  final StockTransferViewModel? transfer;
+  final StockTransferLineViewModel? transferLine;
+
+  const _StockHistoryEntry({
+    required this.date,
+    this.movement,
+    this.transfer,
+    this.transferLine,
+  });
+}
 
 class StockHistoryScreen extends StatefulWidget {
   final StockItem item;
@@ -11,40 +26,92 @@ class StockHistoryScreen extends StatefulWidget {
 }
 
 class _StockHistoryScreenState extends State<StockHistoryScreen> {
-  List<StockMovementEntry> _movements = [];
+  List<_StockHistoryEntry> _history = [];
   bool _isLoading = true;
   String? _error;
+  String? _warning;
 
   @override
   void initState() {
     super.initState();
-    _loadStockMovements();
+    _loadHistory();
   }
 
-  Future<void> _loadStockMovements() async {
+  Future<void> _loadHistory() async {
     setState(() {
       _isLoading = true;
       _error = null;
+      _warning = null;
     });
 
+    final itemId = widget.item.itemId ?? widget.item.id;
+    List<StockMovementEntry>? movements;
+    List<StockTransferViewModel>? transfers;
+    Object? movementError;
+    Object? transferError;
+
     try {
-      final movements = await ApiRepository.instance.getStockMovements(
-        itemId: widget.item.id,
+      movements = await ApiRepository.instance.getStockMovements(
+        storeId: widget.item.storeId,
+        itemId: itemId,
       );
-      if (mounted) {
-        setState(() {
-          _movements = movements;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _error = e.toString();
-          _isLoading = false;
-        });
+    } catch (error) {
+      movementError = error;
+    }
+
+    try {
+      transfers = await ApiRepository.instance.getStockTransfersForItem(
+        itemId,
+        storeId: widget.item.storeId,
+      );
+    } catch (error) {
+      transferError = error;
+    }
+
+    if (!mounted) return;
+    if (movements == null && transfers == null) {
+      setState(() {
+        _error = 'Could not load this item’s history. '
+            '${movementError ?? ''} ${transferError ?? ''}'.trim();
+        _isLoading = false;
+      });
+      return;
+    }
+
+    final history = <_StockHistoryEntry>[];
+    if (movements != null) {
+      for (final movement in movements) {
+        // A transfer is represented once by its transfer record when that
+        // endpoint is available, instead of duplicating ship/receive rows.
+        if (transfers != null && movement.type == 'Transfer') continue;
+        history.add(
+          _StockHistoryEntry(date: movement.date, movement: movement),
+        );
       }
     }
+    if (transfers != null) {
+      for (final transfer in transfers) {
+        for (final line in transfer.lines.where((line) => line.itemId == itemId)) {
+          history.add(
+            _StockHistoryEntry(
+              date: DateTime.tryParse(transfer.date) ??
+                  DateTime.fromMillisecondsSinceEpoch(0),
+              transfer: transfer,
+              transferLine: line,
+            ),
+          );
+        }
+      }
+    }
+
+    history.sort((a, b) => b.date.compareTo(a.date));
+    setState(() {
+      _history = history;
+      _warning = movementError != null || transferError != null
+          ? 'Some history records could not be loaded. Retry to see the complete history.'
+          : null;
+      _isLoading = false;
+    });
   }
 
   Color _typeColor(String type) {
@@ -98,6 +165,23 @@ class _StockHistoryScreenState extends State<StockHistoryScreen> {
       'Dec'
     ];
     return '${d.day} ${months[d.month]} ${d.year}';
+  }
+
+  double _transferQuantity(StockTransferLineViewModel line) {
+    if (line.quantityReceived > 0) return line.quantityReceived;
+    if (line.quantityShipped > 0) return line.quantityShipped;
+    return line.quantityRequested;
+  }
+
+  String _transferStatusLabel(String status) {
+    return status
+        .split('_')
+        .map(
+          (word) => word.isEmpty
+              ? word
+              : '${word[0].toUpperCase()}${word.substring(1)}',
+        )
+        .join(' ');
   }
 
   @override
@@ -183,7 +267,7 @@ class _StockHistoryScreenState extends State<StockHistoryScreen> {
                       Text('Error: $_error'),
                       const SizedBox(height: 16),
                       ElevatedButton(
-                        onPressed: _loadStockMovements,
+                        onPressed: _loadHistory,
                         child: const Text('Retry'),
                       ),
                     ],
@@ -196,7 +280,7 @@ class _StockHistoryScreenState extends State<StockHistoryScreen> {
       );
     }
 
-    final movements = _movements;
+    final history = _history;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -266,7 +350,7 @@ class _StockHistoryScreenState extends State<StockHistoryScreen> {
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
-                      '${movements.length} record${movements.length == 1 ? '' : 's'}',
+                      '${history.length} record${history.length == 1 ? '' : 's'}',
                       style: const TextStyle(
                           color: Color(0xFF2563EB),
                           fontWeight: FontWeight.w700,
@@ -277,9 +361,20 @@ class _StockHistoryScreenState extends State<StockHistoryScreen> {
               ),
             ),
             const SizedBox(height: 12),
+            if (_warning != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                child: Text(
+                  _warning!,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
             // List
             Expanded(
-              child: movements.isEmpty
+              child: history.isEmpty
                   ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -294,13 +389,13 @@ class _StockHistoryScreenState extends State<StockHistoryScreen> {
                                 size: 44, color: Color(0xFF94A3B8)),
                           ),
                           const SizedBox(height: 16),
-                          const Text('No movement history',
+                          const Text('No movement or transfer history',
                               style: TextStyle(
                                   fontWeight: FontWeight.w700,
                                   fontSize: 16,
                                   color: Color(0xFF10162B))),
                           const SizedBox(height: 6),
-                          const Text('No records found for this item.',
+                          const Text('No records found for this item in this store.',
                               style: TextStyle(
                                   color: Color(0xFF64748B), fontSize: 13)),
                         ],
@@ -308,10 +403,27 @@ class _StockHistoryScreenState extends State<StockHistoryScreen> {
                     )
                   : ListView.builder(
                       padding: const EdgeInsets.fromLTRB(20, 0, 20, 112),
-                      itemCount: movements.length,
+                      itemCount: history.length,
                       itemBuilder: (context, index) {
-                        final m = movements[index];
-                        final color = _typeColor(m.type);
+                        final entry = history[index];
+                        final movement = entry.movement;
+                        final transfer = entry.transfer;
+                        final transferLine = entry.transferLine;
+                        final isTransfer = transfer != null;
+                        final type = isTransfer ? 'Transfer' : movement!.type;
+                        final color = _typeColor(type);
+                        final quantity = isTransfer
+                            ? _transferQuantity(transferLine!)
+                            : movement!.quantity;
+                        final unit = isTransfer
+                            ? transferLine!.unit
+                            : movement!.unit;
+                        final performedBy = isTransfer
+                            ? transfer!.person
+                            : movement!.performedBy;
+                        final note = isTransfer
+                            ? 'Transfer ${transfer!.number}: ${transfer!.fromStore} → ${transfer!.toStore}'
+                            : movement!.note;
                         return Container(
                           margin: const EdgeInsets.only(bottom: 12),
                           padding: const EdgeInsets.all(16),
@@ -335,7 +447,7 @@ class _StockHistoryScreenState extends State<StockHistoryScreen> {
                                   color: color.withOpacity(0.12),
                                   borderRadius: BorderRadius.circular(14),
                                 ),
-                                child: Icon(_typeIcon(m.type),
+                                child: Icon(_typeIcon(type),
                                     color: color, size: 20),
                               ),
                               const SizedBox(width: 12),
@@ -353,14 +465,17 @@ class _StockHistoryScreenState extends State<StockHistoryScreen> {
                                             borderRadius:
                                                 BorderRadius.circular(999),
                                           ),
-                                          child: Text(m.type,
+                                          child: Text(
+                                            isTransfer
+                                                ? 'Transfer · ${_transferStatusLabel(transfer!.status)}'
+                                                : type,
                                               style: TextStyle(
                                                   color: color,
                                                   fontSize: 11,
                                                   fontWeight: FontWeight.w700)),
                                         ),
                                         const Spacer(),
-                                        Text(_formatDate(m.date),
+                                        Text(_formatDate(entry.date),
                                             style: const TextStyle(
                                                 fontSize: 11,
                                                 color: Color(0xFF94A3B8),
@@ -369,20 +484,20 @@ class _StockHistoryScreenState extends State<StockHistoryScreen> {
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                        '${m.quantity.toStringAsFixed(m.quantity == m.quantity.truncate() ? 0 : 1)} ${m.unit}',
+                                        '${quantity.toStringAsFixed(quantity == quantity.truncate() ? 0 : 1)} $unit',
                                         style: const TextStyle(
                                             fontWeight: FontWeight.w800,
                                             fontSize: 15,
                                             color: Color(0xFF10162B))),
                                     const SizedBox(height: 4),
-                                    Text('By ${m.performedBy}',
+                                    Text('By ${performedBy.isEmpty ? "Unknown" : performedBy}',
                                         style: const TextStyle(
                                             fontSize: 12,
                                             color: Color(0xFF64748B),
                                             fontWeight: FontWeight.w500)),
-                                    if (m.note.isNotEmpty) ...[
+                                    if (note.isNotEmpty) ...[
                                       const SizedBox(height: 6),
-                                      Text(m.note,
+                                      Text(note,
                                           style: const TextStyle(
                                               fontSize: 12,
                                               color: Color(0xFF475569),

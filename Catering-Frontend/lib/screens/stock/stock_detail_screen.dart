@@ -30,24 +30,57 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
       _error = null;
     });
 
+    final itemId = widget.item.itemId ?? widget.item.id;
+    List<StockMovementEntry>? movements;
+    var transferCount = 0;
+    var transferHistoryLoaded = false;
+    Object? loadError;
+
     try {
-      final movements = await ApiRepository.instance.getStockMovements(
-        itemId: widget.item.id,
+      movements = await ApiRepository.instance.getStockMovements(
+        storeId: widget.item.storeId,
+        itemId: itemId,
       );
-      if (mounted) {
-        setState(() {
-          _movementCount = movements.length;
-          _isLoading = false;
-        });
+    } catch (error) {
+      loadError = error;
+    }
+
+    try {
+      final transfers = await ApiRepository.instance.getStockTransfersForItem(
+        itemId,
+        storeId: widget.item.storeId,
+      );
+      transferCount = transfers.length;
+      transferHistoryLoaded = true;
+    } catch (error) {
+      loadError ??= error;
+    }
+
+    if (!mounted) return;
+    setState(() {
+      if (movements == null && !transferHistoryLoaded) {
+        _error = loadError.toString();
+        _movementCount = 0;
+      } else {
+        final movementCount = movements
+                ?.where(
+                  (movement) =>
+                      !transferHistoryLoaded || movement.type != 'Transfer',
+                )
+                .length ??
+            0;
+        _movementCount = movementCount + transferCount;
       }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _error = e.toString();
-          _isLoading = false;
-          _movementCount = 0; // Default to 0 on error
-        });
-      }
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _openHistory() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => StockHistoryScreen(item: widget.item)),
+    );
+    if (mounted) {
+      _loadStockMovements();
     }
   }
 
@@ -64,10 +97,7 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
             MaterialPageRoute(
                 builder: (_) => StockFormScreen(item: widget.item)),
           ),
-          onHistory: () => Navigator.of(context).push(
-            MaterialPageRoute(
-                builder: (_) => StockHistoryScreen(item: widget.item)),
-          ),
+          onHistory: _openHistory,
         ),
       ),
     );
