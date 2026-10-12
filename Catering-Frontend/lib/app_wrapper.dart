@@ -7,6 +7,7 @@ import 'screens/api_test_screen.dart';
 import 'screens/api_config_screen.dart'; // API testing screen for development
 import 'app.dart';
 import 'config/app_config.dart';
+import 'services/api/api_client.dart' as modern_api;
 import 'utils/connectivity_manager.dart';
 import 'services/api_repository.dart';
 import 'widgets/logo_loading_transition.dart';
@@ -38,6 +39,9 @@ class _AppWrapperState extends State<AppWrapper> {
     try {
       // Initialize API repository
       // All data operations now use API services directly
+      await AppConfig.restoreCustomApiUrl();
+      modern_api.ApiClient.instance.dio.options.baseUrl =
+          AppConfig.effectiveApiUrl;
 
       // Check if user is already authenticated
       await _authProvider.checkAuthStatus();
