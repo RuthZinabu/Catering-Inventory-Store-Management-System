@@ -77,8 +77,9 @@ class AuthService extends ChangeNotifier {
         await _apiClient.setAuthToken(authResponse.accessToken);
         await legacy_api.ApiClient.instance.synchronizeAuthToken(
           authResponse.accessToken,
-          resetStore: true,
+          resetStore: false,
         );
+        await _ensureLegacyStoreSelection(authResponse.user);
         await _storeUserData(authResponse.user);
         
         _currentUser = authResponse.user;
@@ -116,7 +117,7 @@ class AuthService extends ChangeNotifier {
       }
 
       // Clear all stored data
-      await _clearUserData();
+      await _clearUserData(preserveSelectedStore: true);
       
       _currentUser = null;
       _errorMessage = null;
@@ -124,7 +125,7 @@ class AuthService extends ChangeNotifier {
       
     } catch (e) {
       // Even if logout fails, clear local data
-      await _clearUserData();
+      await _clearUserData(preserveSelectedStore: true);
       _currentUser = null;
       _setState(AuthState.unauthenticated);
     }
@@ -218,9 +219,53 @@ class AuthService extends ChangeNotifier {
   }
 
   /// Clear all user data
-  Future<void> _clearUserData() async {
+  Future<void> _clearUserData({bool preserveSelectedStore = false}) async {
     await _apiClient.clearTokens();
-    await legacy_api.ApiClient.instance.clearLocalSession();
+    await legacy_api.ApiClient.instance
+        .clearLocalSession(preserveStore: preserveSelectedStore);
+  }
+
+  Future<void> _ensureLegacyStoreSelection(AuthUser user) async {
+    final legacyClient = legacy_api.ApiClient.instance;
+    final currentStore = legacyClient.storeId;
+    final assignedStoreIds =
+        user.assignedStores.map((store) => store.storeId).toSet();
+
+    if (assignedStoreIds.isNotEmpty) {
+      final selectedStore = currentStore != null &&
+              assignedStoreIds.contains(currentStore)
+          ? currentStore
+          : user.assignedStores.first.storeId;
+      await legacyClient.selectStore(selectedStore);
+      return;
+    }
+
+    // Admin accounts may have no explicit assignments; retain the previous
+    // selection when it is still active, otherwise choose the first available.
+    try {
+      final response =
+          await legacyClient.get('/stores?active=true&per_page=100');
+      final data = Map<String, dynamic>.from(response['data'] as Map);
+      final stores = (data['stores'] as List? ??
+              data['items'] as List? ??
+              const [])
+          .map((row) => Map<String, dynamic>.from(row as Map))
+          .toList();
+      final availableStoreIds = stores
+          .map((store) =>
+              store['store_id']?.toString() ?? store['id']?.toString())
+          .whereType<String>()
+          .where((id) => id.isNotEmpty)
+          .toList();
+      if (availableStoreIds.isEmpty) return;
+      final selectedStore = currentStore != null &&
+              availableStoreIds.contains(currentStore)
+          ? currentStore
+          : availableStoreIds.first;
+      await legacyClient.selectStore(selectedStore);
+    } catch (_) {
+      // Do not block sign-in if the optional store lookup is unavailable.
+    }
   }
 
   /// Set authentication state

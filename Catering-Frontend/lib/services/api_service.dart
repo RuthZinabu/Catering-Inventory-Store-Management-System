@@ -67,17 +67,20 @@ class ApiClient {
       storeId = null;
       final preferences = await SharedPreferences.getInstance();
       await preferences.remove(_storeKey);
+    } else if (tokenChanged) {
+      final preferences = await SharedPreferences.getInstance();
+      storeId = preferences.getString(_storeKey);
     }
   }
 
   /// Clear legacy in-memory and preference state after app-wide logout.
-  Future<void> clearLocalSession() async {
+  Future<void> clearLocalSession({bool preserveStore = false}) async {
     _token = null;
     storeId = null;
     _getCache.clear();
     final preferences = await SharedPreferences.getInstance();
     await preferences.remove(_legacyTokenKey);
-    await preferences.remove(_storeKey);
+    if (!preserveStore) await preferences.remove(_storeKey);
   }
 
   Future<Map<String, dynamic>> login({
