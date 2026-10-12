@@ -34,41 +34,61 @@ class _ApiConfigWidgetState extends State<ApiConfigWidget> {
     super.dispose();
   }
 
-  void _updateApiUrl() {
+  Future<void> _updateApiUrl() async {
     final newUrl = _urlController.text.trim();
-    if (newUrl.isNotEmpty && newUrl != AppConfig.apiBaseUrl) {
-      AppConfig.setCustomApiUrl(newUrl);
+    try {
+      if (newUrl.isEmpty) {
+        throw const FormatException('Enter an API URL.');
+      }
+      if (newUrl == AppConfig.apiBaseUrl) {
+        await AppConfig.clearCustomApiUrl();
+      } else {
+        await AppConfig.setCustomApiUrl(newUrl);
+      }
       ApiClient.instance.dio.options.baseUrl = AppConfig.effectiveApiUrl;
+      if (!mounted) return;
+      final isDefault = newUrl == AppConfig.apiBaseUrl;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('API URL updated to: $newUrl'),
-          backgroundColor: Colors.green,
+          content: Text(
+            isDefault ? 'Using default API URL' : 'API URL saved: $newUrl',
+          ),
+          backgroundColor: isDefault ? Colors.blue : Colors.green,
         ),
       );
-    } else if (newUrl == AppConfig.apiBaseUrl) {
-      AppConfig.clearCustomApiUrl();
+    } on FormatException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message)),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not save the API URL. Try again.')),
+      );
+    }
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _resetToDefault() async {
+    try {
+      await AppConfig.clearCustomApiUrl();
       ApiClient.instance.dio.options.baseUrl = AppConfig.effectiveApiUrl;
+      if (!mounted) return;
+      _urlController.text = AppConfig.effectiveApiUrl;
+      setState(() {});
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Using default API URL'),
+          content: Text('Reset to default API URL'),
           backgroundColor: Colors.blue,
         ),
       );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not reset the API URL. Try again.')),
+      );
     }
-    setState(() {});
-  }
-
-  void _resetToDefault() {
-    AppConfig.clearCustomApiUrl();
-    ApiClient.instance.dio.options.baseUrl = AppConfig.effectiveApiUrl;
-    _urlController.text = AppConfig.effectiveApiUrl;
-    setState(() {});
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Reset to default API URL'),
-        backgroundColor: Colors.blue,
-      ),
-    );
   }
 
   void _copyToClipboard(String text) {
@@ -176,9 +196,9 @@ class _ApiConfigWidgetState extends State<ApiConfigWidget> {
               runSpacing: 8,
               children: AppConfig.developmentUrls.entries.map((entry) {
                 return ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     _urlController.text = entry.value;
-                    _updateApiUrl();
+                    await _updateApiUrl();
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppConfig.effectiveApiUrl == entry.value

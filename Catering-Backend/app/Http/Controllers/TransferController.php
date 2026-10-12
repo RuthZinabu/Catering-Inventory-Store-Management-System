@@ -20,6 +20,7 @@ class TransferController extends Controller
     {
         $validated = $request->validate([
             'store_id' => 'nullable|uuid|exists:stores,id',
+            'item_id' => 'nullable|uuid|exists:items,id',
             'status' => ['nullable', Rule::in(['pending', 'approved', 'in_transit', 'received', 'cancelled'])],
             'per_page' => 'nullable|integer|min:1|max:100',
         ]);
@@ -36,6 +37,10 @@ class TransferController extends Controller
             $query->where(fn ($builder) => $builder
                 ->where('from_store_id', $storeId)
                 ->orWhere('to_store_id', $storeId));
+        }
+        if (!empty($validated['item_id'])) {
+            $itemId = $validated['item_id'];
+            $query->whereHas('items', fn ($builder) => $builder->where('item_id', $itemId));
         }
         if (!empty($validated['status'])) {
             $query->where('status', $validated['status']);

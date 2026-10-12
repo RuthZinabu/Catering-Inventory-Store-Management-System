@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 enum Environment { development, staging, production }
 
@@ -48,13 +49,39 @@ class AppConfig {
 
   /// Set custom API URL for development (useful for physical devices)
   static String? _customApiUrl;
+  static const String _customApiUrlPreferenceKey = 'custom_api_base_url';
 
-  static void setCustomApiUrl(String url) {
-    _customApiUrl = url;
+  static Future<void> restoreCustomApiUrl() async {
+    final preferences = await SharedPreferences.getInstance();
+    final savedUrl = preferences.getString(_customApiUrlPreferenceKey);
+    _customApiUrl =
+        savedUrl == null ? null : _normalizeApiUrl(savedUrl);
   }
 
-  static void clearCustomApiUrl() {
+  static Future<void> setCustomApiUrl(String url) async {
+    final normalizedUrl = _normalizeApiUrl(url);
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setString(_customApiUrlPreferenceKey, normalizedUrl);
+    _customApiUrl = normalizedUrl;
+  }
+
+  static Future<void> clearCustomApiUrl() async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.remove(_customApiUrlPreferenceKey);
     _customApiUrl = null;
+  }
+
+  static String _normalizeApiUrl(String url) {
+    final normalizedUrl = url.trim().replaceFirst(RegExp(r'/+$'), '');
+    final uri = Uri.tryParse(normalizedUrl);
+    if (uri == null ||
+        (uri.scheme != 'http' && uri.scheme != 'https') ||
+        uri.host.isEmpty) {
+      throw const FormatException(
+        'Enter a valid API URL starting with http:// or https://.',
+      );
+    }
+    return normalizedUrl;
   }
 
   /// Get the effective API URL (custom override or default)

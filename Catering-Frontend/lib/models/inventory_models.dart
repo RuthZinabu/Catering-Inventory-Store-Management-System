@@ -159,7 +159,16 @@ class Supplier {
   });
 
   factory Supplier.fromJson(Map<String, dynamic> json) =>
-      _$SupplierFromJson(json);
+      _$SupplierFromJson({
+        ...json,
+        // These columns are nullable in the database, but this model exposes
+        // them as strings for search and display.
+        'contact_person': json['contact_person']?.toString() ?? '',
+        'phone': json['phone']?.toString() ?? '',
+        'email': json['email']?.toString() ?? '',
+        'address': json['address']?.toString() ?? '',
+        'tax_number': json['tax_number']?.toString() ?? '',
+      });
 
   Map<String, dynamic> toJson() => _$SupplierToJson(this);
 }

@@ -17,6 +17,36 @@ class TransferService extends BaseApiService {
     return result.items;
   }
 
+  Future<List<StockTransferViewModel>> getForItem(
+    String itemId, {
+    String? storeId,
+  }) async {
+    final transfers = <StockTransferViewModel>[];
+    var page = 1;
+    var lastPage = 1;
+
+    do {
+      final result = await executePaginatedRequest<StockTransferViewModel>(
+        () => apiClient.get<Map<String, dynamic>>(
+          '/transfers',
+          queryParameters: {
+            'item_id': itemId,
+            if (storeId != null) 'store_id': storeId,
+            'page': page,
+            'per_page': 100,
+          },
+        ),
+        itemFromJson: StockTransferViewModel.fromJson,
+        errorContext: 'Failed to load item transfers',
+      );
+      transfers.addAll(result.items);
+      lastPage = result.lastPage;
+      page++;
+    } while (page <= lastPage);
+
+    return transfers;
+  }
+
   Future<List<TransferStockItemViewModel>> getStock(String storeId) async {
     final response = await apiClient.get<Map<String, dynamic>>(
       '/stores/$storeId/stock',

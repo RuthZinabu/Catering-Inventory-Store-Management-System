@@ -31,19 +31,38 @@ class _PurchaseListScreenState extends State<PurchaseListScreen> {
   }
 
   Future<void> _load() async {
-    final storeId = ApiClient.instance.storeId;
-    if (storeId == null) {
-      setState(() {
-        _loading = false;
-        _error = 'No destination store is selected.';
-      });
-      return;
-    }
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
+      // Restore the persisted auth and store state before reading storeId.
+      // The app's authentication wrapper uses a separate API client, so this
+      // client may not have its in-memory session restored yet.
+      await ApiClient.instance.restoreSession();
+      var storeId = ApiClient.instance.storeId;
+      if (storeId == null) {
+        final response =
+            await ApiClient.instance.get('/stores?active=true&per_page=100');
+        final data = Map<String, dynamic>.from(response['data'] as Map);
+        final stores = (data['stores'] as List? ??
+                data['items'] as List? ??
+                const [])
+            .map((row) => Map<String, dynamic>.from(row as Map))
+            .toList();
+        if (stores.isEmpty) {
+          throw const ApiException(
+              'Your account has no active destination stores.');
+        }
+        storeId = stores.first['store_id']?.toString() ??
+            stores.first['id']?.toString();
+        if (storeId == null || storeId.isEmpty) {
+          throw const ApiException(
+              'No destination store is available for this account.');
+        }
+        await ApiClient.instance.selectStore(storeId);
+      }
+
       final response = await ApiClient.instance.get('/purchase-orders?store_id=$storeId&per_page=100');
       final rows = (response['data'] as Map)['purchase_orders'] as List? ?? const [];
       if (!mounted) return;
@@ -57,6 +76,11 @@ class _PurchaseListScreenState extends State<PurchaseListScreen> {
       if (mounted) setState(() {
         _loading = false;
         _error = error.message;
+      });
+    } catch (error) {
+      if (mounted) setState(() {
+        _loading = false;
+        _error = error.toString();
       });
     }
   }

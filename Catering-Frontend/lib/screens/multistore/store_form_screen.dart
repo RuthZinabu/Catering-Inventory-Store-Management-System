@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import '../../models/inventory_models.dart';
 import '../../models/store_model.dart';
 import '../../services/api/api_exception.dart';
+import '../../services/api/base_api_service.dart';
 import '../../services/store_service.dart';
+import '../../services/user_service.dart';
 
 class StoreFormScreen extends StatefulWidget {
   final Store? store;
@@ -25,6 +28,10 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
   String _selectedType = 'main_warehouse';
   bool _isActive = true;
   bool _isSaving = false;
+  bool _loadingManagers = false;
+  List<AppUser> _storeManagers = [];
+  AppUser? _selectedManager;
+  String? _managerLoadError;
 
   @override
   void initState() {
@@ -44,6 +51,7 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
       // Set default values for new store
       _codeCtrl.text =
           'SW-${DateTime.now().millisecondsSinceEpoch.toString().substring(6, 9)}';
+      _loadStoreManagers();
     }
   }
 
@@ -60,6 +68,53 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
   }
 
   List<Map<String, String>> get storeTypes => Store.storeTypes;
+
+  Future<void> _loadStoreManagers() async {
+    setState(() {
+      _loadingManagers = true;
+      _managerLoadError = null;
+    });
+
+    try {
+      final managers = <AppUser>[];
+      var page = 1;
+      var lastPage = 1;
+
+      do {
+        final result = await UserService.instance.getAll(
+          queryParams: ListQueryParams(
+            page: page,
+            perPage: 100,
+            filters: const {
+              'role': 'store_manager',
+              'status': 'Active',
+            },
+          ),
+        );
+        managers.addAll(
+          result.items.where(
+            (user) =>
+                user.role == 'store_manager' &&
+                user.status.toLowerCase() == 'active',
+          ),
+        );
+        lastPage = result.lastPage;
+        page++;
+      } while (page <= lastPage);
+
+      if (!mounted) return;
+      setState(() {
+        _storeManagers = managers;
+        _loadingManagers = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _loadingManagers = false;
+        _managerLoadError = error.toString();
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -306,28 +361,31 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Manager
-              TextFormField(
-                controller: _managerCtrl,
-                decoration: InputDecoration(
-                  labelText: 'Manager Name',
-                  prefixIcon: const Icon(Icons.people),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                      color: Color(0xFF2563EB),
-                      width: 2,
+              // New stores can be assigned directly to an active store manager.
+              if (widget.store == null)
+                _buildManagerSelector()
+              else
+                TextFormField(
+                  controller: _managerCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'Manager Name',
+                    prefixIcon: const Icon(Icons.people),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(
+                        color: Color(0xFF2563EB),
+                        width: 2,
+                      ),
                     ),
                   ),
                 ),
-              ),
               const SizedBox(height: 24),
 
               // Status
@@ -374,6 +432,73 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
     );
   }
 
+  Widget _buildManagerSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        DropdownButtonFormField<AppUser>(
+          value: _selectedManager,
+          decoration: InputDecoration(
+            labelText: 'Store Manager',
+            prefixIcon: const Icon(Icons.people),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: Color(0xFF2563EB),
+                width: 2,
+              ),
+            ),
+          ),
+          hint: const Text('Select a store manager'),
+          items: _storeManagers
+              .map(
+                (manager) => DropdownMenuItem<AppUser>(
+                  value: manager,
+                  child: Text(
+                    manager.email.isEmpty
+                        ? manager.name
+                        : '${manager.name} · ${manager.email}',
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              )
+              .toList(),
+          onChanged: _loadingManagers || _managerLoadError != null
+              ? null
+              : (manager) => setState(() => _selectedManager = manager),
+        ),
+        if (_loadingManagers) ...[
+          const SizedBox(height: 8),
+          const LinearProgressIndicator(minHeight: 2),
+        ] else if (_managerLoadError != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            'Could not load store managers.',
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+          TextButton.icon(
+            onPressed: _loadStoreManagers,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Retry'),
+          ),
+        ] else if (_storeManagers.isEmpty) ...[
+          const SizedBox(height: 8),
+          Text(
+            'No active store managers found. You can leave this unassigned.',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      ],
+    );
+  }
+
   Future<void> _saveStore() async {
     if (_isSaving || !_formKey.currentState!.validate()) return;
 
@@ -385,7 +510,11 @@ class _StoreFormScreenState extends State<StoreFormScreen> {
       'location': _locationCtrl.text.trim(),
       'phone': _phoneCtrl.text.trim(),
       'email': _emailCtrl.text.trim(),
-      'manager': _managerCtrl.text.trim(),
+      'manager': widget.store == null
+          ? (_selectedManager?.name ?? '')
+          : _managerCtrl.text.trim(),
+      if (widget.store == null && _selectedManager != null)
+        'manager_id': _selectedManager!.id,
       'store_type': _selectedType,
       'is_active': _isActive,
     };

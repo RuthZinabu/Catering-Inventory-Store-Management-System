@@ -21,10 +21,7 @@ class ApiClient {
   ApiClient._();
 
   static final ApiClient instance = ApiClient._();
-  static const String _baseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'https://catering-inventory-store-management.onrender.com/api',
-  );
+  String get _baseUrl => AppConfig.effectiveApiUrl;
   static const String _legacyTokenKey = 'api_access_token';
   static const String _storeKey = 'purchase_store_id';
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
@@ -70,17 +67,20 @@ class ApiClient {
       storeId = null;
       final preferences = await SharedPreferences.getInstance();
       await preferences.remove(_storeKey);
+    } else if (tokenChanged) {
+      final preferences = await SharedPreferences.getInstance();
+      storeId = preferences.getString(_storeKey);
     }
   }
 
   /// Clear legacy in-memory and preference state after app-wide logout.
-  Future<void> clearLocalSession() async {
+  Future<void> clearLocalSession({bool preserveStore = false}) async {
     _token = null;
     storeId = null;
     _getCache.clear();
     final preferences = await SharedPreferences.getInstance();
     await preferences.remove(_legacyTokenKey);
-    await preferences.remove(_storeKey);
+    if (!preserveStore) await preferences.remove(_storeKey);
   }
 
   Future<Map<String, dynamic>> login({

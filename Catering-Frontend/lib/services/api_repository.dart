@@ -290,6 +290,13 @@ class ApiRepository {
     return _transferService.getAll();
   }
 
+  Future<List<StockTransferViewModel>> getStockTransfersForItem(
+    String itemId, {
+    String? storeId,
+  }) {
+    return _transferService.getForItem(itemId, storeId: storeId);
+  }
+
   Future<List<TransferStockItemViewModel>> getTransferStock(String storeId) {
     return _transferService.getStock(storeId);
   }

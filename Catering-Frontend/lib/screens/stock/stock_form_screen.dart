@@ -67,7 +67,8 @@ class _StockFormScreenState extends State<StockFormScreen> {
         _brandCtrl.text = item.brand;
         _modelCtrl.text = item.model;
         _warrantyCtrl.text = item.warrantyStatus;
-        _maintenanceCtrl.text = item.lastMaintenanceDate!.toIso8601String();
+        _maintenanceCtrl.text =
+            item.lastMaintenanceDate?.toIso8601String().split('T').first ?? '';
         _assetTagCtrl.text = item.assetTag;
       }
 
